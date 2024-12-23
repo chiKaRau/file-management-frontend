@@ -1,8 +1,9 @@
-import {app, BrowserWindow, screen} from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
 let win: BrowserWindow | null = null;
+
 const args = process.argv.slice(1),
   serve = args.some(val => val === '--serve');
 
@@ -14,8 +15,8 @@ function createWindow(): BrowserWindow {
   win = new BrowserWindow({
     x: 0,
     y: 0,
-    width: size.width,
-    height: size.height,
+    width: 1200,
+    height: 800,
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: (serve),
@@ -34,7 +35,7 @@ function createWindow(): BrowserWindow {
     let pathIndex = './index.html';
 
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
-       // Path when running electron in local folder
+      // Path when running electron in local folder
       pathIndex = '../dist/index.html';
     }
 
@@ -58,7 +59,9 @@ try {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
-  app.on('ready', () => setTimeout(createWindow, 400));
+  app.whenReady().then(() => {
+    setTimeout(createWindow, 400);
+  });
 
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
@@ -77,7 +80,25 @@ try {
     }
   });
 
+  // IPC Handler for opening the directory selection dialog
+  ipcMain.handle('open-directory-dialog', async () => {
+    // Ensure mainWindow is available
+    const focusedWindow = BrowserWindow.getFocusedWindow() || win;
+    if (!focusedWindow) {
+      return null; // or handle this gracefully
+    }
+
+    const result = await dialog.showOpenDialog(focusedWindow as BrowserWindow, {
+      properties: ['openDirectory']
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0]; // Return the selected directory path
+    } else {
+      return null;
+    }
+  });
+
 } catch (e) {
-  // Catch Error
-  // throw e;
+  console.error('Error in main process:', e);
 }

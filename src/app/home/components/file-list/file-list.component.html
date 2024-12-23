@@ -1,0 +1,9 @@
+<div class="file-list">
+    <div class="file-item" *ngFor="let item of items" (click)="onItemClick(item)">
+        <div class="icon">
+            <ng-container *ngIf="item.isDirectory">📁</ng-container>
+            <ng-container *ngIf="!item.isDirectory">📄</ng-container>
+        </div>
+        <div class="filename">{{ item.name }}</div>
+    </div>
+</div>

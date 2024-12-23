@@ -53,4 +53,15 @@ export class ElectronService {
   get isElectron(): boolean {
     return !!(window && window.process && window.process.type);
   }
+
+  /**
+   * Opens the directory selection dialog via IPC.
+   * @returns The selected directory path or null if canceled.
+   */
+  async openDirectoryDialog(): Promise<string | null> {
+    if (!this.isElectron) return null;
+    const dirPath = await this.ipcRenderer.invoke('open-directory-dialog');
+    return dirPath;
+  }
+
 }

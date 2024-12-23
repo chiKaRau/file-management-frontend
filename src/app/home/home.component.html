@@ -1,7 +1,30 @@
+<!-- home.component.html -->
 <div class="container">
   <h1 class="title">
     {{ 'PAGES.HOME.TITLE' | translate }}
   </h1>
+
+  <button (click)="openDirectory()">Browse Directory</button>
+
+  <div *ngIf="isLoading" class="loading">
+    Loading files...
+    <!-- Alternatively, you can use a spinner icon or component -->
+  </div>
+
+  <div *ngIf="infoMessage" class="info">
+    {{ infoMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && selectedDirectory">
+    <h2>Contents of {{ selectedDirectory }}</h2>
+    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+    <app-file-list [items]="directoryContents" (openFolder)="openSubDirectory($event)">
+    </app-file-list>
+  </div>
+
+  <div *ngIf="!selectedDirectory && !errorMessage && !isLoading">
+    <p>No directory selected.</p>
+  </div>
 
   <a routerLink="/detail">{{ 'PAGES.HOME.GO_TO_DETAIL' | translate }}</a>
 </div>

@@ -1,3 +1,29 @@
-:host {
-  
+.container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: white; // Add this to test visibility
+}
+
+
+.error {
+    color: red;
+    margin-top: 10px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+.folder {
+    font-weight: bold;
+}
+
+.file {
+    color: #555;
 }

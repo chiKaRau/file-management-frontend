@@ -9,5 +9,6 @@
   "main": "main.js",
   "private": true,
   "dependencies": {
+    "angular-electron": "file:"
   }
 }

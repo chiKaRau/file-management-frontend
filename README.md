@@ -181,3 +181,505 @@ Please refer to [HOW_TO file](./HOW_TO.md)
 [github-star]: https://github.com/maximegris/angular-electron/stargazers
 [twitter]: https://twitter.com/intent/tweet?text=Check%20out%20angular-electron!%20https://github.com/maximegris/angular-electron%20%F0%9F%91%8D
 [twitter-badge]: https://img.shields.io/twitter/url/https/github.com/maximegris/angular-electron.svg?style=social
+
+```
+file-management-frontend
+├─ .angular
+├─ .editorconfig
+├─ .eslintignore
+├─ .eslintrc.json
+├─ .git
+│  ├─ config
+│  ├─ description
+│  ├─ FETCH_HEAD
+│  ├─ HEAD
+│  ├─ hooks
+│  │  ├─ applypatch-msg.sample
+│  │  ├─ commit-msg.sample
+│  │  ├─ fsmonitor-watchman.sample
+│  │  ├─ post-update.sample
+│  │  ├─ pre-applypatch.sample
+│  │  ├─ pre-commit.sample
+│  │  ├─ pre-merge-commit.sample
+│  │  ├─ pre-push.sample
+│  │  ├─ pre-rebase.sample
+│  │  ├─ pre-receive.sample
+│  │  ├─ prepare-commit-msg.sample
+│  │  ├─ push-to-checkout.sample
+│  │  ├─ sendemail-validate.sample
+│  │  └─ update.sample
+│  ├─ index
+│  ├─ info
+│  │  └─ exclude
+│  ├─ logs
+│  │  ├─ HEAD
+│  │  └─ refs
+│  │     ├─ heads
+│  │     │  └─ main
+│  │     └─ remotes
+│  │        └─ origin
+│  │           └─ HEAD
+│  ├─ objects
+│  │  ├─ info
+│  │  └─ pack
+│  │     ├─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.idx
+│  │     ├─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.pack
+│  │     └─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.rev
+│  ├─ packed-refs
+│  └─ refs
+│     ├─ heads
+│     │  └─ main
+│     ├─ remotes
+│     │  └─ origin
+│     │     └─ HEAD
+│     └─ tags
+├─ .github
+│  ├─ dependabot.yml
+│  ├─ FUNDING.yml
+│  ├─ ISSUE_TEMPLATE
+│  │  ├─ bug_report.md
+│  │  ├─ bug_report.yml
+│  │  ├─ feature_request.md
+│  │  └─ feature_request.yml
+│  ├─ pull_request_template.md
+│  ├─ stale.yml
+│  └─ workflows
+│     ├─ macos.yml
+│     ├─ ubuntu.yml
+│     └─ windows.yml
+├─ .gitignore
+├─ .node-version
+├─ .npmrc
+├─ .nx
+│  └─ cache
+│     └─ 18.3.4-nx.win32-x64-msvc.node
+├─ angular.json
+├─ angular.webpack.js
+├─ app
+│  ├─ main.ts
+│  ├─ package-lock.json
+│  └─ package.json
+├─ CHANGELOG.md
+├─ CODE_OF_CONDUCT.md
+├─ e2e
+│  ├─ main.spec.ts
+│  └─ playwright.config.ts
+├─ electron-builder.json
+├─ file_structure.txt
+├─ HOW_TO.md
+├─ jest.config.js
+├─ LICENSE.md
+├─ package-lock.json
+├─ package.json
+├─ README.md
+├─ src
+│  ├─ app
+│  │  ├─ app-routing.module.ts
+│  │  ├─ app.component.html
+│  │  ├─ app.component.scss
+│  │  ├─ app.component.spec.ts
+│  │  ├─ app.component.ts
+│  │  ├─ app.module.ts
+│  │  ├─ core
+│  │  │  ├─ core.module.ts
+│  │  │  └─ services
+│  │  │     ├─ electron
+│  │  │     │  ├─ electron.service.spec.ts
+│  │  │     │  └─ electron.service.ts
+│  │  │     └─ index.ts
+│  │  ├─ detail
+│  │  │  ├─ detail-routing.module.ts
+│  │  │  ├─ detail.component.html
+│  │  │  ├─ detail.component.scss
+│  │  │  ├─ detail.component.spec.ts
+│  │  │  ├─ detail.component.ts
+│  │  │  └─ detail.module.ts
+│  │  ├─ home
+│  │  │  ├─ home-routing.module.ts
+│  │  │  ├─ home.component.html
+│  │  │  ├─ home.component.scss
+│  │  │  ├─ home.component.spec.ts
+│  │  │  ├─ home.component.ts
+│  │  │  └─ home.module.ts
+│  │  └─ shared
+│  │     ├─ components
+│  │     │  ├─ index.ts
+│  │     │  └─ page-not-found
+│  │     │     ├─ page-not-found.component.html
+│  │     │     ├─ page-not-found.component.scss
+│  │     │     ├─ page-not-found.component.spec.ts
+│  │     │     └─ page-not-found.component.ts
+│  │     ├─ directives
+│  │     │  ├─ index.ts
+│  │     │  └─ webview
+│  │     │     ├─ webview.directive.spec.ts
+│  │     │     └─ webview.directive.ts
+│  │     └─ shared.module.ts
+│  ├─ assets
+│  │  ├─ .gitkeep
+│  │  ├─ background.jpg
+│  │  ├─ i18n
+│  │  └─ icons
+│  │     ├─ electron.bmp
+│  │     ├─ favicon.256x256.png
+│  │     ├─ favicon.512x512.png
+│  │     ├─ favicon.icns
+│  │     ├─ favicon.ico
+│  │     └─ favicon.png
+│  ├─ environments
+│  │  ├─ environment.dev.ts
+│  │  ├─ environment.prod.ts
+│  │  ├─ environment.ts
+│  │  ├─ environment.web.prod.ts
+│  │  └─ environment.web.ts
+│  ├─ favicon.ico
+│  ├─ index.html
+│  ├─ main.ts
+│  ├─ polyfills-test.ts
+│  ├─ polyfills.ts
+│  ├─ styles.scss
+│  ├─ tsconfig.app.json
+│  └─ tsconfig.spec.json
+├─ tsconfig.json
+├─ tsconfig.serve.json
+└─ _config.yml
+
+```
+```
+file-management-frontend
+├─ .angular
+├─ .editorconfig
+├─ .eslintignore
+├─ .eslintrc.json
+├─ .git
+│  ├─ config
+│  ├─ description
+│  ├─ FETCH_HEAD
+│  ├─ HEAD
+│  ├─ hooks
+│  │  ├─ applypatch-msg.sample
+│  │  ├─ commit-msg.sample
+│  │  ├─ fsmonitor-watchman.sample
+│  │  ├─ post-update.sample
+│  │  ├─ pre-applypatch.sample
+│  │  ├─ pre-commit.sample
+│  │  ├─ pre-merge-commit.sample
+│  │  ├─ pre-push.sample
+│  │  ├─ pre-rebase.sample
+│  │  ├─ pre-receive.sample
+│  │  ├─ prepare-commit-msg.sample
+│  │  ├─ push-to-checkout.sample
+│  │  ├─ sendemail-validate.sample
+│  │  └─ update.sample
+│  ├─ index
+│  ├─ info
+│  │  └─ exclude
+│  ├─ logs
+│  │  ├─ HEAD
+│  │  └─ refs
+│  │     ├─ heads
+│  │     │  └─ main
+│  │     └─ remotes
+│  │        └─ origin
+│  │           └─ HEAD
+│  ├─ objects
+│  │  ├─ info
+│  │  └─ pack
+│  │     ├─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.idx
+│  │     ├─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.pack
+│  │     └─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.rev
+│  ├─ packed-refs
+│  └─ refs
+│     ├─ heads
+│     │  └─ main
+│     ├─ remotes
+│     │  └─ origin
+│     │     └─ HEAD
+│     └─ tags
+├─ .github
+│  ├─ dependabot.yml
+│  ├─ FUNDING.yml
+│  ├─ ISSUE_TEMPLATE
+│  │  ├─ bug_report.md
+│  │  ├─ bug_report.yml
+│  │  ├─ feature_request.md
+│  │  └─ feature_request.yml
+│  ├─ pull_request_template.md
+│  ├─ stale.yml
+│  └─ workflows
+│     ├─ macos.yml
+│     ├─ ubuntu.yml
+│     └─ windows.yml
+├─ .gitignore
+├─ .node-version
+├─ .npmrc
+├─ .nx
+│  └─ cache
+│     └─ 18.3.4-nx.win32-x64-msvc.node
+├─ angular.json
+├─ angular.webpack.js
+├─ app
+│  ├─ main.ts
+│  ├─ package-lock.json
+│  └─ package.json
+├─ CHANGELOG.md
+├─ CODE_OF_CONDUCT.md
+├─ e2e
+│  ├─ main.spec.ts
+│  └─ playwright.config.ts
+├─ electron-builder.json
+├─ file_structure.txt
+├─ HOW_TO.md
+├─ jest.config.js
+├─ LICENSE.md
+├─ package-lock.json
+├─ package.json
+├─ README.md
+├─ src
+│  ├─ app
+│  │  ├─ app-routing.module.ts
+│  │  ├─ app.component.html
+│  │  ├─ app.component.scss
+│  │  ├─ app.component.spec.ts
+│  │  ├─ app.component.ts
+│  │  ├─ app.module.ts
+│  │  ├─ core
+│  │  │  ├─ core.module.ts
+│  │  │  └─ services
+│  │  │     ├─ electron
+│  │  │     │  ├─ electron.service.spec.ts
+│  │  │     │  └─ electron.service.ts
+│  │  │     └─ index.ts
+│  │  ├─ detail
+│  │  │  ├─ detail-routing.module.ts
+│  │  │  ├─ detail.component.html
+│  │  │  ├─ detail.component.scss
+│  │  │  ├─ detail.component.spec.ts
+│  │  │  ├─ detail.component.ts
+│  │  │  └─ detail.module.ts
+│  │  ├─ home
+│  │  │  ├─ components
+│  │  │  │  └─ file-list
+│  │  │  │     ├─ file-list.component.html
+│  │  │  │     ├─ file-list.component.scss
+│  │  │  │     ├─ file-list.component.spec.ts
+│  │  │  │     └─ file-list.component.ts
+│  │  │  ├─ home-routing.module.ts
+│  │  │  ├─ home.component.html
+│  │  │  ├─ home.component.scss
+│  │  │  ├─ home.component.spec.ts
+│  │  │  ├─ home.component.ts
+│  │  │  └─ home.module.ts
+│  │  └─ shared
+│  │     ├─ components
+│  │     │  ├─ index.ts
+│  │     │  └─ page-not-found
+│  │     │     ├─ page-not-found.component.html
+│  │     │     ├─ page-not-found.component.scss
+│  │     │     ├─ page-not-found.component.spec.ts
+│  │     │     └─ page-not-found.component.ts
+│  │     ├─ directives
+│  │     │  ├─ index.ts
+│  │     │  └─ webview
+│  │     │     ├─ webview.directive.spec.ts
+│  │     │     └─ webview.directive.ts
+│  │     └─ shared.module.ts
+│  ├─ assets
+│  │  ├─ .gitkeep
+│  │  ├─ background.jpg
+│  │  ├─ i18n
+│  │  └─ icons
+│  │     ├─ electron.bmp
+│  │     ├─ favicon.256x256.png
+│  │     ├─ favicon.512x512.png
+│  │     ├─ favicon.icns
+│  │     ├─ favicon.ico
+│  │     └─ favicon.png
+│  ├─ environments
+│  │  ├─ environment.dev.ts
+│  │  ├─ environment.prod.ts
+│  │  ├─ environment.ts
+│  │  ├─ environment.web.prod.ts
+│  │  └─ environment.web.ts
+│  ├─ favicon.ico
+│  ├─ index.html
+│  ├─ main.ts
+│  ├─ polyfills-test.ts
+│  ├─ polyfills.ts
+│  ├─ styles.scss
+│  ├─ tsconfig.app.json
+│  └─ tsconfig.spec.json
+├─ tsconfig.json
+├─ tsconfig.serve.json
+└─ _config.yml
+
+```
+```
+file-management-frontend
+├─ .angular
+├─ .editorconfig
+├─ .eslintignore
+├─ .eslintrc.json
+├─ .git
+│  ├─ config
+│  ├─ description
+│  ├─ FETCH_HEAD
+│  ├─ HEAD
+│  ├─ hooks
+│  │  ├─ applypatch-msg.sample
+│  │  ├─ commit-msg.sample
+│  │  ├─ fsmonitor-watchman.sample
+│  │  ├─ post-update.sample
+│  │  ├─ pre-applypatch.sample
+│  │  ├─ pre-commit.sample
+│  │  ├─ pre-merge-commit.sample
+│  │  ├─ pre-push.sample
+│  │  ├─ pre-rebase.sample
+│  │  ├─ pre-receive.sample
+│  │  ├─ prepare-commit-msg.sample
+│  │  ├─ push-to-checkout.sample
+│  │  ├─ sendemail-validate.sample
+│  │  └─ update.sample
+│  ├─ index
+│  ├─ info
+│  │  └─ exclude
+│  ├─ logs
+│  │  ├─ HEAD
+│  │  └─ refs
+│  │     ├─ heads
+│  │     │  └─ main
+│  │     └─ remotes
+│  │        └─ origin
+│  │           └─ HEAD
+│  ├─ objects
+│  │  ├─ info
+│  │  └─ pack
+│  │     ├─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.idx
+│  │     ├─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.pack
+│  │     └─ pack-7865fd860c45eaa9e28d78a2209041a60ef6dbb5.rev
+│  ├─ packed-refs
+│  └─ refs
+│     ├─ heads
+│     │  └─ main
+│     ├─ remotes
+│     │  └─ origin
+│     │     └─ HEAD
+│     └─ tags
+├─ .github
+│  ├─ dependabot.yml
+│  ├─ FUNDING.yml
+│  ├─ ISSUE_TEMPLATE
+│  │  ├─ bug_report.md
+│  │  ├─ bug_report.yml
+│  │  ├─ feature_request.md
+│  │  └─ feature_request.yml
+│  ├─ pull_request_template.md
+│  ├─ stale.yml
+│  └─ workflows
+│     ├─ macos.yml
+│     ├─ ubuntu.yml
+│     └─ windows.yml
+├─ .gitignore
+├─ .node-version
+├─ .npmrc
+├─ .nx
+│  └─ cache
+│     └─ 18.3.4-nx.win32-x64-msvc.node
+├─ angular.json
+├─ angular.webpack.js
+├─ app
+│  ├─ main.ts
+│  ├─ package-lock.json
+│  └─ package.json
+├─ CHANGELOG.md
+├─ CODE_OF_CONDUCT.md
+├─ e2e
+│  ├─ main.spec.ts
+│  └─ playwright.config.ts
+├─ electron-builder.json
+├─ file_structure.txt
+├─ HOW_TO.md
+├─ jest.config.js
+├─ LICENSE.md
+├─ package-lock.json
+├─ package.json
+├─ README.md
+├─ src
+│  ├─ app
+│  │  ├─ app-routing.module.ts
+│  │  ├─ app.component.html
+│  │  ├─ app.component.scss
+│  │  ├─ app.component.spec.ts
+│  │  ├─ app.component.ts
+│  │  ├─ app.module.ts
+│  │  ├─ core
+│  │  │  ├─ core.module.ts
+│  │  │  └─ services
+│  │  │     ├─ electron
+│  │  │     │  ├─ electron.service.spec.ts
+│  │  │     │  └─ electron.service.ts
+│  │  │     └─ index.ts
+│  │  ├─ detail
+│  │  │  ├─ detail-routing.module.ts
+│  │  │  ├─ detail.component.html
+│  │  │  ├─ detail.component.scss
+│  │  │  ├─ detail.component.spec.ts
+│  │  │  ├─ detail.component.ts
+│  │  │  └─ detail.module.ts
+│  │  ├─ home
+│  │  │  ├─ components
+│  │  │  │  └─ file-list
+│  │  │  │     ├─ file-list.component.html
+│  │  │  │     ├─ file-list.component.scss
+│  │  │  │     ├─ file-list.component.spec.ts
+│  │  │  │     └─ file-list.component.ts
+│  │  │  ├─ home-routing.module.ts
+│  │  │  ├─ home.component.html
+│  │  │  ├─ home.component.scss
+│  │  │  ├─ home.component.spec.ts
+│  │  │  ├─ home.component.ts
+│  │  │  └─ home.module.ts
+│  │  └─ shared
+│  │     ├─ components
+│  │     │  ├─ index.ts
+│  │     │  └─ page-not-found
+│  │     │     ├─ page-not-found.component.html
+│  │     │     ├─ page-not-found.component.scss
+│  │     │     ├─ page-not-found.component.spec.ts
+│  │     │     └─ page-not-found.component.ts
+│  │     ├─ directives
+│  │     │  ├─ index.ts
+│  │     │  └─ webview
+│  │     │     ├─ webview.directive.spec.ts
+│  │     │     └─ webview.directive.ts
+│  │     └─ shared.module.ts
+│  ├─ assets
+│  │  ├─ .gitkeep
+│  │  ├─ background.jpg
+│  │  ├─ i18n
+│  │  └─ icons
+│  │     ├─ electron.bmp
+│  │     ├─ favicon.256x256.png
+│  │     ├─ favicon.512x512.png
+│  │     ├─ favicon.icns
+│  │     ├─ favicon.ico
+│  │     └─ favicon.png
+│  ├─ environments
+│  │  ├─ environment.dev.ts
+│  │  ├─ environment.prod.ts
+│  │  ├─ environment.ts
+│  │  ├─ environment.web.prod.ts
+│  │  └─ environment.web.ts
+│  ├─ favicon.ico
+│  ├─ index.html
+│  ├─ main.ts
+│  ├─ polyfills-test.ts
+│  ├─ polyfills.ts
+│  ├─ styles.scss
+│  ├─ tsconfig.app.json
+│  └─ tsconfig.spec.json
+├─ tsconfig.json
+├─ tsconfig.serve.json
+└─ _config.yml
+
+```
