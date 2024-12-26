@@ -12,6 +12,8 @@ export class ExplorerToolbarComponent {
   @Output() back = new EventEmitter<void>();
   @Output() forward = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
+  @Output() searchQuery = new EventEmitter<string>();
+
 
   // In the future, you can also emit an event for "enter new path"
   // @Output() pathEntered = new EventEmitter<string>();
@@ -27,4 +29,10 @@ export class ExplorerToolbarComponent {
   onRefresh() {
     this.refresh.emit();
   }
+
+  onSearchChange(value: string) {
+    // Emit search text to the parent
+    this.searchQuery.emit(value);
+  }
+
 }

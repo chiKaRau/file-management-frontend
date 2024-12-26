@@ -14,6 +14,7 @@ import * as path from 'path';
 })
 export class HomeComponent {
   // Remove local properties, read from the ExplorerStateService instead
+  searchTerm = '';  // This will hold the current search text
 
   constructor(
     private electronService: ElectronService,
@@ -56,6 +57,24 @@ export class HomeComponent {
   }
   set isLoading(val: boolean) {
     this.explorerState.isLoading = val;
+  }
+
+  // The items we actually pass to <app-file-list>
+  get filteredDirectoryContents(): DirectoryItem[] {
+    const contents = this.explorerState.directoryContents;
+    // If no search term, show all
+    if (!this.searchTerm) return contents;
+
+    // Otherwise, filter by name
+    const term = this.searchTerm.toLowerCase();
+    return contents.filter(item =>
+      item.name.toLowerCase().includes(term)
+    );
+  }
+
+  applySearch(newTerm: string) {
+    // Called when ExplorerToolbar emits searchQuery
+    this.searchTerm = newTerm;
   }
 
   async openDirectory() {

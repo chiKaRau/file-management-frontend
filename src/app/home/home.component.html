@@ -3,7 +3,7 @@
   <div class="toolbar-wrapper">
     <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
-      (refresh)="onRefresh()"></app-explorer-toolbar>
+      (refresh)="onRefresh()" (searchQuery)="applySearch($event)"> </app-explorer-toolbar>
     <button (click)="openDirectory()">Browse Directory</button>
   </div>
 
@@ -18,7 +18,7 @@
 
     <div *ngIf="!isLoading && selectedDirectory">
       <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
-      <app-file-list [items]="directoryContents" (openFolder)="openSubDirectory($event)"></app-file-list>
+      <app-file-list [items]="filteredDirectoryContents" (openFolder)="openSubDirectory($event)"></app-file-list>
     </div>
 
     <div *ngIf="!selectedDirectory && !errorMessage && !isLoading">

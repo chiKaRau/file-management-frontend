@@ -5,4 +5,10 @@
 
     <!-- Directory path display -->
     <input type="text" [value]="currentPath || ''" readonly class="path-display" />
+
+    <!-- On the right side, the search input -->
+    <div class="search-container">
+        <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
+    </div>
+
 </div>
