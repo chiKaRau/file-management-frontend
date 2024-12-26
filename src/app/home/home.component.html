@@ -3,7 +3,8 @@
   <div class="toolbar-wrapper">
     <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
-      (refresh)="onRefresh()" (searchQuery)="applySearch($event)"> </app-explorer-toolbar>
+      (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)">
+    </app-explorer-toolbar>
     <button (click)="openDirectory()">Browse Directory</button>
   </div>
 

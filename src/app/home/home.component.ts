@@ -171,4 +171,30 @@ export class HomeComponent {
     this.navigationService.navigateTo(subDirPath);
     this.loadDirectoryContents(subDirPath);
   }
+
+  navigateByPath(newPath: string) {
+    if (!fs.existsSync(newPath)) {
+      this.errorMessage = `Path does not exist: ${newPath}`;
+      return;
+    }
+
+    // Confirm it's a directory
+    const stats = fs.statSync(newPath);
+    if (!stats.isDirectory()) {
+      this.errorMessage = `Path is not a directory: ${newPath}`;
+      return;
+    }
+
+    this.ngZone.run(() => {
+      this.isLoading = true;
+      this.errorMessage = null;
+      this.infoMessage = null;
+      this.directoryContents = [];
+    });
+
+    this.navigationService.navigateTo(newPath);
+    this.loadDirectoryContents(newPath);
+  }
+
+
 }

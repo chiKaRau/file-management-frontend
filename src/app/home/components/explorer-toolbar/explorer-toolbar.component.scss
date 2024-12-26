@@ -1,15 +1,40 @@
-.toolbar {
+/* explorer-toolbar.component.scss */
+
+.toolbar-container {
     display: flex;
     align-items: center;
-    gap: 10px;
     padding: 8px;
-    background-color: #f1f1f1;
-    margin-bottom: 10px;
+    background-color: #2f2f2f;
+    /* or your color */
+    color: #ddd;
 }
 
-.path-display {
+.breadcrumb-view {
+    display: flex;
+    gap: 8px;
+    cursor: pointer;
     flex: 1;
-    /* so it expands to fill the row */
-    padding: 5px;
-    border: 1px solid #ccc;
+    /* so it expands across empty space */
+    align-items: center;
+    overflow: hidden;
+    /* if you want to clip if super long */
+}
+
+.breadcrumb-part {
+    white-space: nowrap;
+}
+
+.separator {
+    margin: 0 4px;
+}
+
+.edit-view {
+    flex: 1;
+}
+
+.path-input {
+    width: 100%;
+    /* fill the entire area */
+    padding: 4px;
+    font-size: 14px;
 }
