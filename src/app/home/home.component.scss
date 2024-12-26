@@ -1,29 +1,34 @@
-.container {
+.home-page {
+    height: 100vh;
+    /* Occupy full viewport height */
+    display: flex;
+    flex-direction: column;
+    /* Column layout: toolbar on top, content below */
+}
+
+/* The toolbar wrapper is pinned to the top */
+.toolbar-wrapper {
+    position: sticky;
+    /* or position: fixed; */
+    top: 0;
+    /* stick/fix to the very top */
+    z-index: 10;
+    /* ensure it stays above the scrollable content */
+    background-color: #f1f1f1;
+    /* or your preferred color */
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    /* a subtle separator line */
+}
+
+/* The main content should scroll, not the toolbar */
+.content-area {
+    flex: 1;
+    /* take remaining vertical space in the column layout */
+    overflow-y: auto;
+    /* enable vertical scrolling for file lists */
     padding: 20px;
-    font-family: Arial, sans-serif;
-    background-color: white; // Add this to test visibility
-}
-
-
-.error {
-    color: red;
-    margin-top: 10px;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li {
-    margin: 5px 0;
-    cursor: pointer;
-}
-
-.folder {
-    font-weight: bold;
-}
-
-.file {
-    color: #555;
+    /* spacing around content */
+    background-color: #fff;
+    /* or your preferred background */
 }

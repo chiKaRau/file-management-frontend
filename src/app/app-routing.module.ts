@@ -6,20 +6,18 @@ import { HomeRoutingModule } from './home/home-routing.module';
 import { DetailRoutingModule } from './detail/detail-routing.module';
 
 const routes: Routes = [
-  {
-    path: '',
-    redirectTo: 'home',
-    pathMatch: 'full'
-  },
-  {
-    path: '**',
-    component: PageNotFoundComponent
-  }
+  { path: '', redirectTo: 'home', pathMatch: 'full' },
+  // ...
+  { path: 'home', loadChildren: () => import('./home/home.module').then(m => m.HomeModule) },
+  { path: 'preferences', loadChildren: () => import('./preferences/preferences.module').then(m => m.PreferencesModule) },
+  { path: '**', component: PageNotFoundComponent }
 ];
+
+
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, {}),
+    RouterModule.forRoot(routes),
     HomeRoutingModule,
     DetailRoutingModule
   ],

@@ -1,15 +1,11 @@
 // home.component.ts
+
 import { Component, NgZone } from '@angular/core';
 import { ElectronService } from '../core/services/electron/electron.service';
+import { NavigationService } from './services/navigation.service';
+import { ExplorerStateService, DirectoryItem } from './services/explorer-state.service';
 import * as fs from 'fs';
 import * as path from 'path';
-
-interface DirectoryItem {
-  name: string;
-  path: string;
-  isFile: boolean;
-  isDirectory: boolean;
-}
 
 @Component({
   selector: 'app-home',
@@ -17,59 +13,89 @@ interface DirectoryItem {
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {
-  selectedDirectory: string | null = null;
-  directoryContents: DirectoryItem[] = [];
-  errorMessage: string | null = null;
-  infoMessage: string | null = null; // Added infoMessage
-  isLoading: boolean = false; // Added loading flag
+  // Remove local properties, read from the ExplorerStateService instead
 
   constructor(
     private electronService: ElectronService,
-    private ngZone: NgZone // Inject NgZone
+    private ngZone: NgZone,
+    public navigationService: NavigationService,
+    public explorerState: ExplorerStateService // Inject the service
   ) { }
+
+  // For convenience, define getters/setters that read/write service fields
+  get selectedDirectory(): string | null {
+    return this.explorerState.selectedDirectory;
+  }
+  set selectedDirectory(val: string | null) {
+    this.explorerState.selectedDirectory = val;
+  }
+
+  get directoryContents(): DirectoryItem[] {
+    return this.explorerState.directoryContents;
+  }
+  set directoryContents(val: DirectoryItem[]) {
+    this.explorerState.directoryContents = val;
+  }
+
+  get errorMessage(): string | null {
+    return this.explorerState.errorMessage;
+  }
+  set errorMessage(val: string | null) {
+    this.explorerState.errorMessage = val;
+  }
+
+  get infoMessage(): string | null {
+    return this.explorerState.infoMessage;
+  }
+  set infoMessage(val: string | null) {
+    this.explorerState.infoMessage = val;
+  }
+
+  get isLoading(): boolean {
+    return this.explorerState.isLoading;
+  }
+  set isLoading(val: boolean) {
+    this.explorerState.isLoading = val;
+  }
 
   async openDirectory() {
     const directoryPath = await this.electronService.openDirectoryDialog();
     if (directoryPath) {
-      // Start loading
       this.ngZone.run(() => {
         this.isLoading = true;
-        this.selectedDirectory = directoryPath;
-        this.errorMessage = null; // Reset error message
-        this.infoMessage = null; // Reset info message
+        this.errorMessage = null;
+        this.infoMessage = null;
       });
+
+      this.navigationService.navigateTo(directoryPath);
       this.loadDirectoryContents(directoryPath);
     } else {
-      // Display a cancellation message
       this.ngZone.run(() => {
         this.infoMessage = 'Directory selection was canceled.';
       });
-      console.warn('Directory selection canceled.');
     }
   }
 
   loadDirectoryContents(directoryPath: string) {
     fs.readdir(directoryPath, (err, files) => {
       if (err) {
-        // Update inside the zone
         this.ngZone.run(() => {
           console.error('Error reading directory:', err);
           this.errorMessage = 'Failed to read the directory contents.';
-          this.isLoading = false; // Stop loading
+          this.isLoading = false;
         });
         return;
       }
 
-      // UI updates inside NgZone
       this.ngZone.run(() => {
         if (files.length === 0) {
           this.errorMessage = 'The selected directory is empty.';
         } else {
-          // Clear the error since we have files
           this.errorMessage = null;
         }
 
-        this.directoryContents = files.map((file) => {
+        this.selectedDirectory = directoryPath; // Now sets it in the service
+        this.directoryContents = files.map(file => {
           const fullPath = path.join(directoryPath, file);
           const stats = fs.statSync(fullPath);
           return {
@@ -81,19 +107,49 @@ export class HomeComponent {
         });
 
         console.log('Directory Contents:', this.directoryContents);
-        this.isLoading = false; // Stop loading
+        this.isLoading = false;
       });
     });
   }
 
+  onBack() {
+    const prevPath = this.navigationService.goBack();
+    if (prevPath) {
+      this.ngZone.run(() => {
+        this.selectedDirectory = prevPath;
+        this.isLoading = true;
+      });
+      this.loadDirectoryContents(prevPath);
+    }
+  }
+
+  onForward() {
+    const nextPath = this.navigationService.goForward();
+    if (nextPath) {
+      this.ngZone.run(() => {
+        this.selectedDirectory = nextPath;
+        this.isLoading = true;
+      });
+      this.loadDirectoryContents(nextPath);
+    }
+  }
+
+  onRefresh() {
+    if (this.selectedDirectory) {
+      this.ngZone.run(() => {
+        this.isLoading = true;
+      });
+      this.loadDirectoryContents(this.selectedDirectory);
+    }
+  }
+
   openSubDirectory(subDirPath: string) {
-    // Even though this isn't async, if it triggers file reads, wrap UI updates:
     this.ngZone.run(() => {
-      this.selectedDirectory = subDirPath;
-      this.isLoading = true; // Start loading
-      this.errorMessage = null; // Reset error message
-      this.infoMessage = null; // Reset info message
+      this.isLoading = true;
+      this.errorMessage = null;
+      this.infoMessage = null;
     });
+    this.navigationService.navigateTo(subDirPath);
     this.loadDirectoryContents(subDirPath);
   }
 }

@@ -1,30 +1,30 @@
-<!-- home.component.html -->
-<div class="container">
-  <h1 class="title">
-    {{ 'PAGES.HOME.TITLE' | translate }}
-  </h1>
-
-  <button (click)="openDirectory()">Browse Directory</button>
-
-  <div *ngIf="isLoading" class="loading">
-    Loading files...
-    <!-- Alternatively, you can use a spinner icon or component -->
+<div class="home-page">
+  <!-- Sticky (or fixed) toolbar container -->
+  <div class="toolbar-wrapper">
+    <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
+      [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
+      (refresh)="onRefresh()"></app-explorer-toolbar>
+    <button (click)="openDirectory()">Browse Directory</button>
   </div>
 
-  <div *ngIf="infoMessage" class="info">
-    {{ infoMessage }}
-  </div>
+  <!-- Scrollable content area -->
+  <div class="content-area">
+    <div *ngIf="isLoading" class="loading">
+      Loading files...
+    </div>
+    <div *ngIf="infoMessage" class="info">
+      {{ infoMessage }}
+    </div>
 
-  <div *ngIf="!isLoading && selectedDirectory">
-    <h2>Contents of {{ selectedDirectory }}</h2>
-    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
-    <app-file-list [items]="directoryContents" (openFolder)="openSubDirectory($event)">
-    </app-file-list>
-  </div>
+    <div *ngIf="!isLoading && selectedDirectory">
+      <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+      <app-file-list [items]="directoryContents" (openFolder)="openSubDirectory($event)"></app-file-list>
+    </div>
 
-  <div *ngIf="!selectedDirectory && !errorMessage && !isLoading">
-    <p>No directory selected.</p>
-  </div>
+    <div *ngIf="!selectedDirectory && !errorMessage && !isLoading">
+      <p>No directory selected.</p>
+    </div>
 
-  <a routerLink="/detail">{{ 'PAGES.HOME.GO_TO_DETAIL' | translate }}</a>
+    <!-- <a routerLink="/detail">{{ 'PAGES.HOME.GO_TO_DETAIL' | translate }}</a> -->
+  </div>
 </div>

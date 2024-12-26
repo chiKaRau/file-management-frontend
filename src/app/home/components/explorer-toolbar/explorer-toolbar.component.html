@@ -1,0 +1,8 @@
+<div class="toolbar">
+    <button (click)="onBack()" [disabled]="!canGoBack">⬅️</button>
+    <button (click)="onForward()" [disabled]="!canGoForward">➡️</button>
+    <button (click)="onRefresh()">🔄</button>
+
+    <!-- Directory path display -->
+    <input type="text" [value]="currentPath || ''" readonly class="path-display" />
+</div>

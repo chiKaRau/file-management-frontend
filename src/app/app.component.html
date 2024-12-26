@@ -1,1 +1,9 @@
-<router-outlet></router-outlet>
+<div class="app-layout">
+    <nav class="tab-bar">
+        <a routerLink="/home" routerLinkActive="active">Home</a>
+        <a routerLink="/preferences" routerLinkActive="active">Preferences</a>
+    </nav>
+
+    <!-- The main content (whatever route is active) goes here -->
+    <router-outlet></router-outlet>
+</div>
