@@ -1,9 +1,29 @@
-<div class="file-list">
-    <div class="file-item" *ngFor="let item of items" (click)="onItemClick(item)">
+<div class="file-list" [ngClass]="viewMode">
+    <div class="file-item" *ngFor="let item of items" (click)="onItemClick(item)" (dblclick)="onItemDblClick(item)"
+        (contextmenu)="onFileRightClick(item, $event)">
         <div class="icon">
-            <ng-container *ngIf="item.isDirectory">📁</ng-container>
-            <ng-container *ngIf="!item.isDirectory">📄</ng-container>
+
+            <!-- 1) Directory icon if it's a folder -->
+            <svg *ngIf="item.isDirectory" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                <!-- A simple "folder" icon path -->
+                <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9
+               c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9z" />
+            </svg>
+
+            <!-- 2) If it's a file and is an image, show the thumbnail -->
+            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
+                style="object-fit: cover" />
+
+            <!-- 3) If it's a file and NOT an image, show a file icon -->
+            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                <!-- A generic "file" icon path -->
+                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+               c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+            </svg>
+
         </div>
-        <div class="filename">{{ item.name }}</div>
+        <div class="filename">
+            {{ item.name }}
+        </div>
     </div>
 </div>

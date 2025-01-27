@@ -1,28 +1,28 @@
 <div class="toolbar-container">
-    <!-- Some existing Back/Forward/Refresh UI here -->
-    <button (click)="onBack()" [disabled]="!canGoBack">⬅️</button>
-    <button (click)="onForward()" [disabled]="!canGoForward">➡️</button>
-    <button (click)="onRefresh()">🔄</button>
+    <div class="breadcrumb-section">
+        <!-- Navigation Buttons -->
+        <button (click)="onBack()" [disabled]="!canGoBack">←</button>
+        <button (click)="onForward()" [disabled]="!canGoForward">→</button>
+        <button (click)="onRefresh()">⟳</button>
 
-    <!-- If user is in breadcrumb mode, display the breadcrumb chips -->
-    <div *ngIf="!isEditingPath" class="breadcrumb-view" (click)="enterEditMode()">
-        <ng-container *ngFor="let part of truncatedBreadcrumbs; let i = index">
-            <!-- Each part is clickable to navigate? Or just for display? -->
-            <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">
-                {{ part }}
-            </span>
-            <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
-        </ng-container>
+        <!-- If user is in breadcrumb mode, display the breadcrumb chips -->
+        <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
+            <ng-container *ngFor="let part of truncatedBreadcrumbs; let i = index">
+                <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">
+                    {{ part }}
+                </span>
+                <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
+            </ng-container>
+        </div>
+
+        <!-- If user is in edit mode, display a text box for the path -->
+        <div *ngIf="isEditingPath" class="edit-view">
+            <input type="text" class="path-input" [value]="currentPath"
+                (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
+                autofocus />
+        </div>
     </div>
-
-    <!-- If user is in edit mode, display a text box -->
-    <div *ngIf="isEditingPath" class="edit-view">
-        <input type="text" class="path-input" [value]="currentPath"
-            (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
-            autofocus />
-    </div>
-
-    <!-- On the right side, the search input -->
+    <!-- The Search Container on the right side -->
     <div class="search-container">
         <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
     </div>

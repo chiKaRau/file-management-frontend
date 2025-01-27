@@ -7,6 +7,7 @@ export interface DirectoryItem {
     path: string;
     isFile: boolean;
     isDirectory: boolean;
+    civitaiGroup?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -16,8 +17,24 @@ export class ExplorerStateService {
     errorMessage: string | null = null;
     infoMessage: string | null = null;
     isLoading: boolean = false;
+    enableCivitaiMode = true;
+
+    viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
 
     constructor() {
-        // Optionally do any initialization here
+        const savedViewMode = localStorage.getItem('viewMode');
+        if (savedViewMode) {
+            // Make sure it's one of the valid strings
+            if (['extraLarge', 'large', 'medium', 'small', 'list', 'details'].includes(savedViewMode)) {
+                this.viewMode = savedViewMode as any;
+            }
+        }
     }
+
+    saveViewMode(mode: string) {
+        this.viewMode = mode as any;
+        // Also persist it
+        localStorage.setItem('viewMode', mode);
+    }
+
 }

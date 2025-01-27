@@ -1,31 +1,78 @@
 <div class="home-page">
-  <!-- Sticky (or fixed) toolbar container -->
-  <div class="toolbar-wrapper">
+  <!-- The second pinned bar below the 40px tab bar -->
+  <div class="home-toolbar">
+    <!-- Use an icon or a button. Example with an icon: -->
+    <button class="browse-icon" (click)="openDirectory()">
+      <!-- Simple folder icon as an example, replace with your own icon if you want -->
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+      </svg>
+    </button>
+
     <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
       (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)">
     </app-explorer-toolbar>
-    <button (click)="openDirectory()">Browse Directory</button>
   </div>
 
-  <!-- Scrollable content area -->
-  <div class="content-area">
-    <div *ngIf="isLoading" class="loading">
-      Loading files...
-    </div>
-    <div *ngIf="infoMessage" class="info">
-      {{ infoMessage }}
+
+  <div class="actual-content">
+    <!-- The container for everything, handles empty-area right-click -->
+    <div class="file-area" (contextmenu)="onEmptyAreaRightClick($event)">
+      <!-- Scrollable content area -->
+      <div class="content-area">
+        <div *ngIf="isLoading" class="loading">
+          Loading files...
+        </div>
+        <div *ngIf="infoMessage" class="info">
+          {{ infoMessage }}
+        </div>
+
+        <div *ngIf="!isLoading && selectedDirectory">
+          <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+          <app-file-list [items]="filteredDirectoryContents" [viewMode]="explorerState.viewMode"
+            (openFolder)="openSubDirectory($event)" (fileRightClick)="onFileRightClick($event.file, $event.event)"
+            (itemClicked)="onSingleClick($event)">
+          </app-file-list>
+
+
+        </div>
+
+        <div *ngIf="!selectedDirectory && !errorMessage && !isLoading">
+          <p>No directory selected.</p>
+        </div>
+      </div>
     </div>
 
-    <div *ngIf="!isLoading && selectedDirectory">
-      <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
-      <app-file-list [items]="filteredDirectoryContents" (openFolder)="openSubDirectory($event)"></app-file-list>
+    <!-- 1) Empty-area menu (View/Sort/Group/Refresh) -->
+    <div class="context-menu" *ngIf="showEmptyAreaContextMenu" [style.left.px]="menuX" [style.top.px]="menuY"
+      (click)="onMenuClick($event)" (contextmenu)="$event.preventDefault()">
+      <div class="menu-item" (mouseenter)="onMouseEnterViewSubmenu($event)"
+        (mouseleave)="viewSubmenuOpen = false; viewSubmenuShouldFlip = false;">
+        View >
+        <div class="submenu" #viewSubmenu id="view-submenu" *ngIf="viewSubmenuOpen"
+          [ngClass]="{ 'flip-submenu': viewSubmenuShouldFlip }">
+          <div class="submenu-item" (click)="switchView('extraLarge')">Extra large icons</div>
+          <div class="submenu-item" (click)="switchView('large')">Large icons</div>
+          <div class="submenu-item" (click)="switchView('medium')">Medium icons</div>
+          <div class="submenu-item" (click)="switchView('small')">Small icons</div>
+          <div class="submenu-item" (click)="switchView('list')">List</div>
+          <div class="submenu-item" (click)="switchView('details')">Details</div>
+        </div>
+      </div>
+      <div class="menu-item" (click)="sortBy('name')">Sort by Name</div>
+      <div class="menu-item" (click)="refresh()">Refresh</div>
     </div>
+  </div>
 
-    <div *ngIf="!selectedDirectory && !errorMessage && !isLoading">
-      <p>No directory selected.</p>
-    </div>
-
-    <!-- <a routerLink="/detail">{{ 'PAGES.HOME.GO_TO_DETAIL' | translate }}</a> -->
+  <!-- The file-based context menu -->
+  <div class="context-menu" *ngIf="showFileContextMenu" [style.left.px]="menuX" [style.top.px]="menuY"
+    (click)="onMenuClick($event)" (contextmenu)="$event.preventDefault()">
+    <div class="menu-item" (click)="cutFile()">Cut</div>
+    <div class="menu-item" (click)="copyFile()">Copy</div>
+    <div class="menu-item" (click)="deleteFile()">Delete</div>
+    <div class="menu-item" (click)="renameFile()">Rename</div>
+    <div class="menu-item" (click)="showProperties()">Properties</div>
   </div>
 </div>

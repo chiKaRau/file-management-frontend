@@ -17,7 +17,10 @@ const routes: Routes = [
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes),
+    RouterModule.forRoot(routes, {
+      scrollPositionRestoration: 'enabled',
+      // or 'top' if you want it always to scroll to top on new route
+    }),
     HomeRoutingModule,
     DetailRoutingModule
   ],

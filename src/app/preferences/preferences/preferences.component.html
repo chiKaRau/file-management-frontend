@@ -15,6 +15,18 @@
         </label>
     </div>
 
+    <br />
+
+    <label for="viewModeSelect">View Mode:</label>
+    <select id="viewModeSelect" [(ngModel)]="viewMode">
+        <option value="extraLarge">Extra large icons</option>
+        <option value="large">Large icons</option>
+        <option value="medium">Medium icons</option>
+        <option value="small">Small icons</option>
+        <option value="list">List</option>
+        <option value="details">Details</option>
+    </select>
+
     <button (click)="savePreferences()">Save</button>
     <button routerLink="/home">Back to Home</button>
 

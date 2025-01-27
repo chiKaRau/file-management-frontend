@@ -2,30 +2,152 @@
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-}
 
-.file-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100px;
-    cursor: pointer;
-    text-align: center;
-}
+    .file-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        text-align: center;
+        border-radius: 4px;
+        transition: background-color 0.2s;
 
-.icon {
-    font-size: 40px;
-}
+        .icon {
+            /* default icon size if none of the below rules match */
+            width: 64px;
+            height: 64px;
+            overflow: hidden;
 
-.filename {
-    margin-top: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-}
+            img,
+            svg {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
 
-.file-item:hover {
-    background-color: #f0f0f0;
-    border-radius: 8px;
+        .filename {
+            margin-top: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        &:hover {
+            background-color: #f0f0f0;
+        }
+    }
+
+    /* =========================================== */
+    /* 1) Extra Large Icons Mode */
+    /* =========================================== */
+    &.extraLarge {
+        .file-item {
+            width: 160px;
+
+            /* or whatever you want */
+            .icon {
+                width: 128px;
+                height: 128px;
+            }
+        }
+    }
+
+    /* =========================================== */
+    /* 2) Large Icons (default) */
+    /* =========================================== */
+    &.large {
+        .file-item {
+            width: 120px;
+
+            .icon {
+                width: 96px;
+                height: 96px;
+            }
+        }
+    }
+
+    /* =========================================== */
+    /* 3) Medium Icons */
+    /* =========================================== */
+    &.medium {
+        .file-item {
+            width: 100px;
+
+            .icon {
+                width: 64px;
+                height: 64px;
+            }
+        }
+    }
+
+    /* =========================================== */
+    /* 4) Small Icons */
+    /* =========================================== */
+    &.small {
+        .file-item {
+            width: 80px;
+
+            .icon {
+                width: 48px;
+                height: 48px;
+            }
+        }
+    }
+
+    /* =========================================== */
+    /* 5) List Mode */
+    /* =========================================== */
+    &.list {
+        /* Typically list mode is a single column with a small icon to the left */
+        display: block;
+
+        /* or flex but "column" direction */
+        .file-item {
+            flex-direction: row;
+            align-items: center;
+            text-align: left;
+            padding: 4px 8px;
+            width: 100%;
+
+            .icon {
+                width: 32px;
+                height: 32px;
+                margin-right: 8px;
+            }
+
+            .filename {
+                margin-top: 0;
+                width: auto;
+                flex: 1 1 auto;
+                /* let it fill the line */
+            }
+        }
+    }
+
+    /* =========================================== */
+    /* 6) Details Mode */
+    /* =========================================== */
+    &.details {
+        /* Often details mode is a table-like layout 
+         We'll do a simple table approach as an example */
+        display: table;
+        width: 100%;
+
+        .file-item {
+            display: table-row;
+
+            /* each item is a row */
+            .icon {
+                width: 24px;
+                height: 24px;
+            }
+
+            .filename {
+                display: table-cell;
+                padding: 4px 8px;
+            }
+        }
+    }
 }

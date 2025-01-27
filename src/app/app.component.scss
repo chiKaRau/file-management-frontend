@@ -1,17 +1,22 @@
-.app-layout {
+.fixed-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    /* or however tall your tab bar is */
+    background-color: #f1f1f1;
+    z-index: 9999;
     display: flex;
-    flex-direction: column;
-    height: 100vh;
-    /* fill entire viewport if desired */
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    /* possibly some padding, etc. */
 }
 
 .tab-bar {
-    position: sticky;
-    /* or fixed */
-    top: 0;
-    z-index: 10;
+
     background-color: #ddd;
-    padding: 10px;
+
 }
 
 /* Example link styles: */

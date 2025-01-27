@@ -1,40 +1,109 @@
-/* explorer-toolbar.component.scss */
-
 .toolbar-container {
     display: flex;
     align-items: center;
-    padding: 8px;
-    background-color: #2f2f2f;
-    /* or your color */
-    color: #ddd;
+    padding: 6px 10px;
+    /* vertical/horizontal padding for a compact look */
+    background-color: #e9ecef;
+    /* a light gray reminiscent of Windows Explorer */
+    border-bottom: 1px solid #ccc;
+    gap: 10px;
+    /* space between items */
+    color: #333;
+    /* text color for icons/buttons */
+    font-family: "Segoe UI", sans-serif;
+    font-size: 14px;
 }
 
-.breadcrumb-view {
-    display: flex;
-    gap: 8px;
+/* Navigation buttons (Back/Forward/Refresh) */
+.toolbar-container button {
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
     cursor: pointer;
-    flex: 1;
-    /* so it expands across empty space */
+    display: flex;
     align-items: center;
-    overflow: hidden;
-    /* if you want to clip if super long */
+    justify-content: center;
+    transition: background-color 0.2s;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    &:not(:disabled):hover {
+        background-color: #e2e6ea;
+        /* subtle hover */
+    }
 }
 
+/* The breadcrumb or path area */
+.breadcrumb-view,
+.edit-view {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    /* take remaining space */
+    overflow: hidden;
+    /* clip if super long */
+    cursor: pointer;
+    gap: 4px;
+    /* space between parts or path segments */
+    position: relative;
+    min-width: 0;
+    /* allow overflow hidden to clip text */
+}
+
+/* Each part of the breadcrumb */
 .breadcrumb-part {
     white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 150px;
+    /* so each segment doesn’t get too wide */
 }
 
+.breadcrumb-section {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    /* ... */
+}
+
+/* The separator “>” between parts */
 .separator {
-    margin: 0 4px;
+    margin: 0 2px;
+    color: #666;
 }
 
-.edit-view {
-    flex: 1;
-}
-
+/* The path input in edit mode */
 .path-input {
     width: 100%;
-    /* fill the entire area */
-    padding: 4px;
+    padding: 4px 6px;
     font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+}
+
+/* The search box area on the right side */
+.search-container {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* The search input box */
+.search-container input[type='text'] {
+    width: 180px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 6px;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+        border-color: #888;
+    }
 }
