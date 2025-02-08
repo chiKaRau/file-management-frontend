@@ -151,3 +151,24 @@
         }
     }
 }
+
+.file-item.deleted {
+    position: relative;
+    filter: grayscale(50%) brightness(90%);
+    border: 2px dashed #ff4d4d;
+    box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+
+    &:after {
+        content: 'Recycled';
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(255, 77, 77, 0.85);
+        color: #fff;
+        padding: 2px 6px;
+        font-size: 12px;
+        font-weight: bold;
+        border-radius: 2px;
+        text-transform: uppercase;
+    }
+}

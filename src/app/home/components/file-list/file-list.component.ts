@@ -7,13 +7,18 @@ export interface DirectoryItem {
   isDirectory: boolean;
 }
 
+// Extend DirectoryItem with an optional isDeleted property.
+export interface DisplayDirectoryItem extends DirectoryItem {
+  isDeleted?: boolean;
+}
+
 @Component({
   selector: 'app-file-list',
   templateUrl: './file-list.component.html',
   styleUrls: ['./file-list.component.scss']
 })
 export class FileListComponent {
-  @Input() items: DirectoryItem[] = [];
+  @Input() items: DisplayDirectoryItem[] = [];
   @Input() viewMode: string = 'large'; // default to "large"
 
   /** Emitted when user wants to open a folder (double-click). */

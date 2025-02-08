@@ -11,9 +11,13 @@ import {
 import { ElectronService } from '../core/services/electron/electron.service';
 import { NavigationService } from './services/navigation.service';
 import { ExplorerStateService, DirectoryItem } from './services/explorer-state.service';
+import { RecycleService } from '../recycle/recycle.service';
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { ScrollStateService } from './services/scroll-state.service';
+import { RecycleRecord } from '../recycle/model/recycle-record.model';
+import { DisplayDirectoryItem } from './components/file-list/file-list.component';
 
 @Component({
   selector: 'app-home',
@@ -45,7 +49,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     private scrollState: ScrollStateService,
     private ngZone: NgZone,
     public navigationService: NavigationService,
-    public explorerState: ExplorerStateService
+    public explorerState: ExplorerStateService,
+    private recycleService: RecycleService
   ) { }
 
   ngOnInit() {
@@ -69,6 +74,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // }
 
   // ====== Getters/Setters referencing ExplorerStateService ======
+
   get selectedDirectory(): string | null {
     return this.explorerState.selectedDirectory;
   }
@@ -105,13 +111,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   // Filtered contents for search
-  get filteredDirectoryContents(): DirectoryItem[] {
-    const contents = this.explorerState.directoryContents;
-    if (!this.searchTerm) return contents;
+  // home.component.ts
+
+  get filteredDirectoryContents(): DisplayDirectoryItem[] {
+    // Get the recycle records once
+    const recycleRecords = this.recycleService.getRecords();
+
+    // First, decorate the directory items with the isDeleted flag:
+    const decoratedItems: DisplayDirectoryItem[] = this.explorerState.directoryContents.map(item => {
+      // Check if this file’s path exists in any recycle record.
+      // You might have different logic depending on your record structure.
+      const isDeleted = recycleRecords.some(record =>
+        record.files.includes(item.path)
+      );
+      return { ...item, isDeleted };
+    });
+
+    // Now, apply the search filter on the decorated list:
+    if (!this.searchTerm) {
+      return decoratedItems;
+    }
     const term = this.searchTerm.toLowerCase();
-    return contents.filter(item =>
-      item.name.toLowerCase().includes(term)
-    );
+    return decoratedItems.filter(item => item.name.toLowerCase().includes(term));
   }
 
   applySearch(newTerm: string) {
@@ -484,12 +505,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.showFileContextMenu = false;
     if (!this.selectedFile) return;
 
-    if (this.selectedFile.civitaiGroup) {
-      console.log('[CivitaiMode] Deleting entire set:', this.selectedFile.civitaiGroup);
-      // For now, just console.log — you could call fs.unlinkSync() for each file in the group.
-    } else {
-      console.log('Delete file:', this.selectedFile.name);
-    }
+    const isDirectory = this.selectedFile.isDirectory;
+    const recordType: 'set' | 'directory' = isDirectory ? 'directory' : 'set';
+
+    const record: RecycleRecord = {
+      id: Date.now().toString(), // or use uuidv4() if available
+      type: recordType,
+      originalPath: this.selectedFile.path,
+      files: this.selectedFile.civitaiGroup ? this.selectedFile.civitaiGroup : [this.selectedFile.path],
+      deletedDate: new Date()
+    };
+
+    // Add record to the recycle bin
+    this.recycleService.addRecord(record);
+
+    // Instead of removing the item, you can mark it as deleted.
+    // For example, if you rebuild the displayed list, annotate items with isDeleted.
+    // (Your code for that will depend on how you currently load items.)
+
+    this.selectedFile = null;
   }
 
   renameFile() {
