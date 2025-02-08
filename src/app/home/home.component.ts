@@ -345,11 +345,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // 2) Called when user right-clicks a file
   onFileRightClick(file: DirectoryItem, event: MouseEvent) {
     event.preventDefault();
+    event.stopPropagation(); // Prevent the event from bubbling to the parent's contextmenu handler.
     this.selectedFile = file;
     this.positionContextMenu(event.clientX, event.clientY);
     this.showFileContextMenu = true;
     this.showEmptyAreaContextMenu = false;
   }
+
 
   // Positions the context menu so it won't overflow
   positionContextMenu(x: number, y: number) {
