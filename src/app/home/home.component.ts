@@ -11,13 +11,11 @@ import {
 import { ElectronService } from '../core/services/electron/electron.service';
 import { NavigationService } from './services/navigation.service';
 import { ExplorerStateService, DirectoryItem } from './services/explorer-state.service';
-import { RecycleService } from '../recycle/recycle.service';
-
 import * as fs from 'fs';
 import * as path from 'path';
 import { ScrollStateService } from './services/scroll-state.service';
+import { RecycleService } from '../recycle/recycle.service';
 import { RecycleRecord } from '../recycle/model/recycle-record.model';
-import { DisplayDirectoryItem } from './components/file-list/file-list.component';
 
 @Component({
   selector: 'app-home',
@@ -74,7 +72,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // }
 
   // ====== Getters/Setters referencing ExplorerStateService ======
-
   get selectedDirectory(): string | null {
     return this.explorerState.selectedDirectory;
   }
@@ -111,28 +108,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   // Filtered contents for search
-  // home.component.ts
+  get filteredDirectoryContents(): DirectoryItem[] {
 
-  get filteredDirectoryContents(): DisplayDirectoryItem[] {
-    // Get the recycle records once
-    const recycleRecords = this.recycleService.getRecords();
-
-    // First, decorate the directory items with the isDeleted flag:
-    const decoratedItems: DisplayDirectoryItem[] = this.explorerState.directoryContents.map(item => {
-      // Check if this file’s path exists in any recycle record.
-      // You might have different logic depending on your record structure.
-      const isDeleted = recycleRecords.some(record =>
-        record.files.includes(item.path)
-      );
-      return { ...item, isDeleted };
-    });
-
-    // Now, apply the search filter on the decorated list:
-    if (!this.searchTerm) {
-      return decoratedItems;
-    }
+    const contents = this.explorerState.directoryContents;
+    if (!this.searchTerm) return contents;
     const term = this.searchTerm.toLowerCase();
-    return decoratedItems.filter(item => item.name.toLowerCase().includes(term));
+    return contents.filter(item =>
+      item.name.toLowerCase().includes(term)
+    );
   }
 
   applySearch(newTerm: string) {
@@ -177,6 +160,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
         this.selectedDirectory = directoryPath;
 
+        // Retrieve recycle records from the recycle service.
+        const recycleRecords = this.recycleService.getRecords();
+
+        // Helper function to check if a file path is marked as deleted.
+        const isFileDeleted = (fullPath: string): boolean =>
+          recycleRecords.some(record => record.files.includes(fullPath));
+
         // ===============================
         // If NOT in Civitai Mode, do normal listing
         // ===============================
@@ -188,7 +178,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
               name: file,
               path: fullPath,
               isFile: stats.isFile(),
-              isDirectory: stats.isDirectory()
+              isDirectory: stats.isDirectory(),
+              isDeleted: isFileDeleted(fullPath)  // Mark as deleted if found in recycle records
             };
           });
         } else {
@@ -196,7 +187,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
           // Civitai Mode: show grouped .preview.png sets + directories
           // ===============================
 
-          // We'll keep two lists: one for directories, one for grouped sets
+          // Keep two lists: one for directories, one for grouped sets
           const directories: DirectoryItem[] = [];
           // Map of prefix => { allFiles, previewPath? }
           const groupMap = new Map<string, {
@@ -209,13 +200,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
             const fullPath = path.join(directoryPath, file);
             const stats = fs.statSync(fullPath);
 
-            // If it's a directory, just add it so user can navigate
+            // If it's a directory, add it (with deleted check)
             if (stats.isDirectory()) {
               directories.push({
                 name: file,
                 path: fullPath,
                 isFile: false,
-                isDirectory: true
+                isDirectory: true,
+                isDeleted: isFileDeleted(fullPath)
               });
               return;
             }
@@ -245,10 +237,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
           groupMap.forEach((group, prefix) => {
             if (group.previewPath) {
               groupedItems.push({
-                name: path.basename(group.previewPath), // or prefix
+                name: path.basename(group.previewPath), // or use prefix if desired
                 path: group.previewPath,
                 isFile: true,
                 isDirectory: false,
+                isDeleted: isFileDeleted(group.previewPath),  // Check deletion status based on the preview file
                 civitaiGroup: group.allFiles
               });
             }
@@ -266,6 +259,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
     });
   }
+
 
 
   /**
@@ -372,7 +366,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.showFileContextMenu = true;
     this.showEmptyAreaContextMenu = false;
   }
-
 
   // Positions the context menu so it won't overflow
   positionContextMenu(x: number, y: number) {
@@ -529,8 +522,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // Instead of removing the item, mark it as deleted
     // (This assumes your file-list component uses item.isDeleted to style recycled items.)
     this.selectedFile = null;
-  }
 
+    // Re-load the current directory to update deletion status for all items.
+    if (this.selectedDirectory) {
+      this.loadDirectoryContents(this.selectedDirectory);
+    }
+  }
 
   renameFile() {
     this.showFileContextMenu = false;

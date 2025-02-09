@@ -5,11 +5,7 @@ export interface DirectoryItem {
   path: string;
   isFile: boolean;
   isDirectory: boolean;
-}
-
-// Extend DirectoryItem with an optional isDeleted property.
-export interface DisplayDirectoryItem extends DirectoryItem {
-  isDeleted?: boolean;
+  isDeleted?: boolean; // <-- New property
 }
 
 @Component({
@@ -18,7 +14,7 @@ export interface DisplayDirectoryItem extends DirectoryItem {
   styleUrls: ['./file-list.component.scss']
 })
 export class FileListComponent {
-  @Input() items: DisplayDirectoryItem[] = [];
+  @Input() items: DirectoryItem[] = [];
   @Input() viewMode: string = 'large'; // default to "large"
 
   /** Emitted when user wants to open a folder (double-click). */
@@ -44,15 +40,13 @@ export class FileListComponent {
   }
 
   onItemDblClick(item: DirectoryItem) {
-    console.log('Double-click event fired for:', item);
+    // Double-click => if it's a directory, emit openFolder
     if (item.isDirectory) {
-      console.log('Opening folder:', item.path);
       this.openFolder.emit(item.path);
     } else {
       console.log('Double-clicked file:', item.name);
     }
   }
-  
 
   // Make sure the order in your template matches:
   // In the HTML, we have (contextmenu)="onFileRightClick(item, $event)"

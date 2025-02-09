@@ -7,6 +7,7 @@ export interface DirectoryItem {
     path: string;
     isFile: boolean;
     isDirectory: boolean;
+    isDeleted?: boolean; // <-- New property
     civitaiGroup?: string[];
 }
 
