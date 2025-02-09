@@ -27,7 +27,34 @@
         <option value="details">Details</option>
     </select>
 
+    <br /><br />
+
+    <!-- Storage Directory Input with Verify Button -->
+    <div class="form-group">
+        <label for="storageDir">Recycle Bin Storage Directory:</label>
+        <div class="input-group">
+            <input type="text" id="storageDir" [(ngModel)]="storageDir"
+                placeholder="F:\Coding Projects\Java\CivitaiSQL Server\server\files\download\@scan@" />
+            <button (click)="verifyPath('storage')" [disabled]="storageVerified">
+                {{ storageVerified ? 'Verified' : 'Verify' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Delete Directory Input with Verify Button -->
+    <div class="form-group">
+        <label for="deleteDir">Delete Folder Directory:</label>
+        <div class="input-group">
+            <input type="text" id="deleteDir" [(ngModel)]="deleteDir"
+                placeholder="F:\Coding Projects\Java\CivitaiSQL Server\server\files\download\@scan@" />
+            <button (click)="verifyPath('delete')" [disabled]="deleteVerified">
+                {{ deleteVerified ? 'Verified' : 'Verify' }}
+            </button>
+        </div>
+    </div>
+
+    <br />
+
     <button (click)="savePreferences()">Save</button>
     <button routerLink="/home">Back to Home</button>
-
 </div>

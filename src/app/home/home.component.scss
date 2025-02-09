@@ -122,3 +122,9 @@
 .flip-submenu {
     left: -150px;
 }
+
+.menu-item.disabled {
+    color: #aaa; // Gray out the text.
+    pointer-events: none; // Prevent click events.
+    cursor: not-allowed;
+}

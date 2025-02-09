@@ -8,70 +8,53 @@ import * as path from 'path';
 })
 export class RecycleService {
     private records: RecycleRecord[] = [];
-    private storagePath: string;
-    private deleteFolderPath: string;
-
+    private storagePath: string = '';       // Full file path for JSON
+    private deleteFolderPath: string = '';    // Delete folder directory
 
     constructor() {
-        // Use __dirname to calculate the project root.
-        // Based on your logs, this should resolve to:
-        // F:\Coding Projects\File-management\file-management-frontend
-        const projectRoot = path.resolve(__dirname, '../');
-        console.log('Project Root:', projectRoot);
-
-        // Build the recycle bin storage path:
-        // F:\Coding Projects\File-management\file-management-frontend\src\data\recycle-bin.json
-        this.storagePath = path.join(projectRoot, 'src', 'data', 'recycle-bin.json');
-        console.log('Recycle bin storage path:', this.storagePath);
-
-        // Ensure the data directory exists.
-        const dataDirectory = path.dirname(this.storagePath);
-        if (!fs.existsSync(dataDirectory)) {
-            fs.mkdirSync(dataDirectory, { recursive: true });
-            console.log('Created data directory:', dataDirectory);
-        }
-
-        // Create the recycle-bin.json file if it does not exist.
-        if (!fs.existsSync(this.storagePath)) {
-            try {
-                fs.writeFileSync(this.storagePath, JSON.stringify([], null, 2));
-                console.log('Recycle bin file created at:', this.storagePath);
-            } catch (err) {
-                console.error('Error creating recycle bin file:', err);
-            }
-        }
-
-        // Build the delete folder path:
-        // F:\Coding Projects\File-management\file-management-frontend\src\delete
-        this.deleteFolderPath = path.join(projectRoot, 'src', 'delete');
-        console.log('Delete folder path:', this.deleteFolderPath);
-        if (!fs.existsSync(this.deleteFolderPath)) {
-            fs.mkdirSync(this.deleteFolderPath, { recursive: true });
-            console.log('Created delete folder at:', this.deleteFolderPath);
-        }
-
-        this.loadRecords();
+        // Initially, do nothing since paths are not set.
     }
 
-    private loadRecords(): void {
-        if (fs.existsSync(this.storagePath)) {
-            try {
-                const data = fs.readFileSync(this.storagePath, 'utf-8');
-                this.records = JSON.parse(data);
-            } catch (err) {
-                console.error('Error reading recycle bin file:', err);
-                this.records = [];
-            }
-        } else {
-            this.records = [];
+    setPaths(storageDir: string, deleteDir: string): void {
+        storageDir = storageDir.trim();
+        deleteDir = deleteDir.trim();
+
+        if (!storageDir || !deleteDir) {
+            console.warn('Either storageDir or deleteDir is empty. Skipping path setup.');
+            return;
         }
+
+        // Build the full file path for the recycle bin JSON file.
+        // (Assuming storageDir is the base path that already includes @scan@)
+        this.storagePath = path.join(storageDir, 'data', 'recycle-bin.json');
+        // For delete, since you want the directory under @scan@:
+        this.deleteFolderPath = path.join(deleteDir, 'delete');
+
+        // Optionally, you can verify here again if needed, but if your verify function already did that,
+        // then this is just to update the service's internal state.
     }
+
+    // private loadRecords(): void {
+    //     if (this.storagePath && fs.existsSync(this.storagePath)) {
+    //         try {
+    //             const data = fs.readFileSync(this.storagePath, 'utf-8');
+    //             this.records = JSON.parse(data);
+    //         } catch (err) {
+    //             console.error('Error reading recycle bin file:', err);
+    //             this.records = [];
+    //         }
+    //     } else {
+    //         this.records = [];
+    //     }
+    // }
 
     private saveRecords(): void {
-        try {
-            fs.writeFileSync(this.storagePath, JSON.stringify(this.records, null, 2));
-        } catch (err) {
-            console.error('Error writing recycle bin file:', err);
+        if (this.storagePath) {
+            try {
+                fs.writeFileSync(this.storagePath, JSON.stringify(this.records, null, 2));
+            } catch (err) {
+                console.error('Error writing recycle bin file:', err);
+            }
         }
     }
 
@@ -101,11 +84,9 @@ export class RecycleService {
         if (record) {
             record.files.forEach(filePath => {
                 try {
-                    // Ensure the file exists before attempting to move it.
                     if (fs.existsSync(filePath)) {
                         const fileName = path.basename(filePath);
                         const targetPath = path.join(this.deleteFolderPath, fileName);
-                        // Attempt to move the file using renameSync.
                         fs.renameSync(filePath, targetPath);
                         console.log(`Moved file ${filePath} to ${targetPath}`);
                     } else {
@@ -119,21 +100,22 @@ export class RecycleService {
                             const fileName = path.basename(filePath);
                             const targetPath = path.join(this.deleteFolderPath, fileName);
                             fs.copyFileSync(filePath, targetPath);
-                            // Only remove the original if the copy was successful.
                             fs.unlinkSync(filePath);
                             console.log(`Copied and removed file ${filePath} to ${targetPath} as a fallback.`);
                         }
                     } catch (fallbackErr) {
                         console.error(`Fallback error processing file ${filePath}:`, fallbackErr);
-                        // At this point, the file remains in its original location.
-                        // You may choose to mark this record for manual review or add additional recovery logic.
                     }
                 }
             });
-            // After processing all files, remove the record from the recycle bin.
             this.records = this.records.filter(r => r.id !== recordId);
             this.saveRecords();
         }
+    }
+
+    public get arePathsSet(): boolean {
+        // Check that storagePath and deleteFolderPath are set and not empty strings.
+        return this.storagePath.trim() !== '' && this.deleteFolderPath.trim() !== '';
     }
 
 }

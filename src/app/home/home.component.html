@@ -71,7 +71,12 @@
     (click)="onMenuClick($event)" (contextmenu)="$event.preventDefault()">
     <div class="menu-item" (click)="cutFile()">Cut</div>
     <div class="menu-item" (click)="copyFile()">Copy</div>
-    <div class="menu-item" (click)="deleteFile()">Delete</div>
+    <div class="menu-item" [class.disabled]="!recycleService.arePathsSet"
+      [title]="!recycleService.arePathsSet ? 'Please set up recycle path in preferences' : ''" (click)="deleteFile()">
+      Delete
+    </div>
+
+
     <div class="menu-item" (click)="renameFile()">Rename</div>
     <div class="menu-item" (click)="showProperties()">Properties</div>
   </div>

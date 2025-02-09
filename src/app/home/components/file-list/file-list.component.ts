@@ -44,13 +44,15 @@ export class FileListComponent {
   }
 
   onItemDblClick(item: DirectoryItem) {
-    // Double-click => if it's a directory, emit openFolder
+    console.log('Double-click event fired for:', item);
     if (item.isDirectory) {
+      console.log('Opening folder:', item.path);
       this.openFolder.emit(item.path);
     } else {
       console.log('Double-clicked file:', item.name);
     }
   }
+  
 
   // Make sure the order in your template matches:
   // In the HTML, we have (contextmenu)="onFileRightClick(item, $event)"

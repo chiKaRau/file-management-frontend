@@ -50,7 +50,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     private ngZone: NgZone,
     public navigationService: NavigationService,
     public explorerState: ExplorerStateService,
-    private recycleService: RecycleService
+    public recycleService: RecycleService
   ) { }
 
   ngOnInit() {
@@ -505,6 +505,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.showFileContextMenu = false;
     if (!this.selectedFile) return;
 
+    // Check if recycle paths are set
+    if (!this.recycleService.arePathsSet) {
+      console.warn('Recycle paths are not set. Please set up the recycle path in Preferences.');
+      // Optionally, display a message to the user.
+      return;
+    }
+
     const isDirectory = this.selectedFile.isDirectory;
     const recordType: 'set' | 'directory' = isDirectory ? 'directory' : 'set';
 
@@ -519,12 +526,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // Add record to the recycle bin
     this.recycleService.addRecord(record);
 
-    // Instead of removing the item, you can mark it as deleted.
-    // For example, if you rebuild the displayed list, annotate items with isDeleted.
-    // (Your code for that will depend on how you currently load items.)
-
+    // Instead of removing the item, mark it as deleted
+    // (This assumes your file-list component uses item.isDeleted to style recycled items.)
     this.selectedFile = null;
   }
+
 
   renameFile() {
     this.showFileContextMenu = false;
