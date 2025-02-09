@@ -1,3 +1,4 @@
+<!-- app.component.html -->
 <div class="app-layout">
     <nav class="tab-bar fixed-top">
         <a routerLink="/home" routerLinkActive="active">Home</a>
@@ -5,6 +6,6 @@
         <a routerLink="/preferences" routerLinkActive="active">Preferences</a>
     </nav>
 
-    <!-- This is where your main content (e.g., HomeComponent, etc.) will be rendered -->
-    <router-outlet></router-outlet>
+    <!-- Listen for activation events -->
+    <router-outlet (activate)="onActivate($event)"></router-outlet>
 </div>

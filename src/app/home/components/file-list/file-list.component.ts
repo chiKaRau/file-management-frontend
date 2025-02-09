@@ -1,12 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-
-export interface DirectoryItem {
-  name: string;
-  path: string;
-  isFile: boolean;
-  isDirectory: boolean;
-  isDeleted?: boolean; // <-- New property
-}
+import { DirectoryItem } from './model/directory-item.model';
 
 @Component({
   selector: 'app-file-list',

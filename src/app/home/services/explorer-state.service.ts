@@ -1,15 +1,7 @@
 // src/app/home/services/explorer-state.service.ts
 
 import { Injectable } from '@angular/core';
-
-export interface DirectoryItem {
-    name: string;
-    path: string;
-    isFile: boolean;
-    isDirectory: boolean;
-    isDeleted?: boolean; // <-- New property
-    civitaiGroup?: string[];
-}
+import { DirectoryItem } from '../components/file-list/model/directory-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class ExplorerStateService {

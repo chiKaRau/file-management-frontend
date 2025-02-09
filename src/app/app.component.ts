@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { ElectronService } from './core/services';
 import { TranslateService } from '@ngx-translate/core';
 import { APP_CONFIG } from '../environments/environment';
+import { HomeRefreshService } from './home/services/home-refresh.service';
+import { HomeComponent } from './home/home.component';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +13,8 @@ import { APP_CONFIG } from '../environments/environment';
 export class AppComponent {
   constructor(
     private electronService: ElectronService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private homeRefreshService: HomeRefreshService
   ) {
     this.translate.setDefaultLang('en');
     console.log('APP_CONFIG', APP_CONFIG);
@@ -25,4 +28,13 @@ export class AppComponent {
       console.log('Run in browser');
     }
   }
+  // This method is called when any routed component is activated.
+  onActivate(componentRef: any) {
+    // For HomeComponent:
+    if (componentRef instanceof HomeComponent) {
+      console.log('HomeComponent activated, refreshing...');
+      componentRef.onRefresh();
+    }
+  }
+
 }

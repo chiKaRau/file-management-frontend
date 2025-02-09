@@ -10,12 +10,15 @@ import {
 } from '@angular/core';
 import { ElectronService } from '../core/services/electron/electron.service';
 import { NavigationService } from './services/navigation.service';
-import { ExplorerStateService, DirectoryItem } from './services/explorer-state.service';
+import { ExplorerStateService } from './services/explorer-state.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ScrollStateService } from './services/scroll-state.service';
 import { RecycleService } from '../recycle/recycle.service';
 import { RecycleRecord } from '../recycle/model/recycle-record.model';
+import { DirectoryItem } from './components/file-list/model/directory-item.model';
+import { Subscription } from 'rxjs';
+import { HomeRefreshService } from './services/home-refresh.service';
 
 @Component({
   selector: 'app-home',
@@ -42,9 +45,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // The file the user right-clicked on (if any)
   selectedFile: DirectoryItem | null = null;
 
+  // Keep a subscription reference so we can unsubscribe later.
+  private homeRefreshSub!: Subscription;
+
   constructor(
     private electronService: ElectronService,
     private scrollState: ScrollStateService,
+    private homeRefreshService: HomeRefreshService,
     private ngZone: NgZone,
     public navigationService: NavigationService,
     public explorerState: ExplorerStateService,
@@ -57,6 +64,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
       window.scrollTo(0, this.scrollState.homeScrollPosition);
       console.log('Restored window.scrollY to', this.scrollState.homeScrollPosition);
     }, 0);
+
+    // Subscribe to refresh events
+    this.homeRefreshSub = this.homeRefreshService.refresh$.subscribe(() => {
+      console.log('Refresh event received from HomeRefreshService.');
+      if (this.selectedDirectory) {
+        this.onRefresh();
+      }
+    });
+
   }
 
   ngAfterViewInit() {
@@ -65,11 +81,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
     console.log('Restored window.scrollY to', this.scrollState.homeScrollPosition);
   }
 
-  // ngOnDestroy() {
-  //   // Save the current scroll offset in the service
-  //   this.scrollState.homeScrollPosition = window.scrollY;
-  //   console.log('Stored window.scrollY', this.scrollState.homeScrollPosition);
-  // }
+  ngOnDestroy() {
+    // Save the current scroll offset in the service
+    // this.scrollState.homeScrollPosition = window.scrollY;
+    // console.log('Stored window.scrollY', this.scrollState.homeScrollPosition);
+    if (this.homeRefreshSub) {
+      this.homeRefreshSub.unsubscribe();
+    }
+  }
 
   // ====== Getters/Setters referencing ExplorerStateService ======
   get selectedDirectory(): string | null {
@@ -525,7 +544,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     // Re-load the current directory to update deletion status for all items.
     if (this.selectedDirectory) {
-      this.loadDirectoryContents(this.selectedDirectory);
+      this.onRefresh();
     }
   }
 
