@@ -7,9 +7,10 @@ import { ExplorerToolbarComponent } from './components/explorer-toolbar/explorer
 
 import { HomeComponent } from './home.component';
 import { SharedModule } from '../shared/shared.module';
+import { FileInfoSidebarComponent } from '../file-info-sidebar/file-info-sidebar.component';
 
 @NgModule({
-  declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent],
+  declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent, FileInfoSidebarComponent],
   imports: [CommonModule, SharedModule, HomeRoutingModule]
 })
 export class HomeModule { }

@@ -1,0 +1,36 @@
+.sidebar {
+    width: 300px;
+    /* Fixed sidebar width */
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+
+    /* Use sticky positioning so the sidebar remains visible when scrolling */
+    position: sticky;
+    /* Since your .actual-content starts at margin-top: 90px, we set top accordingly */
+    top: 90px;
+
+    /* Fill the remaining viewport height */
+    height: calc(100vh - 90px);
+    padding-bottom: 20px;
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+
+        button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    }
+
+    .content {
+        padding: 10px;
+    }
+}

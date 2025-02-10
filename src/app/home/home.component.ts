@@ -374,8 +374,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   onSingleClick(file: DirectoryItem) {
     console.log('Parent sees single-click:', file.name);
-    // If you want the parent to do something on single-click, do it here
+    // Only set the selectedFile if it is a file (not a folder)
+    if (file.isFile) {
+      this.selectedFile = file;
+    } else {
+      // Optionally clear the selection if a folder is clicked
+      this.selectedFile = null;
+    }
   }
+
   // 2) Called when user right-clicks a file
   onFileRightClick(file: DirectoryItem, event: MouseEvent) {
     event.preventDefault();

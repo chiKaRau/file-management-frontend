@@ -1,0 +1,14 @@
+<div class="sidebar">
+    <div class="header">
+        <h3>Details</h3>
+        <!-- Clicking this button will clear the selection in HomeComponent -->
+        <button (click)="close()">X</button>
+    </div>
+    <div *ngIf="item" class="content">
+        <p><strong>Name:</strong> {{ item.name }}</p>
+        <p><strong>Path:</strong> {{ item.path }}</p>
+        <p *ngIf="item.isDirectory">Type: Folder</p>
+        <p *ngIf="item.isFile">Type: File</p>
+        <!-- Add more details as needed -->
+    </div>
+</div>

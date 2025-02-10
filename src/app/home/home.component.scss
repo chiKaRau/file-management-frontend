@@ -8,19 +8,12 @@
     background-color: #fafafa;
     border-bottom: 1px solid #ccc;
     z-index: 9998;
-
-    /* Key: use a single row layout, no space-between. */
     display: flex;
     align-items: center;
-
-    /* Some horizontal padding around the edges if desired. */
     padding: 0 10px;
-
-    /* gap adds a little space between the button & the toolbar */
     gap: 8px;
 }
 
-/* Example styling if you want a “folder” icon or something that acts like a button. */
 .browse-icon {
     background: #e9e9e9;
     border: 1px solid #ccc;
@@ -41,46 +34,22 @@
     }
 }
 
-
-/* Or, alternatively, we could just do `.home-toolbar { justify-content: space-between; }`
-     and place all Explorer toolbar stuff directly on the left, the button on the right. 
-     But using .explorer-left and .explorer-right is more structured. */
-
-
-/* The main content below both pinned bars */
 .actual-content {
     margin-top: 90px;
     /* 40px + 50px = 90px */
-    /* So .actual-content starts below both bars */
-    /* We can make this container flex too if needed. */
 }
 
-/* The file-area can remain as is or be your main container. 
-     If you want it to flex, that’s fine, but typically it’s just a block. */
 .file-area {
-    /* you can keep flex:1 if you want a layout that grows, 
-       but it's not strictly needed if the entire window is scrolling. */
     display: flex;
     flex-direction: column;
 }
 
-/* The content-area is your scrollable region or just the normal content. 
-     If the entire window is scrolling, 
-     you might not need 'overflow-y: auto;' here.
-     Only do 'overflow-y: auto;' if .content-area is your actual scroll container. */
 .content-area {
-    /* If you want this to scroll internally: 
-       height: calc(100vh - 90px); 
-       overflow-y: auto; 
-     */
     padding: 20px;
     background-color: #fff;
 }
 
-/* If you want to keep the home page layout the same, that’s fine. 
-     The key is your second bar is pinned at top:40px and the content is margin-top:90px. */
-
-/* ============== Context Menus / Submenus ============= */
+/* Context menus and submenus */
 .context-menu {
     position: fixed;
     background: #fff;
@@ -124,7 +93,23 @@
 }
 
 .menu-item.disabled {
-    color: #aaa; // Gray out the text.
-    pointer-events: none; // Prevent click events.
+    color: #aaa;
+    pointer-events: none;
     cursor: not-allowed;
+}
+
+/* Flex container for sidebar and file list */
+.main-container {
+    display: flex;
+    flex-direction: row;
+
+    .file-list-container {
+        flex: 1;
+        margin-left: 16px;
+        /* space from sidebar */
+    }
+}
+
+.main-container:not(.with-sidebar) .file-list-container {
+    margin-left: 0;
 }
