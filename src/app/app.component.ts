@@ -30,7 +30,7 @@ export class AppComponent {
   }
   // This method is called when any routed component is activated.
   onActivate(componentRef: any) {
-    // For HomeComponent:
+    //Add Components (tabs) here for refreshing when the tab is clicked; do the same thing as HomeComponent
     if (componentRef instanceof HomeComponent) {
       console.log('HomeComponent activated, refreshing...');
       componentRef.onRefresh();

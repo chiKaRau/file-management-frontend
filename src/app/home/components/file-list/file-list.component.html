@@ -1,6 +1,7 @@
 <div class="file-list" [ngClass]="viewMode">
     <div class="file-item" *ngFor="let item of items" (click)="onItemClick(item)" (dblclick)="onItemDblClick(item)"
-        (contextmenu)="onFileRightClick(item, $event)" [ngClass]="{'deleted': item.isDeleted}">
+        (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': selectedItem === item}">
         <div class="icon">
 
             <!-- 1) Directory icon if it's a folder -->

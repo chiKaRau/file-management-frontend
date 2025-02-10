@@ -172,3 +172,11 @@
         text-transform: uppercase;
     }
 }
+
+.file-item.selected {
+    /* Change the background color to a light gray (or any color you prefer) */
+    background-color: #e0e0e0;
+
+    /* Optional: add a border or outline for additional emphasis */
+    border: 2px solid #0078d7;
+}
