@@ -387,7 +387,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   onFileRightClick(file: DirectoryItem, event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation(); // Prevent the event from bubbling to the parent's contextmenu handler.
-    this.selectedFile = file;
+    // this.selectedFile = file;
     this.positionContextMenu(event.clientX, event.clientY);
     this.showFileContextMenu = true;
     this.showEmptyAreaContextMenu = false;

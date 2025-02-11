@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { ExplorerStateService } from '../../home/services/explorer-state.service';
+import { ExplorerStateService } from '../home/services/explorer-state.service';
 // Import Node modules (make sure Node integration is enabled in Electron)
 import * as fs from 'fs';
 import * as path from 'path';
-import { RecycleService } from '../../recycle/recycle.service';
+import { RecycleService } from '../recycle/recycle.service';
 
 @Component({
   selector: 'app-preferences',

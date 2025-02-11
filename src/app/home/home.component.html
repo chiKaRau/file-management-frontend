@@ -1,4 +1,4 @@
-<div class="home-page">
+<div class="home-page" (contextmenu)="onEmptyAreaRightClick($event)">
   <!-- Top Toolbar -->
   <div class="home-toolbar">
     <button class="browse-icon" (click)="openDirectory()">
@@ -24,7 +24,7 @@
 
       <!-- File list panel -->
       <!-- Note: Added (contextmenu)="onEmptyAreaRightClick($event)" here -->
-      <div class="file-list-container" (contextmenu)="onEmptyAreaRightClick($event)">
+      <div class="file-list-container">
         <div *ngIf="isLoading" class="loading">
           Loading files...
         </div>

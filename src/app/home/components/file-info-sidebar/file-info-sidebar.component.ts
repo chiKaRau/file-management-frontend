@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { DirectoryItem } from '../home/components/file-list/model/directory-item.model';
+import { DirectoryItem } from '../file-list/model/directory-item.model';
 
 @Component({
   selector: 'app-file-info-sidebar',

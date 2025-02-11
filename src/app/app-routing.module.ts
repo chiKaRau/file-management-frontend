@@ -13,6 +13,7 @@ const routes: Routes = [
   { path: 'home', loadChildren: () => import('./home/home.module').then(m => m.HomeModule) },
   { path: 'preferences', loadChildren: () => import('./preferences/preferences.module').then(m => m.PreferencesModule) },
   { path: 'recycle', component: RecycleComponent },
+  { path: 'update', loadChildren: () => import('./update/update.module').then(m => m.UpdateModule) },
   { path: '**', component: PageNotFoundComponent }
 ];
 
