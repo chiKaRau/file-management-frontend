@@ -99,6 +99,12 @@ try {
     }
   });
 
+  ipcMain.handle('open-file-dialog', async (event, options) => {
+    const result = await dialog.showOpenDialog(options);
+    // Return filePaths (or an empty array if canceled)
+    return result.filePaths || [];
+  });
+
 } catch (e) {
   console.error('Error in main process:', e);
 }

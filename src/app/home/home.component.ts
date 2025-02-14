@@ -45,6 +45,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // The file the user right-clicked on (if any)
   selectedFile: DirectoryItem | null = null;
 
+  // Add this new property in your HomeComponent class:
+  contextFile: DirectoryItem | null = null;
+
   // Keep a subscription reference so we can unsubscribe later.
   private homeRefreshSub!: Subscription;
 
@@ -386,8 +389,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // 2) Called when user right-clicks a file
   onFileRightClick(file: DirectoryItem, event: MouseEvent) {
     event.preventDefault();
-    event.stopPropagation(); // Prevent the event from bubbling to the parent's contextmenu handler.
-    // this.selectedFile = file;
+    event.stopPropagation();
+    // Do NOT update selectedFile here
+    this.contextFile = file; // store for context menu actions only
     this.positionContextMenu(event.clientX, event.clientY);
     this.showFileContextMenu = true;
     this.showEmptyAreaContextMenu = false;
@@ -413,13 +417,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.menuY = newY;
   }
 
-  @HostListener('document:click')
-  onDocumentClick() {
-    // If user clicks outside, hide both menus
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    // Hide context menus and submenus
     this.showEmptyAreaContextMenu = false;
     this.showFileContextMenu = false;
     this.viewSubmenuOpen = false;
     this.sortSubmenuOpen = false;
+
+    const target = event.target as HTMLElement;
+    // If the click is NOT on a file item or on the sidebar, clear the selection
+    if (!target.closest('.file-item') && !target.closest('.sidebar')) {
+      this.selectedFile = null;
+    }
   }
 
   onMenuClick(event: MouseEvent) {
@@ -522,34 +532,32 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   deleteFile() {
     this.showFileContextMenu = false;
-    if (!this.selectedFile) return;
+    // Use contextFile instead of selectedFile
+    if (!this.contextFile) return;
 
     // Check if recycle paths are set
     if (!this.recycleService.arePathsSet) {
       console.warn('Recycle paths are not set. Please set up the recycle path in Preferences.');
-      // Optionally, display a message to the user.
       return;
     }
 
-    const isDirectory = this.selectedFile.isDirectory;
+    const isDirectory = this.contextFile.isDirectory;
     const recordType: 'set' | 'directory' = isDirectory ? 'directory' : 'set';
 
     const record: RecycleRecord = {
-      id: Date.now().toString(), // or use uuidv4() if available
+      id: Date.now().toString(),
       type: recordType,
-      originalPath: this.selectedFile.path,
-      files: this.selectedFile.civitaiGroup ? this.selectedFile.civitaiGroup : [this.selectedFile.path],
+      originalPath: this.contextFile.path,
+      files: this.contextFile.civitaiGroup ? this.contextFile.civitaiGroup : [this.contextFile.path],
       deletedDate: new Date()
     };
 
-    // Add record to the recycle bin
     this.recycleService.addRecord(record);
 
-    // Instead of removing the item, mark it as deleted
-    // (This assumes your file-list component uses item.isDeleted to style recycled items.)
-    this.selectedFile = null;
+    // Clear the contextFile (and optionally selectedFile if needed)
+    this.contextFile = null;
 
-    // Re-load the current directory to update deletion status for all items.
+    // Refresh directory to update deletion status
     if (this.selectedDirectory) {
       this.onRefresh();
     }

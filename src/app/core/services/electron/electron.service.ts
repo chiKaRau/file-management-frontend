@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 // If you import a module but never use any of the imported values other than as TypeScript types,
 // the resulting javascript file will look as if you never imported the module at all.
-import { ipcRenderer, webFrame } from 'electron';
+import { dialog, ipcRenderer, webFrame } from 'electron';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 
@@ -62,6 +62,22 @@ export class ElectronService {
     if (!this.isElectron) return null;
     const dirPath = await this.ipcRenderer.invoke('open-directory-dialog');
     return dirPath;
+  }
+
+  /**
+   * Opens a file dialog via IPC and returns the selected file paths.
+   */
+  async openFileDialog(): Promise<string[]> {
+    const options = {
+      title: 'Select a configuration file',
+      filters: [
+        { name: 'Config Files', extensions: ['txt', 'ini'] },
+        { name: 'All Files', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    };
+    // Invoke the IPC call defined in the main process.
+    return ipcRenderer.invoke('open-file-dialog', options);
   }
 
 }

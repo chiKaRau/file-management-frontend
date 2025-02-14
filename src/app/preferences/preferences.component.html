@@ -3,13 +3,6 @@
 
     <div class="form-group">
         <label>
-            <input type="checkbox" [(ngModel)]="rememberLastDirectory" />
-            Remember Last Directory
-        </label>
-    </div>
-
-    <div class="form-group">
-        <label>
             <input type="checkbox" [(ngModel)]="enableCivitaiMode" />
             Enable Civitai Mode
         </label>
@@ -28,6 +21,13 @@
     </select>
 
     <br /><br />
+
+    <!-- Open Configuration File Button -->
+    <div class="form-group">
+        <button (click)="openConfigFile()">Open Config File</button>
+    </div>
+
+    <br />
 
     <!-- Storage Directory Input with Verify Button -->
     <div class="form-group">
@@ -49,6 +49,18 @@
                 placeholder="F:\Coding Projects\Java\CivitaiSQL Server\server\files\download\@scan@" />
             <button (click)="verifyPath('delete')" [disabled]="deleteVerified">
                 {{ deleteVerified ? 'Verified' : 'Verify' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Update Directory Input with Verify Button -->
+    <div class="form-group">
+        <label for="updateDir">Update Directory:</label>
+        <div class="input-group">
+            <input type="text" id="updateDir" [(ngModel)]="updateDir"
+                placeholder="F:\Coding Projects\Java\CivitaiSQL Server\server\files\download\@scan@" />
+            <button (click)="verifyPath('update')" [disabled]="updateVerified">
+                {{ updateVerified ? 'Verified' : 'Verify' }}
             </button>
         </div>
     </div>

@@ -67,6 +67,13 @@ export class RecycleService {
     }
 
     addRecord(record: RecycleRecord): void {
+        // Check if a record for the same original path already exists
+        const exists = this.records.some(r => r.originalPath === record.originalPath);
+        if (exists) {
+            console.warn(`Record for ${record.originalPath} already exists. Skipping duplicate.`);
+            return;
+        }
+
         this.records.push(record);
         this.saveRecords();
     }
