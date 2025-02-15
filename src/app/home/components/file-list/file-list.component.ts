@@ -81,11 +81,14 @@ export class FileListComponent {
     }
   }
 
-  onFileRightClick(file: DirectoryItem, event: MouseEvent) {
+  onFileRightClick(file: DirectoryItem, event: MouseEvent): void {
     event.preventDefault();
-    // If the file isn’t already selected, then select it.
+    // If the file isn’t already selected, select it.
     if (!this.selectedItems.includes(file)) {
       this.selectedItems = [file];
+      // Optionally update lastSelectedIndex here.
+      const idx = this.items.indexOf(file);
+      this.lastSelectedIndex = idx;
       this.selectionChanged.emit(this.selectedItems);
     }
     this.fileRightClick.emit({ file, event });
