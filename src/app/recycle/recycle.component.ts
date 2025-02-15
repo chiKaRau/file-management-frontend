@@ -22,8 +22,12 @@ export class RecycleComponent implements OnInit {
   }
 
   loadRecords(): void {
+    // Read the latest records from disk.
+    this.recycleService.loadRecords();
+    // Then update the component's arrays.
     this.setRecords = this.recycleService.getRecordsByType('set');
     this.directoryRecords = this.recycleService.getRecordsByType('directory');
+    console.log('Recycle records refreshed:', this.setRecords, this.directoryRecords);
   }
 
   onRecordRightClick(event: MouseEvent, record: RecycleRecord): void {
@@ -44,6 +48,16 @@ export class RecycleComponent implements OnInit {
     this.recycleService.deletePermanently(this.selectedRecord.id);
     this.loadRecords();
     this.showContextMenu = false;
+  }
+
+  getFileName(path: string): string {
+    // Split by both backslash and forward slash to support different OS paths
+    return path.split(/[/\\]/).pop() || path;
+  }
+
+  getFileNameWithoutExtension(path: string): string {
+    const fileName = this.getFileName(path);
+    return fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
   }
 
   @HostListener('document:click')

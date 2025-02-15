@@ -186,6 +186,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         this.selectedDirectory = directoryPath;
 
         // Retrieve recycle records from the recycle service.
+        this.recycleService.loadRecords();
         const recycleRecords = this.recycleService.getRecords();
 
         // Helper function to check if a file path is marked as deleted.

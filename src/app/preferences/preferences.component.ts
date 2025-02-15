@@ -8,6 +8,7 @@ import { RecycleService } from '../recycle/recycle.service';
 // Import Electron's dialog API (adjust based on your Electron version)
 import { dialog } from 'electron';
 import { ElectronService } from '../core/services/electron/electron.service';
+import { PreferencesService } from './preferences.service';
 
 @Component({
   selector: 'app-preferences',
@@ -34,11 +35,23 @@ export class PreferencesComponent {
     private explorerState: ExplorerStateService,
     private recycleService: RecycleService,
     private electronService: ElectronService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private preferencesService: PreferencesService
   ) {
     // Load existing preferences if available.
     this.enableCivitaiMode = explorerState.enableCivitaiMode;
     this.viewMode = explorerState.viewMode;
+  }
+
+  ngOnInit(): void {
+    // Load values from service when the component initializes
+    this.storageDir = this.preferencesService.storageDir;
+    this.deleteDir = this.preferencesService.deleteDir;
+    this.updateDir = this.preferencesService.updateDir;
+
+    this.storageVerified = this.preferencesService.storageVerified;
+    this.deleteVerified = this.preferencesService.deleteVerified;
+    this.updateVerified = this.preferencesService.updateVerified;
   }
 
   /**
@@ -90,6 +103,10 @@ export class PreferencesComponent {
         }
         this.storageVerified = true;
         alert('Storage directory verified and recycle-bin.json created.');
+
+        // Load the recycle records and update the recycle page.
+        this.recycleService.loadRecords();
+
       } else if (type === 'delete') {
         // For delete: nothing additional needs to be created.
         this.deleteVerified = true;
@@ -99,6 +116,9 @@ export class PreferencesComponent {
         this.updateVerified = true;
         alert('Update directory verified.');
       }
+
+      // Store values in the PreferencesService so they persist while navigating.
+      this.updatePreferencesService();
 
       // Update recycle service only when storage and delete are verified.
       this.updateRecycleServicePaths();
@@ -172,6 +192,16 @@ export class PreferencesComponent {
     } catch (error: any) {
       alert('Error opening configuration file: ' + error.message);
     }
+  }
+
+  private updatePreferencesService(): void {
+    this.preferencesService.storageDir = this.storageDir;
+    this.preferencesService.deleteDir = this.deleteDir;
+    this.preferencesService.updateDir = this.updateDir;
+
+    this.preferencesService.storageVerified = this.storageVerified;
+    this.preferencesService.deleteVerified = this.deleteVerified;
+    this.preferencesService.updateVerified = this.updateVerified;
   }
 
   /**

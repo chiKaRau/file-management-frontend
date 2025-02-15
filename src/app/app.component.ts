@@ -4,6 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { APP_CONFIG } from '../environments/environment';
 import { HomeRefreshService } from './home/services/home-refresh.service';
 import { HomeComponent } from './home/home.component';
+import { RecycleComponent } from './recycle/recycle.component';
 
 @Component({
   selector: 'app-root',
@@ -35,6 +36,12 @@ export class AppComponent {
       console.log('HomeComponent activated, refreshing...');
       componentRef.onRefresh();
     }
+
+    if (componentRef instanceof RecycleComponent) {
+      console.log('RecycleComponent activated, refreshing...');
+      componentRef.loadRecords();
+    }
+
   }
 
 }

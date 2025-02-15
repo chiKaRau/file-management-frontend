@@ -34,19 +34,21 @@ export class RecycleService {
         // then this is just to update the service's internal state.
     }
 
-    // private loadRecords(): void {
-    //     if (this.storagePath && fs.existsSync(this.storagePath)) {
-    //         try {
-    //             const data = fs.readFileSync(this.storagePath, 'utf-8');
-    //             this.records = JSON.parse(data);
-    //         } catch (err) {
-    //             console.error('Error reading recycle bin file:', err);
-    //             this.records = [];
-    //         }
-    //     } else {
-    //         this.records = [];
-    //     }
-    // }
+    public loadRecords(): void {
+        if (this.storagePath && fs.existsSync(this.storagePath)) {
+            try {
+                const data = fs.readFileSync(this.storagePath, 'utf-8');
+                this.records = JSON.parse(data);
+                console.log('Loaded recycle records:', this.records);
+            } catch (err) {
+                console.error('Error reading recycle bin file:', err);
+                this.records = [];
+            }
+        } else {
+            this.records = [];
+        }
+    }
+
 
     private saveRecords(): void {
         if (this.storagePath) {
