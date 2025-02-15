@@ -45,6 +45,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // The file the user right-clicked on (if any)
   selectedFile: DirectoryItem | null = null;
 
+  // Optionally, keep track of all selected files from the file-list component.
+  selectedFiles: DirectoryItem[] = [];
+
   // Add this new property in your HomeComponent class:
   contextFile: DirectoryItem | null = null;
 
@@ -530,10 +533,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  deleteFile() {
+  deleteFiles() {
     this.showFileContextMenu = false;
-    // Use contextFile instead of selectedFile
-    if (!this.contextFile) return;
+
+    // Determine the files to delete:
+    const filesToDelete: DirectoryItem[] =
+      this.selectedFiles && this.selectedFiles.length > 0
+        ? this.selectedFiles
+        : (this.contextFile ? [this.contextFile] : []);
+
+    if (filesToDelete.length === 0) return;
 
     // Check if recycle paths are set
     if (!this.recycleService.arePathsSet) {
@@ -541,23 +550,56 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const isDirectory = this.contextFile.isDirectory;
-    const recordType: 'set' | 'directory' = isDirectory ? 'directory' : 'set';
+    filesToDelete.forEach(file => {
+      const recordType: 'set' | 'directory' = file.isFile ? 'set' : 'directory';
+      const record: RecycleRecord = {
+        id: Date.now().toString() + '-' + Math.random().toString(36).substring(2, 8), // create a unique id per file
+        type: recordType,
+        originalPath: file.path,
+        // If this file belongs to a civitai group, you can either store just the file or the entire group,
+        // depending on your desired behavior.
+        files: file.civitaiGroup && file.civitaiGroup.length ? file.civitaiGroup : [file.path],
+        deletedDate: new Date()
+      };
 
-    const record: RecycleRecord = {
-      id: Date.now().toString(),
-      type: recordType,
-      originalPath: this.contextFile.path,
-      files: this.contextFile.civitaiGroup ? this.contextFile.civitaiGroup : [this.contextFile.path],
-      deletedDate: new Date()
-    };
+      this.recycleService.addRecord(record);
+    });
 
-    this.recycleService.addRecord(record);
-
-    // Clear the contextFile (and optionally selectedFile if needed)
+    // Clear selections.
+    this.selectedFiles = [];
+    this.selectedFile = null;
     this.contextFile = null;
 
-    // Refresh directory to update deletion status
+    // Refresh the current directory to update deletion status.
+    if (this.selectedDirectory) {
+      this.onRefresh();
+    }
+  }
+
+  restoreFiles() {
+    // Hide the context menu.
+    this.showFileContextMenu = false;
+
+    // Determine which files to restore.
+    const filesToRestore: DirectoryItem[] =
+      this.selectedFiles && this.selectedFiles.length > 0
+        ? this.selectedFiles
+        : (this.contextFile ? [this.contextFile] : []);
+
+    if (filesToRestore.length === 0) return;
+
+    // Gather the file paths.
+    const filePaths = filesToRestore.map(file => file.path);
+
+    // Call the new restoreFiles method from the RecycleService.
+    this.recycleService.restoreFiles(filePaths);
+
+    // Clear selections.
+    this.selectedFiles = [];
+    this.selectedFile = null;
+    this.contextFile = null;
+
+    // Refresh the current directory to update the deletion status.
     if (this.selectedDirectory) {
       this.onRefresh();
     }
@@ -575,4 +617,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
       console.log('Rename file:', this.selectedFile.name);
     }
   }
+
+  // This method is called when the selection changes in the file list.
+  onSelectionChanged(selected: DirectoryItem[]) {
+    this.selectedFiles = selected;
+    // Show the sidebar only if exactly one file is selected and it is a file (not a folder).
+    if (selected.length === 1 && selected[0].isFile) {
+      this.selectedFile = selected[0];
+    } else {
+      this.selectedFile = null;
+    }
+  }
+
 }

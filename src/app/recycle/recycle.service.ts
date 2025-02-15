@@ -67,16 +67,20 @@ export class RecycleService {
     }
 
     addRecord(record: RecycleRecord): void {
-        // Check if a record for the same original path already exists
-        const exists = this.records.some(r => r.originalPath === record.originalPath);
-        if (exists) {
-            console.warn(`Record for ${record.originalPath} already exists. Skipping duplicate.`);
+        // Check if any file in the new record already exists in a stored record.
+        const duplicate = this.records.some(existingRecord =>
+            record.files.some(filePath => existingRecord.files.includes(filePath))
+        );
+
+        if (duplicate) {
+            console.warn(`A record for one of the files already exists. Skipping duplicate.`);
             return;
         }
 
         this.records.push(record);
         this.saveRecords();
     }
+
 
     restoreRecord(recordId: string): void {
         const index = this.records.findIndex(r => r.id === recordId);
@@ -85,6 +89,20 @@ export class RecycleService {
             this.saveRecords();
         }
     }
+
+    restoreFiles(filePaths: string[]): void {
+        // Convert the file paths to a Set for quick lookup.
+        const restoreSet = new Set(filePaths);
+
+        // Remove any record that contains any file in the restoreSet.
+        this.records = this.records.filter(record => {
+            // If any file in this record is in the restoreSet, remove the entire record.
+            return !record.files.some(file => restoreSet.has(file));
+        });
+
+        this.saveRecords();
+    }
+
 
     deletePermanently(recordId: string): void {
         const record = this.records.find(r => r.id === recordId);
