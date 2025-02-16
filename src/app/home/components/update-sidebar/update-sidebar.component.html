@@ -1,0 +1,11 @@
+<div class="update-sidebar">
+    <div class="header">
+        <h3>Update Details</h3>
+        <button (click)="close()">X</button>
+    </div>
+    <div class="content" *ngIf="item">
+        <p><strong>Name:</strong> {{ item.name }}</p>
+        <p><strong>Path:</strong> {{ item.path }}</p>
+        <!-- Add any additional update-related details or controls here -->
+    </div>
+</div>

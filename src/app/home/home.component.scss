@@ -118,3 +118,10 @@
 .main-container:not(.with-sidebar) .file-list-container {
     margin-left: 0;
 }
+
+
+/* When the update sidebar is open, add right margin to push file list */
+.main-container.with-update-sidebar .file-list-container {
+    margin-right: 300px;
+    /* update sidebar width */
+}

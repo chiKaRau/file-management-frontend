@@ -51,6 +51,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // Add this new property in your HomeComponent class:
   contextFile: DirectoryItem | null = null;
 
+  // New properties for update sidebar
+  showUpdateSidebar: boolean = false;
+  updateFile: DirectoryItem | null = null;
+
   // Keep a subscription reference so we can unsubscribe later.
   private homeRefreshSub!: Subscription;
 
@@ -430,8 +434,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.sortSubmenuOpen = false;
 
     const target = event.target as HTMLElement;
-    // If the click is NOT on a file item or on the sidebar, clear the selection
-    if (!target.closest('.file-item') && !target.closest('.sidebar')) {
+    // Only clear the selection if the click is NOT on a file item, the left sidebar (.sidebar), 
+    // or the update sidebar (.update-sidebar)
+    if (!target.closest('.file-item') &&
+      !target.closest('.sidebar') &&
+      !target.closest('.update-sidebar')) {
       this.selectedFile = null;
     }
   }
@@ -628,6 +635,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
     } else {
       this.selectedFile = null;
     }
+  }
+
+  // Method called from context menu "Update" option:
+  openUpdateSidebar() {
+    // Hide any file context menu
+    this.showFileContextMenu = false;
+
+    // Use contextFile (set during right-click) if available,
+    // otherwise use the selectedFile
+    const fileToUpdate = this.contextFile || this.selectedFile;
+    if (fileToUpdate) {
+      this.updateFile = fileToUpdate;
+      this.showUpdateSidebar = true;
+    } else {
+      console.warn('No file selected to update.');
+    }
+  }
+
+  // (Optional) If you want to close the update sidebar programmatically:
+  closeUpdateSidebar() {
+    this.showUpdateSidebar = false;
+    this.updateFile = null;
   }
 
 }
