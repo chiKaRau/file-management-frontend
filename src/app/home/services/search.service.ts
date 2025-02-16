@@ -57,8 +57,9 @@ export class SearchService {
                             this.zone.run(() => {
                                 observer.next({ progress: `Processing file: ${fullPath}`, results: [...results] });
                             });
-                            // Check if file name starts with "<modelId>_<versionId>_"
-                            const prefix = `${modelId}_${versionId}_`;
+                            // Check if file name starts with "<modelId>_
+                            // const prefix = `${modelId}_${versionId}_`;
+                            const prefix = `${modelId}_`;
                             if (entry.name.startsWith(prefix)) {
                                 results.push(fullPath);
                                 this.zone.run(() => {
