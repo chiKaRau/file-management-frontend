@@ -9,6 +9,7 @@ import { RecycleService } from '../recycle/recycle.service';
 import { dialog } from 'electron';
 import { ElectronService } from '../core/services/electron/electron.service';
 import { PreferencesService } from './preferences.service';
+import { SearchService } from '../home/services/search.service';
 
 @Component({
   selector: 'app-preferences',
@@ -25,18 +26,20 @@ export class PreferencesComponent {
   storageDir: string = '';
   deleteDir: string = '';
   updateDir: string = ''; // New update directory
-
+  scanDir: string = '';
   // Verification flags (used to disable the Verify buttons after success)
   storageVerified: boolean = false;
   deleteVerified: boolean = false;
   updateVerified: boolean = false; // Separate flag for update directory
+  scanVerified: boolean = false;
 
   constructor(
     private explorerState: ExplorerStateService,
     private recycleService: RecycleService,
     private electronService: ElectronService,
     private ngZone: NgZone,
-    private preferencesService: PreferencesService
+    private preferencesService: PreferencesService,
+    private searchService: SearchService,
   ) {
     // Load existing preferences if available.
     this.enableCivitaiMode = explorerState.enableCivitaiMode;
@@ -48,7 +51,9 @@ export class PreferencesComponent {
     this.storageDir = this.preferencesService.storageDir;
     this.deleteDir = this.preferencesService.deleteDir;
     this.updateDir = this.preferencesService.updateDir;
+    this.scanDir = this.preferencesService.scanDir;
 
+    this.scanVerified = this.preferencesService.scanVerified;
     this.storageVerified = this.preferencesService.storageVerified;
     this.deleteVerified = this.preferencesService.deleteVerified;
     this.updateVerified = this.preferencesService.updateVerified;
@@ -61,13 +66,16 @@ export class PreferencesComponent {
    * - For the update directory: creates an "update" subfolder if needed.
    * (Note that the update directory does not interact with the RecycleService.)
    */
-  verifyPath(type: 'storage' | 'delete' | 'update'): void {
+  verifyPath(type: 'storage' | 'delete' | 'update' | 'scan'): void {
+    // Determine the directory based on the type
     let dirPath = (
       type === 'storage'
         ? this.storageDir
         : type === 'delete'
           ? this.deleteDir
-          : this.updateDir
+          : type === 'update'
+            ? this.updateDir
+            : this.scanDir
     ).trim();
 
     try {
@@ -79,42 +87,45 @@ export class PreferencesComponent {
         console.log(`Base directory already exists: ${dirPath}`);
       }
 
-      // Determine subfolder name based on the type.
-      const subFolderName =
-        type === 'storage' ? 'data' : type === 'delete' ? 'delete' : 'update';
-      const actualPath = path.join(dirPath, subFolderName);
+      if (type === 'scan') {
+        // For the scan directory, we can simply verify the base directory.
+        this.scanVerified = true;
+        this.searchService.updateScanDir(this.scanDir);
 
-      // Create the subfolder if it doesn't exist.
-      if (!fs.existsSync(actualPath)) {
-        fs.mkdirSync(actualPath, { recursive: true });
-        console.log(`Created ${subFolderName} directory: ${actualPath}`);
+        alert('Scan directory verified.');
       } else {
-        console.log(`${subFolderName} directory already exists: ${actualPath}`);
-      }
+        // For the other types, determine the subfolder name.
+        const subFolderName =
+          type === 'storage' ? 'data' : type === 'delete' ? 'delete' : 'update';
+        const actualPath = path.join(dirPath, subFolderName);
 
-      if (type === 'storage') {
-        // For storage: create recycle-bin.json inside the "data" folder.
-        const jsonPath = path.join(actualPath, 'recycle-bin.json');
-        if (!fs.existsSync(jsonPath)) {
-          fs.writeFileSync(jsonPath, JSON.stringify([], null, 2));
-          console.log(`Created recycle bin file at: ${jsonPath}`);
+        // Create the subfolder if it doesn't exist.
+        if (!fs.existsSync(actualPath)) {
+          fs.mkdirSync(actualPath, { recursive: true });
+          console.log(`Created ${subFolderName} directory: ${actualPath}`);
         } else {
-          console.log(`Recycle bin file already exists at: ${jsonPath}`);
+          console.log(`${subFolderName} directory already exists: ${actualPath}`);
         }
-        this.storageVerified = true;
-        alert('Storage directory verified and recycle-bin.json created.');
 
-        // Load the recycle records and update the recycle page.
-        this.recycleService.loadRecords();
-
-      } else if (type === 'delete') {
-        // For delete: nothing additional needs to be created.
-        this.deleteVerified = true;
-        alert('Delete directory verified.');
-      } else if (type === 'update') {
-        // For update: simply verify and mark as verified.
-        this.updateVerified = true;
-        alert('Update directory verified.');
+        if (type === 'storage') {
+          // For storage: create recycle-bin.json inside the "data" folder.
+          const jsonPath = path.join(actualPath, 'recycle-bin.json');
+          if (!fs.existsSync(jsonPath)) {
+            fs.writeFileSync(jsonPath, JSON.stringify([], null, 2));
+            console.log(`Created recycle bin file at: ${jsonPath}`);
+          } else {
+            console.log(`Recycle bin file already exists at: ${jsonPath}`);
+          }
+          this.storageVerified = true;
+          alert('Storage directory verified and recycle-bin.json created.');
+          this.recycleService.loadRecords();
+        } else if (type === 'delete') {
+          this.deleteVerified = true;
+          alert('Delete directory verified.');
+        } else if (type === 'update') {
+          this.updateVerified = true;
+          alert('Update directory verified.');
+        }
       }
 
       // Store values in the PreferencesService so they persist while navigating.
@@ -180,9 +191,12 @@ export class PreferencesComponent {
               this.deleteDir = valueTrimmed;
             } else if (keyTrimmed === 'updateDir') {
               this.updateDir = valueTrimmed;
+            } else if (keyTrimmed === 'scanDir') {
+              this.scanDir = valueTrimmed;
             }
           }
         });
+
         console.log('Configuration loaded from file.');
       } else {
         this.ngZone.run(() => {
@@ -198,10 +212,12 @@ export class PreferencesComponent {
     this.preferencesService.storageDir = this.storageDir;
     this.preferencesService.deleteDir = this.deleteDir;
     this.preferencesService.updateDir = this.updateDir;
+    this.preferencesService.scanDir = this.scanDir;
 
     this.preferencesService.storageVerified = this.storageVerified;
     this.preferencesService.deleteVerified = this.deleteVerified;
     this.preferencesService.updateVerified = this.updateVerified;
+    this.preferencesService.scanDir = this.scanDir;
   }
 
   /**

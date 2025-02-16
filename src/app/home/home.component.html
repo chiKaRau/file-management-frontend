@@ -77,15 +77,14 @@
     (click)="onMenuClick($event)" (contextmenu)="$event.preventDefault()">
     <div class="menu-item" (click)="cutFile()">Cut</div>
     <div class="menu-item" (click)="copyFile()">Copy</div>
-    <div class="menu-item" [class.disabled]="!recycleService.arePathsSet"
-      [title]="!recycleService.arePathsSet ? 'Please set up recycle path in preferences' : ''" (click)="deleteFiles()">
+    <div class="menu-item" *ngIf="recycleService.arePathsSet" (click)="deleteFiles()">
       Delete
     </div>
-    <div class="menu-item" [class.disabled]="!recycleService.arePathsSet"
-      [title]="!recycleService.arePathsSet ? 'Please set up recycle path in preferences' : ''"
-      *ngIf="contextFile?.isDeleted" (click)="restoreFiles()">Restore</div>
+    <div class="menu-item" *ngIf="recycleService.arePathsSet && contextFile?.isDeleted" (click)="restoreFiles()">
+      Restore
+    </div>
     <div class="menu-item"
-      *ngIf="(selectedFiles.length === 1 && selectedFiles[0].isFile) || (!selectedFiles.length && contextFile?.isFile)"
+      *ngIf="preferencesService.updateVerified && ((selectedFiles.length === 1 && selectedFiles[0].isFile) || (!selectedFiles.length && contextFile?.isFile))"
       (click)="openUpdateSidebar()">Update</div>
     <div class="menu-item" (click)="renameFile()">Rename</div>
     <div class="menu-item" (click)="showProperties()">Properties</div>

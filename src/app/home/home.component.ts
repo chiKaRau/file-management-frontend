@@ -19,6 +19,7 @@ import { RecycleRecord } from '../recycle/model/recycle-record.model';
 import { DirectoryItem } from './components/file-list/model/directory-item.model';
 import { Subscription } from 'rxjs';
 import { HomeRefreshService } from './services/home-refresh.service';
+import { PreferencesService } from '../preferences/preferences.service';
 
 @Component({
   selector: 'app-home',
@@ -65,7 +66,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     private ngZone: NgZone,
     public navigationService: NavigationService,
     public explorerState: ExplorerStateService,
-    public recycleService: RecycleService
+    public recycleService: RecycleService,
+    public preferencesService: PreferencesService  // <-- Add this
   ) { }
 
   ngOnInit() {
@@ -169,68 +171,64 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  loadDirectoryContents(directoryPath: string) {
-    fs.readdir(directoryPath, (err, files) => {
-      if (err) {
+  async loadDirectoryContents(directoryPath: string) {
+    try {
+      // Read the directory asynchronously.
+      const files = await fs.promises.readdir(directoryPath);
+      if (files.length === 0) {
         this.ngZone.run(() => {
-          console.error('Error reading directory:', err);
-          this.errorMessage = 'Failed to read the directory contents.';
+          this.errorMessage = 'The selected directory is empty.';
           this.isLoading = false;
         });
         return;
       }
 
+      // Set the selected directory and load recycle records.
       this.ngZone.run(() => {
-        if (files.length === 0) {
-          this.errorMessage = 'The selected directory is empty.';
-        } else {
-          this.errorMessage = null;
-        }
-
         this.selectedDirectory = directoryPath;
+      });
+      this.recycleService.loadRecords();
+      const recycleRecords = this.recycleService.getRecords();
 
-        // Retrieve recycle records from the recycle service.
-        this.recycleService.loadRecords();
-        const recycleRecords = this.recycleService.getRecords();
+      // Helper function to check if a file is marked as deleted.
+      const isFileDeleted = (fullPath: string): boolean =>
+        recycleRecords.some(record => record.files.includes(fullPath));
 
-        // Helper function to check if a file path is marked as deleted.
-        const isFileDeleted = (fullPath: string): boolean =>
-          recycleRecords.some(record => record.files.includes(fullPath));
-
-        // ===============================
-        // If NOT in Civitai Mode, do normal listing
-        // ===============================
-        if (!this.explorerState.enableCivitaiMode) {
-          this.directoryContents = files.map(file => {
-            const fullPath = path.join(directoryPath, file);
-            const stats = fs.statSync(fullPath);
+      if (!this.explorerState.enableCivitaiMode) {
+        // Normal mode: Process all files with proper error handling.
+        const fileItems = await Promise.all(files.map(async file => {
+          const fullPath = path.join(directoryPath, file);
+          try {
+            const stats = await fs.promises.stat(fullPath);
             return {
               name: file,
               path: fullPath,
               isFile: stats.isFile(),
               isDirectory: stats.isDirectory(),
-              isDeleted: isFileDeleted(fullPath)  // Mark as deleted if found in recycle records
+              isDeleted: isFileDeleted(fullPath)
             };
-          });
-        } else {
-          // ===============================
-          // Civitai Mode: show grouped .preview.png sets + directories
-          // ===============================
+          } catch (statErr) {
+            console.error(`Error stating file ${fullPath}:`, statErr);
+            // Skip files that cause errors.
+            return null;
+          }
+        }));
 
-          // Keep two lists: one for directories, one for grouped sets
-          const directories: DirectoryItem[] = [];
-          // Map of prefix => { allFiles, previewPath? }
-          const groupMap = new Map<string, {
-            allFiles: string[];
-            previewPath?: string;
-          }>();
+        // Filter out any null entries from errors.
+        this.ngZone.run(() => {
+          this.directoryContents = fileItems.filter(item => item !== null) as DirectoryItem[];
+          this.isLoading = false;
+        });
+      } else {
+        // Civitai Mode: Group files based on naming patterns.
+        const directories: DirectoryItem[] = [];
+        const groupMap = new Map<string, { allFiles: string[]; previewPath?: string }>();
 
-          // 1) Loop over everything in the folder
-          files.forEach(file => {
-            const fullPath = path.join(directoryPath, file);
-            const stats = fs.statSync(fullPath);
-
-            // If it's a directory, add it (with deleted check)
+        // Process each file asynchronously.
+        await Promise.all(files.map(async file => {
+          const fullPath = path.join(directoryPath, file);
+          try {
+            const stats = await fs.promises.stat(fullPath);
             if (stats.isDirectory()) {
               directories.push({
                 name: file,
@@ -239,55 +237,59 @@ export class HomeComponent implements OnInit, AfterViewInit {
                 isDirectory: true,
                 isDeleted: isFileDeleted(fullPath)
               });
-              return;
-            }
+            } else {
+              // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")
+              const prefix = this.getCivitaiPrefix(file);
+              if (!prefix) return;
 
-            // If it's a file, see if it matches the civitai pattern
-            const prefix = this.getCivitaiPrefix(file);
-            if (!prefix) {
-              // Not part of a recognized civitai set => skip
-              return;
-            }
+              if (!groupMap.has(prefix)) {
+                groupMap.set(prefix, { allFiles: [] });
+              }
+              groupMap.get(prefix)!.allFiles.push(fullPath);
 
-            // Ensure the map entry exists
-            if (!groupMap.has(prefix)) {
-              groupMap.set(prefix, { allFiles: [] });
+              // If this file is a preview image, record its path.
+              if (file.endsWith('.preview.png')) {
+                groupMap.get(prefix)!.previewPath = fullPath;
+              }
             }
-            // Add this file’s path
-            groupMap.get(prefix)!.allFiles.push(fullPath);
+          } catch (err) {
+            console.error(`Error stating file ${fullPath}:`, err);
+          }
+        }));
 
-            // If it’s a preview.png, store it
-            if (file.endsWith('.preview.png')) {
-              groupMap.get(prefix)!.previewPath = fullPath;
-            }
-          });
+        // Build grouped items only if a preview exists.
+        const groupedItems: DirectoryItem[] = [];
+        groupMap.forEach((group, prefix) => {
+          if (group.previewPath) {
+            groupedItems.push({
+              name: path.basename(group.previewPath),
+              path: group.previewPath,
+              isFile: true,
+              isDirectory: false,
+              isDeleted: isFileDeleted(group.previewPath),
+              civitaiGroup: group.allFiles
+            });
+          }
+        });
 
-          // 2) Build final list of Civitai sets that actually have a preview
-          const groupedItems: DirectoryItem[] = [];
-          groupMap.forEach((group, prefix) => {
-            if (group.previewPath) {
-              groupedItems.push({
-                name: path.basename(group.previewPath), // or use prefix if desired
-                path: group.previewPath,
-                isFile: true,
-                isDirectory: false,
-                isDeleted: isFileDeleted(group.previewPath),  // Check deletion status based on the preview file
-                civitaiGroup: group.allFiles
-              });
-            }
-          });
-
-          // 3) Combine directories + grouped sets
+        this.ngZone.run(() => {
+          // Combine directories and grouped items.
           this.directoryContents = [
             ...directories,
             ...groupedItems
           ];
-        }
+          this.isLoading = false;
+        });
+      }
 
-        console.log('Directory Contents:', this.directoryContents);
+      console.log('Directory Contents:', this.directoryContents);
+    } catch (err) {
+      console.error('Error reading directory:', err);
+      this.ngZone.run(() => {
+        this.errorMessage = 'Failed to read the directory contents.';
         this.isLoading = false;
       });
-    });
+    }
   }
 
 

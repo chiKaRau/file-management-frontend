@@ -1,5 +1,4 @@
-// src/app/update/update-sidebar.component.ts
-import { Component, HostBinding, Input, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, HostBinding, Input, OnInit, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { SearchProgress, SearchService } from '../../services/search.service';
@@ -9,8 +8,7 @@ import { SearchProgress, SearchService } from '../../services/search.service';
   templateUrl: './update-sidebar.component.html',
   styleUrls: ['./update-sidebar.component.scss']
 })
-export class UpdateSidebarComponent implements OnInit, OnDestroy {
-  // Ensure the host element gets the class "update-sidebar"
+export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   @HostBinding('class') hostClass = 'update-sidebar';
 
   @Input() item: DirectoryItem | null = null;
@@ -24,28 +22,48 @@ export class UpdateSidebarComponent implements OnInit, OnDestroy {
   constructor(private searchService: SearchService) { }
 
   ngOnInit() {
+    // Initial search if item is available
     if (this.item) {
-      // Assume file name is in the format "modelId_versionId_..."
-      const parts = this.item.name.split('_');
-      if (parts.length >= 2) {
-        const modelId = parts[0];
-        const versionId = parts[1];
-        this.startSearch(modelId, versionId);
-      } else {
-        this.progressMessage = 'File name does not match expected format.';
+      this.startSearchForItem(this.item);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    // If the "item" input changes, restart the search.
+    if (changes['item'] && !changes['item'].firstChange) {
+      // Clean up previous search if it's still running.
+      if (this.searchSubscription) {
+        this.searchSubscription.unsubscribe();
+        this.searchSubscription = null;
       }
+      // Clear old results and reset progress message
+      this.results = [];
+      this.progressMessage = '';
+
+      // Start a new search for the new item.
+      if (this.item) {
+        this.startSearchForItem(this.item);
+      }
+    }
+  }
+
+  private startSearchForItem(item: DirectoryItem) {
+    // Assume file name is in the format "modelId_versionId_..."
+    const parts = item.name.split('_');
+    if (parts.length >= 2) {
+      const modelId = parts[0];
+      const versionId = parts[1];
+      this.startSearch(modelId, versionId);
+    } else {
+      this.progressMessage = 'File name does not match expected format.';
     }
   }
 
   startSearch(modelId: string, versionId: string) {
     this.searching = true;
     this.searchSubscription = this.searchService.searchByModelAndVersion(modelId, versionId)
-      // If needed, you can use throttleTime here to limit UI updates:
-      // .pipe(throttleTime(100))
       .subscribe({
         next: (data: SearchProgress) => {
-          // data.progress should be something like:
-          // "Scanning directory: ..." or "Processing file: 123_123_pony_abc.png"
           this.progressMessage = data.progress;
           this.results = data.results;
         },

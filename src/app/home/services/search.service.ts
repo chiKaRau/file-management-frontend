@@ -3,6 +3,7 @@ import { Injectable, NgZone } from '@angular/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Observable, Observer } from 'rxjs';
+import { PreferencesService } from '../../preferences/preferences.service';
 
 export interface SearchProgress {
     progress: string;    // A message showing the current folder/file being processed
@@ -14,10 +15,12 @@ export interface SearchProgress {
 })
 export class SearchService {
     // Hard-coded root scan directory (adjust as needed)
-    private scanDir: string = 'F:\\Coding Projects\\Java\\CivitaiSQL Server\\server\\files\\download\\@scan@';
+    private scanDir: string;
 
-    constructor(private zone: NgZone) { }
-
+    constructor(private zone: NgZone, private preferencesService: PreferencesService) {
+        // Use the scanDir from preferences
+        this.scanDir = this.preferencesService.scanDir;
+    }
     /**
      * Recursively searches the scanDir for files that start with
      * "<modelId>_<versionId>_". It emits progress updates as it scans.
@@ -83,4 +86,10 @@ export class SearchService {
             searchDirectory(this.scanDir);
         });
     }
+
+    updateScanDir(newDir: string): void {
+        this.scanDir = newDir;
+        console.log(`Scan directory updated to: ${this.scanDir}`);
+    }
+
 }

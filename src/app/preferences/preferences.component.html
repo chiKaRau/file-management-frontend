@@ -29,6 +29,19 @@
 
     <br />
 
+    <!-- Scan Directory Input with Verify Button -->
+    <div class="form-group">
+        <label for="scanDir">Scan Directory:</label>
+        <div class="input-group">
+            <input type="text" id="scanDir" [(ngModel)]="scanDir"
+                placeholder="F:\Coding Projects\Java\CivitaiSQL Server\server\files\download\@scan@" />
+            <button (click)="verifyPath('scan')" [disabled]="scanVerified">
+                {{ scanVerified ? 'Verified' : 'Verify' }}
+            </button>
+        </div>
+    </div>
+
+
     <!-- Storage Directory Input with Verify Button -->
     <div class="form-group">
         <label for="storageDir">Recycle Bin Storage Directory:</label>
