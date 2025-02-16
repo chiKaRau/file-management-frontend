@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { RecycleRecord } from './model/recycle-record.model';
 import * as fs from 'fs';
 import * as path from 'path';
-import trash from 'trash';
 
 @Injectable({
     providedIn: 'root'
@@ -114,50 +113,28 @@ export class RecycleService {
                 try {
                     if (fs.existsSync(filePath)) {
                         const fileName = path.basename(filePath);
-                        let targetPath = path.join(this.deleteFolderPath, fileName);
-
-                        // If target already exists, rename it
-                        let counter = 1;
-                        while (fs.existsSync(targetPath)) {
-                            const parsedPath = path.parse(fileName);
-                            const newName = `${parsedPath.name} (${counter})${parsedPath.ext}`;
-                            targetPath = path.join(this.deleteFolderPath, newName);
-                            counter++;
-                        }
-
+                        const targetPath = path.join(this.deleteFolderPath, fileName);
                         fs.renameSync(filePath, targetPath);
-                        console.log(`Moved ${filePath} to ${targetPath}`);
-                    } else {
-                        console.warn(`File/Folder not found: ${filePath}`);
-                    }
-                } catch (err) {
-                    console.error(`Error moving file/folder ${filePath}:`, err);
-                }
-            });
-
-            // Remove from recycle bin records
-            this.records = this.records.filter(r => r.id !== recordId);
-            this.saveRecords();
-        }
-    }
-
-    moveToOSRecycleBin(recordId: string): void {
-        const record = this.records.find(r => r.id === recordId);
-        if (record) {
-            record.files.forEach(async filePath => {
-                try {
-                    if (fs.existsSync(filePath)) {
-                        await trash(filePath);
-                        console.log(`Moved file ${filePath} to OS recycle bin.`);
+                        console.log(`Moved file ${filePath} to ${targetPath}`);
                     } else {
                         console.warn(`File not found: ${filePath}`);
                     }
                 } catch (err) {
-                    console.error(`Error moving file ${filePath} to OS recycle bin:`, err);
+                    console.error(`Error moving file ${filePath} using renameSync:`, err);
+                    // Fallback: try copying the file and then deleting the original.
+                    try {
+                        if (fs.existsSync(filePath)) {
+                            const fileName = path.basename(filePath);
+                            const targetPath = path.join(this.deleteFolderPath, fileName);
+                            fs.copyFileSync(filePath, targetPath);
+                            fs.unlinkSync(filePath);
+                            console.log(`Copied and removed file ${filePath} to ${targetPath} as a fallback.`);
+                        }
+                    } catch (fallbackErr) {
+                        console.error(`Fallback error processing file ${filePath}:`, fallbackErr);
+                    }
                 }
             });
-
-            // Remove from internal records
             this.records = this.records.filter(r => r.id !== recordId);
             this.saveRecords();
         }

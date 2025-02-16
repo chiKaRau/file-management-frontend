@@ -50,15 +50,6 @@ export class RecycleComponent implements OnInit {
     this.showContextMenu = false;
   }
 
-  moveToRecycleBin(): void {
-    const confirmation = confirm(`Are you sure you want to move this to the OS recycle bin?`);
-    if (confirmation) {
-      this.recycleService.moveToOSRecycleBin(this.selectedRecord.id);
-      this.loadRecords();
-      this.showContextMenu = false;
-    }
-  }
-
   getFileName(path: string): string {
     // Split by both backslash and forward slash to support different OS paths
     return path.split(/[/\\]/).pop() || path;
