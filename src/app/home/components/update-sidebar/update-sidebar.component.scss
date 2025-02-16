@@ -1,21 +1,53 @@
 .update-sidebar {
-    position: fixed;
-    right: 0;
-    top: 0;
+    box-sizing: border-box;
     width: 300px;
-    height: 100%;
-    background-color: #fff;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
-    padding: 10px;
-    z-index: 1000;
+    flex-shrink: 0; // Prevent it from stretching or shrinking in a flex container
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    overflow-x: hidden; // Hide horizontal overflow if any
+    transition: transform 0.3s ease;
+
+    /* Use sticky positioning so it stays visible while scrolling */
+    position: sticky;
+    top: 90px; // Aligns with your .actual-content margin-top
+
+    height: calc(100vh - 90px);
+    padding-bottom: 20px;
 
     .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+
+        button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
     }
 
     .content {
-        margin-top: 10px;
+        padding: 10px;
+    }
+
+    /* Example spinner styling */
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: #000;
+        animation: spin 1s ease-in-out infinite;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }

@@ -1,11 +1,28 @@
+<!-- src/app/update/update-sidebar.component.html -->
 <div class="update-sidebar">
     <div class="header">
         <h3>Update Details</h3>
         <button (click)="close()">X</button>
     </div>
-    <div class="content" *ngIf="item">
-        <p><strong>Name:</strong> {{ item.name }}</p>
-        <p><strong>Path:</strong> {{ item.path }}</p>
-        <!-- Add any additional update-related details or controls here -->
+    <div class="content">
+        <p><strong>Name:</strong> {{ item?.name }}</p>
+        <p><strong>Path:</strong> {{ item?.path }}</p>
+
+        <!-- Display progress while searching -->
+        <div *ngIf="searching">
+            <p>Searching... <span class="spinner"></span></p>
+            <!-- This message will update with the current directory or file being processed -->
+            <p>{{ progressMessage }}</p>
+            <p>Matches found so far: {{ results.length }}</p>
+        </div>
+
+        <!-- Display found files when not searching -->
+        <div *ngIf="!searching">
+            <p *ngIf="results.length > 0">Found Matches:</p>
+            <ul *ngIf="results.length > 0">
+                <li *ngFor="let result of results">{{ result }}</li>
+            </ul>
+            <p *ngIf="results.length === 0">No matches found.</p>
+        </div>
     </div>
 </div>
