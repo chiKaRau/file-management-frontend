@@ -84,7 +84,7 @@
       Restore
     </div>
     <div class="menu-item"
-      *ngIf="preferencesService.scanVerified && ((selectedFiles.length === 1 && selectedFiles[0].isFile) || (!selectedFiles.length && contextFile?.isFile))"
+      *ngIf="preferencesService.scanVerified && recycleService.arePathsSet && ((selectedFiles.length === 1 && selectedFiles[0].isFile) || (!selectedFiles.length && contextFile?.isFile))"
       (click)="openUpdateSidebar()">Update</div>
     <div class="menu-item" (click)="renameFile()">Rename</div>
     <div class="menu-item" (click)="showProperties()">Properties</div>
