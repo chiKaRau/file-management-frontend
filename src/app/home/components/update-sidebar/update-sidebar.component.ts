@@ -1,5 +1,5 @@
 import { Component, HostBinding, Input, OnInit, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { SearchProgress, SearchService } from '../../services/search.service';
 
@@ -17,30 +17,34 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   progressMessage: string = '';
   results: string[] = [];
   searching: boolean = false;
+
+  // Using numbers with decimals for precise time measurement
+  elapsedTime: number = 0;          // Updated frequently during search (in seconds)
+  finalElapsedTime: number | null = null; // Set when search completes
+  private startTime: number = 0;
+  private timerSubscription: Subscription | null = null;
   private searchSubscription: Subscription | null = null;
 
   constructor(private searchService: SearchService) { }
 
   ngOnInit() {
-    // Initial search if item is available
     if (this.item) {
       this.startSearchForItem(this.item);
     }
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    // If the "item" input changes, restart the search.
     if (changes['item'] && !changes['item'].firstChange) {
-      // Clean up previous search if it's still running.
       if (this.searchSubscription) {
         this.searchSubscription.unsubscribe();
         this.searchSubscription = null;
       }
-      // Clear old results and reset progress message
+      // Reset values
       this.results = [];
       this.progressMessage = '';
+      this.elapsedTime = 0;
+      this.finalElapsedTime = null;
 
-      // Start a new search for the new item.
       if (this.item) {
         this.startSearchForItem(this.item);
       }
@@ -48,7 +52,6 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private startSearchForItem(item: DirectoryItem) {
-    // Assume file name is in the format "modelId_versionId_..."
     const parts = item.name.split('_');
     if (parts.length >= 2) {
       const modelId = parts[0];
@@ -61,6 +64,16 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
 
   startSearch(modelId: string, versionId: string) {
     this.searching = true;
+    // Use performance.now() for high-resolution timing
+    this.startTime = performance.now();
+    this.elapsedTime = 0;
+    this.finalElapsedTime = null;
+
+    // Update elapsedTime every 100ms for a smoother, more precise display
+    this.timerSubscription = interval(100).subscribe(() => {
+      this.elapsedTime = (performance.now() - this.startTime) / 1000;
+    });
+
     this.searchSubscription = this.searchService.searchByModelAndVersion(modelId, versionId)
       .subscribe({
         next: (data: SearchProgress) => {
@@ -71,9 +84,18 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
           console.error(err);
           this.progressMessage = 'Error during search.';
           this.searching = false;
+          if (this.timerSubscription) {
+            this.timerSubscription.unsubscribe();
+          }
         },
         complete: () => {
           this.searching = false;
+          if (this.timerSubscription) {
+            this.timerSubscription.unsubscribe();
+          }
+          // Calculate the final elapsed time using performance.now()
+          this.finalElapsedTime = (performance.now() - this.startTime) / 1000;
+          console.log(`Search completed in ${this.finalElapsedTime} seconds.`);
         }
       });
   }
@@ -88,6 +110,9 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy() {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
+    }
+    if (this.timerSubscription) {
+      this.timerSubscription.unsubscribe();
     }
   }
 }
