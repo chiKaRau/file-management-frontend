@@ -69,6 +69,9 @@ export class SearchService {
             let candidateRoots: string[] = [];
             if (hintPath) {
                 let candidate = path.join(this.scanDir, hintPath);
+                console.log("hintpath: ");
+                console.log(candidate);
+
                 while (candidate && candidate.startsWith(this.scanDir)) {
                     candidateRoots.push(candidate);
                     if (candidate === this.scanDir) break;
@@ -80,6 +83,8 @@ export class SearchService {
             } else {
                 candidateRoots = [this.scanDir];
             }
+
+            console.log("Candidate roots:", candidateRoots);
 
             // Prepare the ignore base name if ignorePath is provided.
             const ignoreBase = ignorePath ? this.normalizeBaseName(ignorePath) : null;
@@ -107,13 +112,9 @@ export class SearchService {
                             entries.forEach(entry => {
                                 const fullPath = path.join(dir, entry.name);
 
-                                if (!entry.isDirectory()) {
-                                    // Normalize the current file's base name.
-                                    const currentBase = this.normalizeBaseName(fullPath);
-                                    if (ignoreBase && currentBase === ignoreBase) {
-                                        // Skip this file because its normalized base name matches the ignore file.
-                                        return;
-                                    }
+                                // Normalize paths to ensure accurate comparison.
+                                if (ignorePath && path.resolve(fullPath) === path.resolve(ignorePath)) {
+                                    return;
                                 }
 
                                 if (entry.isDirectory()) {
@@ -132,6 +133,8 @@ export class SearchService {
                                     }
                                 }
                             });
+
+
                             pending--;
                             if (pending === 0) {
                                 resolve(results);
