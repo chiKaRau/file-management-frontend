@@ -1,3 +1,4 @@
+// src/app/services/search.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,6 +22,27 @@ export class SearchService {
     }
 
     /**
+     * Normalizes a file's base name.
+     *
+     * If the file's base name ends with ".preview", remove that segment.
+     * For example:
+     *   "somefile.preview" becomes "somefile"
+     *   "somefile" remains "somefile"
+     *
+     * @param filePath Full file path.
+     * @returns Normalized base name.
+     */
+    private normalizeBaseName(filePath: string): string {
+        const parsed = path.parse(filePath);
+        let base = parsed.name; // e.g. "1208241_1360770_Illustrious_center-axis-relock-stance-illustriousxl-lora-nochekaiser.preview"
+        const previewSuffix = '.preview';
+        if (base.toLowerCase().endsWith(previewSuffix)) {
+            base = base.substring(0, base.length - previewSuffix.length);
+        }
+        return base;
+    }
+
+    /**
      * Recursively searches for files starting with "<modelId>_" (you can include versionId if needed).
      * When a hintPath is provided, it builds candidate search roots:
      *
@@ -29,27 +51,38 @@ export class SearchService {
      *   3. Finally: the full scanDir.
      *
      * It searches each candidate sequentially and stops as soon as any candidate returns a match.
+     *
+     * @param modelId The model ID to search for.
+     * @param versionId The version ID (currently unused in the prefix, but available).
+     * @param hintPath An optional hint path (relative) to narrow the search.
+     * @param ignorePath An optional full path of the selected file; any file whose normalized base name
+     *                   matches that of ignorePath will be skipped.
      */
-    searchByModelAndVersion(modelId: string, versionId: string, hintPath?: string): Observable<SearchProgress> {
+    searchByModelAndVersion(
+        modelId: string,
+        versionId: string,
+        hintPath?: string,
+        ignorePath?: string
+    ): Observable<SearchProgress> {
         return new Observable((observer: Observer<SearchProgress>) => {
             // Build candidate search roots based on the hint (if provided)
             let candidateRoots: string[] = [];
             if (hintPath) {
-                // For example, if hintPath is "Appearance/Mud" and scanDir is ".../ACG"
                 let candidate = path.join(this.scanDir, hintPath);
                 while (candidate && candidate.startsWith(this.scanDir)) {
                     candidateRoots.push(candidate);
-                    // Stop if we've reached the scanDir itself
                     if (candidate === this.scanDir) break;
                     candidate = path.dirname(candidate);
                 }
-                // Ensure the scanDir is included as the last candidate.
                 if (candidateRoots[candidateRoots.length - 1] !== this.scanDir) {
                     candidateRoots.push(this.scanDir);
                 }
             } else {
                 candidateRoots = [this.scanDir];
             }
+
+            // Prepare the ignore base name if ignorePath is provided.
+            const ignoreBase = ignorePath ? this.normalizeBaseName(ignorePath) : null;
 
             // Helper: search the given root recursively and return a Promise that resolves with the matches.
             const searchCandidate = (root: string): Promise<string[]> => {
@@ -59,7 +92,6 @@ export class SearchService {
 
                     const searchDirectory = (dir: string) => {
                         pending++;
-                        // Emit progress update for scanning the directory
                         this.zone.run(() => {
                             observer.next({ progress: `Scanning directory: ${dir}`, results: [...results] });
                         });
@@ -74,14 +106,23 @@ export class SearchService {
                             }
                             entries.forEach(entry => {
                                 const fullPath = path.join(dir, entry.name);
+
+                                if (!entry.isDirectory()) {
+                                    // Normalize the current file's base name.
+                                    const currentBase = this.normalizeBaseName(fullPath);
+                                    if (ignoreBase && currentBase === ignoreBase) {
+                                        // Skip this file because its normalized base name matches the ignore file.
+                                        return;
+                                    }
+                                }
+
                                 if (entry.isDirectory()) {
-                                    // Recursively search subdirectories
                                     searchDirectory(fullPath);
                                 } else {
                                     this.zone.run(() => {
                                         observer.next({ progress: `Processing file: ${fullPath}`, results: [...results] });
                                     });
-                                    // Use modelId as the prefix (you can also include versionId if needed)
+                                    // Check if file name starts with the modelId (or modelId_ if desired)
                                     const prefix = `${modelId}_`;
                                     if (entry.name.startsWith(prefix)) {
                                         results.push(fullPath);
@@ -110,7 +151,6 @@ export class SearchService {
                     });
                     const candidateResults = await searchCandidate(root);
                     if (candidateResults.length > 0) {
-                        // If matches were found in this candidate, report and stop searching.
                         this.zone.run(() => {
                             observer.next({ progress: `Matches found in ${root}`, results: candidateResults });
                             observer.complete();
@@ -118,7 +158,6 @@ export class SearchService {
                         return;
                     }
                 }
-                // If none of the candidate roots yielded matches, emit a “not found” message.
                 this.zone.run(() => {
                     observer.next({ progress: 'No matches found.', results: [] });
                     observer.complete();

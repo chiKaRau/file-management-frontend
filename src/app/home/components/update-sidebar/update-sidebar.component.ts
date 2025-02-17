@@ -75,20 +75,22 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  // In your UpdateSidebarComponent
   startSearch(modelId: string, versionId: string, hintPath?: string) {
     this.searching = true;
     this.startTime = performance.now();
     this.elapsedTime = 0;
     this.finalElapsedTime = null;
 
-    // Update elapsed time every 100ms.
     this.timerSubscription = interval(100).subscribe(() => {
       this.elapsedTime = (performance.now() - this.startTime) / 1000;
     });
 
-    // Pass the hintPath to the search service.
+    // Pass the selected file's path as ignorePath
+    const ignorePath = this.item?.path;
+
     this.searchSubscription = this.searchService
-      .searchByModelAndVersion(modelId, versionId, hintPath)
+      .searchByModelAndVersion(modelId, versionId, hintPath, ignorePath)
       .subscribe({
         next: (data: SearchProgress) => {
           this.progressMessage = data.progress;
@@ -112,6 +114,7 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
         }
       });
   }
+
 
   close() {
     if (this.searchSubscription) {
