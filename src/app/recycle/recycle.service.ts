@@ -68,6 +68,10 @@ export class RecycleService {
         return this.records.filter(record => record.type === type);
     }
 
+    getDeleteFolderPath(): string {
+        return this.deleteFolderPath;
+    }
+
     addRecord(record: RecycleRecord): void {
         // Check if any file in the new record already exists in a stored record.
         const duplicate = this.records.some(existingRecord =>

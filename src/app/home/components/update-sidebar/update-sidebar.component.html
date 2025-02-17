@@ -29,6 +29,16 @@
                             style="max-width:200px; max-height:200px; display:block; margin: 0.5rem 0;">
                     </div>
                     <p *ngIf="!set.previewPath">No preview available.</p>
+                    <!-- Action buttons -->
+                    <div>
+                        <button (click)="upgradeSet(set)" [disabled]="set.isProcessing">Upgrade</button>
+                        <button (click)="deleteSet(set)" [disabled]="set.isProcessing">Delete</button>
+                    </div>
+                    <!-- Progress bar -->
+                    <div *ngIf="set.isProcessing">
+                        <progress [value]="set.moveProgress" max="100"></progress>
+                        <span>{{ set.moveProgress }}%</span>
+                    </div>
                 </li>
             </ul>
             <p *ngIf="groupedItems.length === 0">No matches found.</p>

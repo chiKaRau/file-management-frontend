@@ -175,18 +175,36 @@ export class HomeComponent implements OnInit, AfterViewInit {
     try {
       // Read the directory asynchronously.
       const files = await fs.promises.readdir(directoryPath);
+
+      // If the directory is empty, update the UI and navigate up one level.
       if (files.length === 0) {
         this.ngZone.run(() => {
+          this.directoryContents = [];
           this.errorMessage = 'The selected directory is empty.';
           this.isLoading = false;
         });
+
+        // Determine the parent directory.
+        const parentDir = path.dirname(directoryPath);
+        // Only navigate up if the parent is valid and different from the current directory.
+        if (parentDir && parentDir !== directoryPath) {
+          console.log('Directory is empty. Navigating up to:', parentDir);
+          // Update the selected directory and navigation history.
+          this.selectedDirectory = parentDir;
+          this.navigationService.navigateTo(parentDir);
+          // Recursively load the parent directory's contents.
+          await this.loadDirectoryContents(parentDir);
+        }
         return;
       }
 
-      // Set the selected directory and load recycle records.
+      // Set the selected directory.
       this.ngZone.run(() => {
         this.selectedDirectory = directoryPath;
+        this.errorMessage = null;
       });
+
+      // Load recycle records.
       this.recycleService.loadRecords();
       const recycleRecords = this.recycleService.getRecords();
 
@@ -196,25 +214,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
       if (!this.explorerState.enableCivitaiMode) {
         // Normal mode: Process all files with proper error handling.
-        const fileItems = await Promise.all(files.map(async file => {
-          const fullPath = path.join(directoryPath, file);
-          try {
-            const stats = await fs.promises.stat(fullPath);
-            return {
-              name: file,
-              path: fullPath,
-              isFile: stats.isFile(),
-              isDirectory: stats.isDirectory(),
-              isDeleted: isFileDeleted(fullPath)
-            };
-          } catch (statErr) {
-            console.error(`Error stating file ${fullPath}:`, statErr);
-            // Skip files that cause errors.
-            return null;
-          }
-        }));
+        const fileItems = await Promise.all(
+          files.map(async file => {
+            const fullPath = path.join(directoryPath, file);
+            try {
+              const stats = await fs.promises.stat(fullPath);
+              return {
+                name: file,
+                path: fullPath,
+                isFile: stats.isFile(),
+                isDirectory: stats.isDirectory(),
+                isDeleted: isFileDeleted(fullPath)
+              } as DirectoryItem;
+            } catch (statErr) {
+              console.error(`Error stating file ${fullPath}:`, statErr);
+              return null;
+            }
+          })
+        );
 
-        // Filter out any null entries from errors.
         this.ngZone.run(() => {
           this.directoryContents = fileItems.filter(item => item !== null) as DirectoryItem[];
           this.isLoading = false;
@@ -225,37 +243,38 @@ export class HomeComponent implements OnInit, AfterViewInit {
         const groupMap = new Map<string, { allFiles: string[]; previewPath?: string }>();
 
         // Process each file asynchronously.
-        await Promise.all(files.map(async file => {
-          const fullPath = path.join(directoryPath, file);
-          try {
-            const stats = await fs.promises.stat(fullPath);
-            if (stats.isDirectory()) {
-              directories.push({
-                name: file,
-                path: fullPath,
-                isFile: false,
-                isDirectory: true,
-                isDeleted: isFileDeleted(fullPath)
-              });
-            } else {
-              // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")
-              const prefix = this.getCivitaiPrefix(file);
-              if (!prefix) return;
+        await Promise.all(
+          files.map(async file => {
+            const fullPath = path.join(directoryPath, file);
+            try {
+              const stats = await fs.promises.stat(fullPath);
+              if (stats.isDirectory()) {
+                directories.push({
+                  name: file,
+                  path: fullPath,
+                  isFile: false,
+                  isDirectory: true,
+                  isDeleted: isFileDeleted(fullPath)
+                });
+              } else {
+                // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")
+                const prefix = this.getCivitaiPrefix(file);
+                if (!prefix) return;
+                if (!groupMap.has(prefix)) {
+                  groupMap.set(prefix, { allFiles: [] });
+                }
+                groupMap.get(prefix)!.allFiles.push(fullPath);
 
-              if (!groupMap.has(prefix)) {
-                groupMap.set(prefix, { allFiles: [] });
+                // If this file is a preview image, record its path.
+                if (file.endsWith('.preview.png')) {
+                  groupMap.get(prefix)!.previewPath = fullPath;
+                }
               }
-              groupMap.get(prefix)!.allFiles.push(fullPath);
-
-              // If this file is a preview image, record its path.
-              if (file.endsWith('.preview.png')) {
-                groupMap.get(prefix)!.previewPath = fullPath;
-              }
+            } catch (err) {
+              console.error(`Error stating file ${fullPath}:`, err);
             }
-          } catch (err) {
-            console.error(`Error stating file ${fullPath}:`, err);
-          }
-        }));
+          })
+        );
 
         // Build grouped items only if a preview exists.
         const groupedItems: DirectoryItem[] = [];
@@ -274,10 +293,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
         this.ngZone.run(() => {
           // Combine directories and grouped items.
-          this.directoryContents = [
-            ...directories,
-            ...groupedItems
-          ];
+          this.directoryContents = [...directories, ...groupedItems];
           this.isLoading = false;
         });
       }
@@ -291,7 +307,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
     }
   }
-
 
 
   /**
@@ -330,14 +345,27 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onRefresh() {
+  async onRefresh() {
     if (this.selectedDirectory) {
       this.ngZone.run(() => {
         this.isLoading = true;
       });
-      this.loadDirectoryContents(this.selectedDirectory);
+      await this.loadDirectoryContents(this.selectedDirectory);
+
+      // If the current directory is empty, navigate to the parent directory.
+      if (!this.directoryContents || this.directoryContents.length === 0) {
+        const parentDir = path.dirname(this.selectedDirectory);
+        // Only navigate up if we have a valid parent directory.
+        if (parentDir && parentDir !== this.selectedDirectory) {
+          console.log('Current directory is empty. Navigating up to:', parentDir);
+          this.selectedDirectory = parentDir;
+          this.navigationService.navigateTo(parentDir);
+          await this.loadDirectoryContents(parentDir);
+        }
+      }
     }
   }
+
 
   openSubDirectory(subDirPath: string) {
     this.ngZone.run(() => {

@@ -1,17 +1,23 @@
 // update-sidebar.component.ts
 import { Component, HostBinding, Input, OnInit, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { Subscription, interval } from 'rxjs';
+import * as fs from 'fs';
 import * as path from 'path';
 import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { SearchProgress, SearchService } from '../../services/search.service';
+import { RecycleService } from '../../../recycle/recycle.service';
+import { HomeRefreshService } from '../../services/home-refresh.service';
 
 interface CivitaiSet {
   setId: string;
   items: DirectoryItem[];
   isZip: boolean;
   previewPath?: string;
-  folderPath?: string; // New property to store the folder where the set was found.
+  folderPath?: string;
+  isProcessing?: boolean;
+  moveProgress?: number; // 0 to 100
 }
+
 
 @Component({
   selector: 'app-update-sidebar',
@@ -37,7 +43,9 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   private timerSubscription: Subscription | null = null;
   private searchSubscription: Subscription | null = null;
 
-  constructor(private searchService: SearchService) { }
+  constructor(private searchService: SearchService,
+    private recycleService: RecycleService,
+    private homeRefreshService: HomeRefreshService) { }
 
   ngOnInit() {
     if (this.item) {
@@ -182,6 +190,186 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     const match = fileName.match(/^([^\.]+)/);
     return match ? match[1] : fileName;
   }
+
+  // Moves a file from src to dest asynchronously. If rename fails, tries copy+unlink.
+  async moveFileAsync(src: string, dest: string): Promise<void> {
+    // Ensure destination directory exists.
+    const destDir = path.dirname(dest);
+    if (!fs.existsSync(destDir)) {
+      await fs.promises.mkdir(destDir, { recursive: true });
+    }
+
+    console.log("Attempting to move file:", src, "to", dest);
+
+    if (!fs.existsSync(src)) {
+      throw new Error(`Source file does not exist: ${src}`);
+    }
+
+    try {
+      await fs.promises.rename(src, dest);
+    } catch (err) {
+      console.error("Rename failed, trying fallback for", src, err);
+      try {
+        await fs.promises.copyFile(src, dest);
+        await fs.promises.unlink(src);
+      } catch (fallbackErr) {
+        console.error("Fallback failed for", src, fallbackErr);
+        throw fallbackErr;
+      }
+    }
+  }
+
+  // Given a source file path, compute the target production path.
+  // We assume that production files are in the ACG folder.
+  // If the file path contains "\update\", we replace it with "\ACG\".
+  getProductionTarget(src: string): string {
+    const productionFolder = '\\ACG\\';
+    // If the src contains "\update\", replace it; otherwise, always move into the production folder.
+    if (src.toLowerCase().includes("\\update\\")) {
+      return src.replace(/\\update\\/i, productionFolder);
+    }
+    return path.join(productionFolder, path.basename(src));
+  }
+
+  // Compute the delete target by moving the file into the delete folder.
+  // We assume that RecycleService exposes a getter for deleteFolderPath.
+  getDeleteTarget(src: string): string {
+    const deleteFolder = this.recycleService.getDeleteFolderPath(); // Ensure this getter exists in RecycleService
+    return path.join(deleteFolder, path.basename(src));
+  }
+
+  // =================== Upgrade Operation ===================
+  async upgradeSet(set: CivitaiSet): Promise<void> {
+    if (
+      !window.confirm(
+        "Are you sure you want to upgrade this set? This will replace production files with the update version and back up the old files."
+      )
+    ) {
+      return;
+    }
+    set.isProcessing = true;
+    set.moveProgress = 0;
+
+    // Determine the update directory and set id from the selected file.
+    const updateDir = this.item ? path.dirname(this.item.path) : "";
+    const setId = this.item ? this.normalizeSetId(this.item.name) : "";
+    if (!updateDir || !setId) {
+      alert("Invalid update file.");
+      set.isProcessing = false;
+      return;
+    }
+
+    // Use the production folder determined from the search results.
+    const productionDir = set.folderPath;
+    if (!productionDir) {
+      alert("Production folder not determined.");
+      set.isProcessing = false;
+      return;
+    }
+
+    // Read the update directory to get all files belonging to this set.
+    let updateFiles: string[] = [];
+    try {
+      const files = await fs.promises.readdir(updateDir);
+      updateFiles = files
+        .filter((f) => this.normalizeSetId(f) === setId)
+        .map((f) => path.join(updateDir, f));
+    } catch (err) {
+      console.error("Error reading update directory", err);
+      alert("Error reading update directory.");
+      set.isProcessing = false;
+      return;
+    }
+
+    // We'll move both the production files (to back them up) and the update files.
+    const total = updateFiles.length + set.items.length;
+    let movedCount = 0;
+    const errors: string[] = [];
+
+    // 1. Move any existing production files (from the result set) to the delete folder.
+    for (const prod of set.items) {
+      const prodPath = prod.path;
+      if (fs.existsSync(prodPath)) {
+        const deleteTarget = this.getDeleteTarget(prodPath);
+        console.log("Backing up production file:", prodPath, "->", deleteTarget);
+        try {
+          await this.moveFileAsync(prodPath, deleteTarget);
+          movedCount++;
+          set.moveProgress = Math.round((movedCount / total) * 100);
+        } catch (err) {
+          errors.push(prodPath);
+          console.error("Error moving production file", prodPath, err);
+        }
+      }
+    }
+
+    // 2. Move all update files to the production folder.
+    for (const src of updateFiles) {
+      // Build the target path using the production folder from the result set.
+      const target = path.join(productionDir, path.basename(src));
+      console.log("Moving update file:", src, "->", target);
+      try {
+        await this.moveFileAsync(src, target);
+        movedCount++;
+        set.moveProgress = Math.round((movedCount / total) * 100);
+      } catch (err) {
+        errors.push(src);
+        console.error("Error moving update file", src, err);
+      }
+    }
+
+    if (errors.length > 0) {
+      alert(
+        `Upgrade completed with errors. The following files could not be upgraded:\n${errors.join(
+          "\n"
+        )}`
+      );
+    } else {
+      alert("Upgrade completed successfully.");
+    }
+
+    set.isProcessing = false;
+    set.moveProgress = 0;
+    // Trigger a refresh to update the home view.
+    this.homeRefreshService.triggerRefresh();
+  }
+
+  async deleteSet(set: CivitaiSet): Promise<void> {
+    if (!window.confirm("Are you sure you want to delete this set? This will move all files to the delete folder.")) {
+      return;
+    }
+    set.isProcessing = true;
+    set.moveProgress = 0;
+    const files = set.items.map(item => item.path);
+    const total = files.length;
+    let movedCount = 0;
+    const errors: string[] = [];
+
+    for (let src of files) {
+      try {
+        // Ensure destination directory exists inside moveFileAsync.
+        await this.moveFileAsync(src, this.getDeleteTarget(src));
+        movedCount++;
+      } catch (err) {
+        errors.push(src);
+        console.error("Error moving file", src, err);
+      }
+      // Update progress after each file
+      set.moveProgress = Math.round((movedCount / total) * 100);
+    }
+
+    if (errors.length > 0) {
+      alert(`Delete completed with errors. The following files could not be moved:\n${errors.join("\n")}`);
+    } else {
+      alert("Delete completed successfully.");
+    }
+
+    set.isProcessing = false;
+    set.moveProgress = 0;
+    // Trigger a refresh so that home no longer shows the deleted set
+    this.homeRefreshService.triggerRefresh();
+  }
+
 
   isImage(item: DirectoryItem): boolean {
     return /\.(png|jpe?g|gif|webp)$/i.test(item.name);
