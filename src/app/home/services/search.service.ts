@@ -1,4 +1,3 @@
-// src/app/services/search.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,76 +13,119 @@ export interface SearchProgress {
     providedIn: 'root'
 })
 export class SearchService {
-    // Hard-coded root scan directory (adjust as needed)
+    // The root directory to scan (from user preferences)
     private scanDir: string;
 
     constructor(private zone: NgZone, private preferencesService: PreferencesService) {
-        // Use the scanDir from preferences
         this.scanDir = this.preferencesService.scanDir;
     }
+
     /**
-     * Recursively searches the scanDir for files that start with
-     * "<modelId>_<versionId>_". It emits progress updates as it scans.
+     * Recursively searches for files starting with "<modelId>_" (you can include versionId if needed).
+     * When a hintPath is provided, it builds candidate search roots:
+     *
+     *   1. First candidate: scanDir + hintPath (e.g. ...\ACG\Appearance\Mud)
+     *   2. Next candidate: its parent directory (e.g. ...\ACG\Appearance)
+     *   3. Finally: the full scanDir.
+     *
+     * It searches each candidate sequentially and stops as soon as any candidate returns a match.
      */
-    searchByModelAndVersion(modelId: string, versionId: string): Observable<SearchProgress> {
+    searchByModelAndVersion(modelId: string, versionId: string, hintPath?: string): Observable<SearchProgress> {
         return new Observable((observer: Observer<SearchProgress>) => {
-            const results: string[] = [];
-            let pending = 0;
+            // Build candidate search roots based on the hint (if provided)
+            let candidateRoots: string[] = [];
+            if (hintPath) {
+                // For example, if hintPath is "Appearance/Mud" and scanDir is ".../ACG"
+                let candidate = path.join(this.scanDir, hintPath);
+                while (candidate && candidate.startsWith(this.scanDir)) {
+                    candidateRoots.push(candidate);
+                    // Stop if we've reached the scanDir itself
+                    if (candidate === this.scanDir) break;
+                    candidate = path.dirname(candidate);
+                }
+                // Ensure the scanDir is included as the last candidate.
+                if (candidateRoots[candidateRoots.length - 1] !== this.scanDir) {
+                    candidateRoots.push(this.scanDir);
+                }
+            } else {
+                candidateRoots = [this.scanDir];
+            }
 
-            const searchDirectory = (dir: string) => {
-                pending++;
-                // Wrap in NgZone to trigger change detection
-                this.zone.run(() => {
-                    observer.next({ progress: `Scanning directory: ${dir}`, results: [...results] });
-                });
+            // Helper: search the given root recursively and return a Promise that resolves with the matches.
+            const searchCandidate = (root: string): Promise<string[]> => {
+                return new Promise((resolve, reject) => {
+                    const results: string[] = [];
+                    let pending = 0;
 
-                fs.readdir(dir, { withFileTypes: true }, (err, entries) => {
-                    if (err) {
-                        console.error('Error reading directory:', dir, err);
-                        pending--;
-                        if (pending === 0) {
-                            this.zone.run(() => {
-                                observer.next({ progress: 'Scanning complete.', results: [...results] });
-                                observer.complete();
-                            });
-                        }
-                        return;
-                    }
-
-                    entries.forEach(entry => {
-                        const fullPath = path.join(dir, entry.name);
-                        if (entry.isDirectory()) {
-                            // Recursively search subdirectories
-                            searchDirectory(fullPath);
-                        } else {
-                            // Emit a progress update for the file being processed
-                            this.zone.run(() => {
-                                observer.next({ progress: `Processing file: ${fullPath}`, results: [...results] });
-                            });
-                            // Check if file name starts with "<modelId>_
-                            // const prefix = `${modelId}_${versionId}_`;
-                            const prefix = `${modelId}_`;
-                            if (entry.name.startsWith(prefix)) {
-                                results.push(fullPath);
-                                this.zone.run(() => {
-                                    observer.next({ progress: `Matched file: ${fullPath}`, results: [...results] });
-                                });
-                            }
-                        }
-                    });
-
-                    pending--;
-                    if (pending === 0) {
+                    const searchDirectory = (dir: string) => {
+                        pending++;
+                        // Emit progress update for scanning the directory
                         this.zone.run(() => {
-                            observer.next({ progress: 'Scanning complete.', results: [...results] });
-                            observer.complete();
+                            observer.next({ progress: `Scanning directory: ${dir}`, results: [...results] });
                         });
-                    }
+                        fs.readdir(dir, { withFileTypes: true }, (err, entries) => {
+                            if (err) {
+                                console.error('Error reading directory:', dir, err);
+                                pending--;
+                                if (pending === 0) {
+                                    resolve(results);
+                                }
+                                return;
+                            }
+                            entries.forEach(entry => {
+                                const fullPath = path.join(dir, entry.name);
+                                if (entry.isDirectory()) {
+                                    // Recursively search subdirectories
+                                    searchDirectory(fullPath);
+                                } else {
+                                    this.zone.run(() => {
+                                        observer.next({ progress: `Processing file: ${fullPath}`, results: [...results] });
+                                    });
+                                    // Use modelId as the prefix (you can also include versionId if needed)
+                                    const prefix = `${modelId}_`;
+                                    if (entry.name.startsWith(prefix)) {
+                                        results.push(fullPath);
+                                        this.zone.run(() => {
+                                            observer.next({ progress: `Matched file: ${fullPath}`, results: [...results] });
+                                        });
+                                    }
+                                }
+                            });
+                            pending--;
+                            if (pending === 0) {
+                                resolve(results);
+                            }
+                        });
+                    };
+
+                    searchDirectory(root);
                 });
             };
 
-            // Start scanning from the root scan directory.
-            searchDirectory(this.scanDir);
+            // Sequentially search the candidate roots.
+            const runSequentialSearch = async () => {
+                for (const root of candidateRoots) {
+                    this.zone.run(() => {
+                        observer.next({ progress: `Searching in ${root}`, results: [] });
+                    });
+                    const candidateResults = await searchCandidate(root);
+                    if (candidateResults.length > 0) {
+                        // If matches were found in this candidate, report and stop searching.
+                        this.zone.run(() => {
+                            observer.next({ progress: `Matches found in ${root}`, results: candidateResults });
+                            observer.complete();
+                        });
+                        return;
+                    }
+                }
+                // If none of the candidate roots yielded matches, emit a “not found” message.
+                this.zone.run(() => {
+                    observer.next({ progress: 'No matches found.', results: [] });
+                    observer.complete();
+                });
+            };
+
+            runSequentialSearch().catch(err => observer.error(err));
         });
     }
 
@@ -91,5 +133,4 @@ export class SearchService {
         this.scanDir = newDir;
         console.log(`Scan directory updated to: ${this.scanDir}`);
     }
-
 }

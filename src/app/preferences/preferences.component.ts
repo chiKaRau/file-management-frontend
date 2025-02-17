@@ -217,7 +217,7 @@ export class PreferencesComponent {
     this.preferencesService.storageVerified = this.storageVerified;
     this.preferencesService.deleteVerified = this.deleteVerified;
     this.preferencesService.updateVerified = this.updateVerified;
-    this.preferencesService.scanDir = this.scanDir;
+    this.preferencesService.scanVerified = this.scanVerified;
   }
 
   /**
