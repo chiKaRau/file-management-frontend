@@ -182,25 +182,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
       // Read the directory asynchronously.
       const files = await fs.promises.readdir(directoryPath);
 
-      // If the directory is empty, update the UI and navigate up one level.
+      // If the directory is empty, update the UI to show it is empty.
       if (files.length === 0) {
         this.ngZone.run(() => {
           this.directoryContents = [];
           this.errorMessage = 'The selected directory is empty.';
           this.isLoading = false;
         });
-
-        // Determine the parent directory.
-        const parentDir = path.dirname(directoryPath);
-        // Only navigate up if the parent is valid and different from the current directory.
-        if (parentDir && parentDir !== directoryPath) {
-          console.log('Directory is empty. Navigating up to:', parentDir);
-          // Update the selected directory and navigation history.
-          this.selectedDirectory = parentDir;
-          this.navigationService.navigateTo(parentDir);
-          // Recursively load the parent directory's contents.
-          await this.loadDirectoryContents(parentDir);
-        }
         return;
       }
 
