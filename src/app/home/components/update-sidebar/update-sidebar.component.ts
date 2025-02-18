@@ -137,8 +137,14 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
             this.timerSubscription.unsubscribe();
           }
           this.finalElapsedTime = (performance.now() - this.startTime) / 1000;
-          // Final grouping.
-          this.groupedItems = this.groupItems(this.foundItems);
+          // Final grouping with filtering out the selected set.
+          const groups = this.groupItems(this.foundItems);
+          if (this.item) {
+            const selectedSetId = this.normalizeSetId(this.item.name);
+            this.groupedItems = groups.filter(group => group.setId !== selectedSetId);
+          } else {
+            this.groupedItems = groups;
+          }
           console.log(`Search completed in ${this.finalElapsedTime} seconds.`);
         }
       });
