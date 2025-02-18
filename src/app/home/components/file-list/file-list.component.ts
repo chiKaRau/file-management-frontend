@@ -94,6 +94,46 @@ export class FileListComponent {
     this.fileRightClick.emit({ file, event });
   }
 
+  // In file-list.component.ts (inside the FileListComponent class)
+  // In file-list.component.ts (inside FileListComponent class)
+  public selectItemByPrefix(prefix: string): void {
+    const lowerPrefix = prefix.toLowerCase();
+    if (!lowerPrefix) {
+      return;
+    }
+
+    // Check if the prefix consists of one repeated character.
+    const isRepeatedLetter = lowerPrefix.split('').every(char => char === lowerPrefix[0]);
+
+    if (isRepeatedLetter) {
+      // For example, if the user typed "b" or "bb" or "bbb"
+      const letter = lowerPrefix[0];
+      // Get all items whose names start with the letter.
+      const matches = this.items.filter(item => item.name.toLowerCase().startsWith(letter));
+      if (matches.length > 0) {
+        // The cycle index is determined by the number of key presses.
+        // (For "b" -> count=1, so index 0; for "bb" -> count=2, so index 1; etc.)
+        const cycleIndex = (lowerPrefix.length - 1) % matches.length;
+        const selected = matches[cycleIndex];
+
+        // Update selection state
+        this.selectedItems = [selected];
+        this.lastSelectedIndex = this.items.indexOf(selected);
+        this.selectionChanged.emit(this.selectedItems);
+        console.log(`Cycling typeahead: prefix "${prefix}" selected "${selected.name}"`);
+      }
+    } else {
+      // Normal multi-character prefix search.
+      const found = this.items.find(item => item.name.toLowerCase().startsWith(lowerPrefix));
+      if (found) {
+        this.selectedItems = [found];
+        this.lastSelectedIndex = this.items.indexOf(found);
+        this.selectionChanged.emit(this.selectedItems);
+        console.log(`Typeahead: prefix "${prefix}" selected "${found.name}"`);
+      }
+    }
+  }
+
   isSelected(item: DirectoryItem): boolean {
     return this.selectedItems.indexOf(item) !== -1;
   }

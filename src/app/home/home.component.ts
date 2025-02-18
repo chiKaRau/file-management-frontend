@@ -20,6 +20,7 @@ import { DirectoryItem } from './components/file-list/model/directory-item.model
 import { Subscription } from 'rxjs';
 import { HomeRefreshService } from './services/home-refresh.service';
 import { PreferencesService } from '../preferences/preferences.service';
+import { FileListComponent } from './components/file-list/file-list.component';
 
 @Component({
   selector: 'app-home',
@@ -55,6 +56,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // New properties for update sidebar
   showUpdateSidebar: boolean = false;
   updateFile: DirectoryItem | null = null;
+
+  // In home.component.ts (inside the HomeComponent class)
+  private typeaheadBuffer = '';
+  private typeaheadTimer: any = null;
+  private typeaheadTimeout = 1000; // in milliseconds
 
   // Keep a subscription reference so we can unsubscribe later.
   private homeRefreshSub!: Subscription;
@@ -470,6 +476,36 @@ export class HomeComponent implements OnInit, AfterViewInit {
       !target.closest('.sidebar') &&
       !target.closest('.update-sidebar')) {
       this.selectedFile = null;
+    }
+  }
+
+  @ViewChild('fileList') fileListComponent!: FileListComponent;
+
+  @HostListener('window:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    // Skip if focus is in an input, textarea, or an editable element.
+    const target = event.target as HTMLElement;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      return;
+    }
+
+    // Process only single-character keys (letters/digits)
+    if (event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key)) {
+      // Append the key (in lowercase) to our type-ahead buffer.
+      this.typeaheadBuffer += event.key.toLowerCase();
+
+      // Reset the timer
+      if (this.typeaheadTimer) {
+        clearTimeout(this.typeaheadTimer);
+      }
+      this.typeaheadTimer = setTimeout(() => {
+        this.typeaheadBuffer = '';
+      }, this.typeaheadTimeout);
+
+      // Forward the buffer to the file list component so it can update the selection.
+      if (this.fileListComponent) {
+        this.fileListComponent.selectItemByPrefix(this.typeaheadBuffer);
+      }
     }
   }
 
