@@ -1,14 +1,47 @@
 <div class="sidebar">
     <div class="header">
         <h3>Details</h3>
-        <!-- Clicking this button will clear the selection in HomeComponent -->
         <button (click)="close()">X</button>
     </div>
     <div *ngIf="item" class="content">
+
+        <!-- Image Carousel -->
+        <div class="carousel">
+            <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
+            <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
+            <button class="carousel-btn" (click)="nextImage()">&#10095;</button>
+        </div>
+
         <p><strong>Name:</strong> {{ item.name }}</p>
         <p><strong>Path:</strong> {{ item.path }}</p>
-        <p *ngIf="item.isDirectory">Type: Folder</p>
-        <p *ngIf="item.isFile">Type: File</p>
-        <!-- Add more details as needed -->
+        <p><strong>Type:</strong> {{ item.isDirectory ? 'Folder' : 'File' }}</p>
+
+        <!-- Spinner when loading -->
+        <div *ngIf="isLoading">
+            <p>Loading model details...</p>
+            <!-- You can replace this text with a spinner icon if desired -->
+        </div>
+
+        <!-- Error message if loading failed -->
+        <div *ngIf="error">
+            <p class="error">{{ error }}</p>
+        </div>
+
+        <!-- Display extra details if loaded and no error -->
+        <div *ngIf="!isLoading && !error && modelVersion">
+            <p><strong>Base Model:</strong> {{ modelVersion.baseModel }}</p>
+            <p><strong>Model Name:</strong> {{ modelVersion.model?.name }}</p>
+            <p>
+                <strong>Trained Words:</strong>
+                <span *ngIf="modelVersion.trainedWords && modelVersion.trainedWords.length">
+                    {{ modelVersion.trainedWords.join(', ') }}
+                </span>
+            </p>
+            <p>
+                <strong>Stats:</strong>
+                Downloads: {{ modelVersion.stats.downloadCount }},
+                Thumbs Up: {{ modelVersion.stats.thumbsUpCount }}
+            </p>
+        </div>
     </div>
 </div>

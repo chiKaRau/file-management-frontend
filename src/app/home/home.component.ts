@@ -57,6 +57,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   showUpdateSidebar: boolean = false;
   updateFile: DirectoryItem | null = null;
 
+  // Holds the model object received from the sidebar to show in the modal
+  selectedModelVersion: any = null;
+
   // In home.component.ts (inside the HomeComponent class)
   private typeaheadBuffer = '';
   private typeaheadTimer: any = null;
@@ -711,6 +714,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
   closeUpdateSidebar() {
     this.showUpdateSidebar = false;
     this.updateFile = null;
+  }
+
+  // Called when the sidebar emits the full model data
+  openModalFromSidebar(modelVersion: any) {
+    this.selectedModelVersion = modelVersion;
+  }
+
+  closeModal() {
+    this.selectedModelVersion = null;
   }
 
 }

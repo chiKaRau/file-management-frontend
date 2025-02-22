@@ -19,7 +19,7 @@
     <div class="main-container" [ngClass]="{'with-sidebar': selectedFile}">
       <!-- Sidebar: only shows when a file (not a folder) is selected -->
       <app-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory" [item]="selectedFile"
-        (closed)="selectedFile = null">
+        (openModalEvent)="openModalFromSidebar($event)" (closed)="selectedFile = null">
       </app-file-info-sidebar>
 
       <!-- File list panel -->
@@ -89,4 +89,9 @@
     <div class="menu-item" (click)="renameFile()">Rename</div>
     <div class="menu-item" (click)="showProperties()">Properties</div>
   </div>
+
+  <!-- Full-screen modal overlay rendered at the root level -->
+  <app-model-modal *ngIf="selectedModelVersion" [modelVersion]="selectedModelVersion" (close)="closeModal()">
+  </app-model-modal>
+
 </div>
