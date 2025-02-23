@@ -1,9 +1,10 @@
+<!-- explorer-toolbar.component.html -->
 <div class="toolbar-container">
     <div class="breadcrumb-section">
         <!-- Navigation Buttons -->
-        <button (click)="onBack()" [disabled]="!canGoBack">←</button>
-        <button (click)="onForward()" [disabled]="!canGoForward">→</button>
-        <button (click)="onRefresh()">⟳</button>
+        <button (click)="onBack()" [disabled]="isUpdatingLocalPath || !canGoBack">←</button>
+        <button (click)="onForward()" [disabled]="isUpdatingLocalPath || !canGoForward">→</button>
+        <button (click)="onRefresh()" [disabled]="isUpdatingLocalPath">⟳</button>
 
         <!-- If user is in breadcrumb mode, display the breadcrumb chips -->
         <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
@@ -17,7 +18,7 @@
 
         <!-- If user is in edit mode, display a text box for the path -->
         <div *ngIf="isEditingPath" class="edit-view">
-            <input type="text" class="path-input" [value]="currentPath"
+            <input type="text" class="path-input" [value]="currentPath" [disabled]="isUpdatingLocalPath"
                 (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
                 autofocus />
         </div>

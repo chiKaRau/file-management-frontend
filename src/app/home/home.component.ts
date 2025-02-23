@@ -21,6 +21,8 @@ import { Subscription } from 'rxjs';
 import { HomeRefreshService } from './services/home-refresh.service';
 import { PreferencesService } from '../preferences/preferences.service';
 import { FileListComponent } from './components/file-list/file-list.component';
+import { HttpClient } from '@angular/common/http';
+
 
 @Component({
   selector: 'app-home',
@@ -68,6 +70,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // Keep a subscription reference so we can unsubscribe later.
   private homeRefreshSub!: Subscription;
 
+  // Add near your other properties at the top of the class
+  isUpdatingLocalPath: boolean = false;
+
   constructor(
     private electronService: ElectronService,
     private scrollState: ScrollStateService,
@@ -76,7 +81,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     public navigationService: NavigationService,
     public explorerState: ExplorerStateService,
     public recycleService: RecycleService,
-    public preferencesService: PreferencesService  // <-- Add this
+    public preferencesService: PreferencesService,
+    private http: HttpClient
   ) { }
 
   ngOnInit() {
@@ -295,6 +301,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
         });
       }
 
+      if (this.directoryContents.length > 0) {
+        this.updateLocalPath();
+      }
+
       console.log('Directory Contents:', this.directoryContents);
     } catch (err) {
       console.error('Error reading directory:', err);
@@ -305,6 +315,49 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  updateLocalPath() {
+    // Disable explorer interactions until update finishes
+    this.isUpdatingLocalPath = true;
+
+    // Use a Map to deduplicate file sets
+    const fileSetMap = new Map<string, { modelID: string; versionID: string }>();
+
+    this.directoryContents
+      .filter(item => !item.isDirectory && item.name.includes('_'))
+      .forEach(item => {
+        const parts = item.name.split('_');
+        if (parts.length >= 2) {
+          const modelID = parts[0];
+          const versionID = parts[1];
+          const key = `${modelID}_${versionID}`;
+          if (!fileSetMap.has(key)) {
+            fileSetMap.set(key, { modelID, versionID });
+          }
+        }
+      });
+
+    const fileArray = Array.from(fileSetMap.values());
+
+    // Build the request payload
+    const requestBody = {
+      fileArray: fileArray,
+      localPath: this.selectedDirectory
+    };
+
+    // Call your API endpoint
+    this.http.post('http://localhost:3000/api/update-local-path', requestBody)
+      .subscribe({
+        next: (response) => {
+          console.log('Local path update successful:', response);
+          // Re-enable explorer UI when finished
+          this.isUpdatingLocalPath = false;
+        },
+        error: (err) => {
+          console.error('Error updating local path:', err);
+          this.isUpdatingLocalPath = false;
+        }
+      });
+  }
 
   /**
    * Utility function:

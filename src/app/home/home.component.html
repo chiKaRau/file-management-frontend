@@ -1,4 +1,5 @@
 <div class="home-page" (contextmenu)="onEmptyAreaRightClick($event)">
+  <!-- home.component.html -->
   <!-- Top Toolbar -->
   <div class="home-toolbar">
     <button class="browse-icon" (click)="openDirectory()">
@@ -9,7 +10,8 @@
     </button>
     <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
-      (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)">
+      [isUpdatingLocalPath]="isUpdatingLocalPath" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
+      (pathChanged)="navigateByPath($event)">
     </app-explorer-toolbar>
   </div>
 
@@ -28,8 +30,15 @@
         <div *ngIf="isLoading" class="loading">
           Loading files...
         </div>
+
         <div *ngIf="infoMessage" class="info">
           {{ infoMessage }}
+        </div>
+
+        <div *ngIf="isUpdatingLocalPath" class="update-overlay">
+          <div class="update-message">
+            Updating database path, please wait...
+          </div>
         </div>
 
         <div *ngIf="!isLoading && selectedDirectory">
