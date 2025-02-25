@@ -67,11 +67,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private typeaheadTimer: any = null;
   private typeaheadTimeout = 1000; // in milliseconds
 
+  // Add a property to store the scan result if needed:
+  scannedModels: any[] = [];
+
+
   // Keep a subscription reference so we can unsubscribe later.
   private homeRefreshSub!: Subscription;
 
   // Add near your other properties at the top of the class
-  isUpdatingLocalPath: boolean = false;
+  isPreloadComplete: boolean = false;
 
   constructor(
     private electronService: ElectronService,
@@ -303,6 +307,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
       if (this.directoryContents.length > 0) {
         this.updateLocalPath();
+        this.scanLocalFiles();
       }
 
       console.log('Directory Contents:', this.directoryContents);
@@ -317,7 +322,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   updateLocalPath() {
     // Disable explorer interactions until update finishes
-    this.isUpdatingLocalPath = true;
+    this.isPreloadComplete = true;
 
     // Use a Map to deduplicate file sets
     const fileSetMap = new Map<string, { modelID: string; versionID: string }>();
@@ -350,11 +355,57 @@ export class HomeComponent implements OnInit, AfterViewInit {
         next: (response) => {
           console.log('Local path update successful:', response);
           // Re-enable explorer UI when finished
-          this.isUpdatingLocalPath = false;
+          this.isPreloadComplete = false;
         },
         error: (err) => {
           console.error('Error updating local path:', err);
-          this.isUpdatingLocalPath = false;
+          this.isPreloadComplete = false;
+        }
+      });
+  }
+
+  /**
+ * Call the scan-local-files API.
+ * Accepts a Map (or you could rebuild compositeList similarly) and sends the compositeList.
+ */
+  scanLocalFiles() {
+    // Disable explorer interactions until scan completes
+    this.isPreloadComplete = true;
+
+    // Use a Map to deduplicate file sets
+    const fileSetMap = new Map<string, { modelID: string; versionID: string }>();
+
+    // Populate fileSetMap with your file set data
+    this.directoryContents
+      .filter(item => !item.isDirectory && item.name.includes('_'))
+      .forEach(item => {
+        const parts = item.name.split('_');
+        if (parts.length >= 2) {
+          const modelID = parts[0];
+          const versionID = parts[1];
+          const key = `${modelID}_${versionID}`;
+          if (!fileSetMap.has(key)) {
+            fileSetMap.set(key, { modelID, versionID });
+          }
+        }
+      });
+
+    // Build the request payload with compositeList key
+    const compositeList = Array.from(fileSetMap.values());
+    const scanRequestBody = { compositeList };
+
+    this.http.post('http://localhost:3000/api/scan-local-files', scanRequestBody)
+      .subscribe({
+        next: (response: any) => {
+          console.log('Scan local files response:', response);
+          // Optionally store the result for later use
+          this.scannedModels = response.payload?.modelsList || [];
+          // Re-enable explorer UI
+          this.isPreloadComplete = false;
+        },
+        error: (err) => {
+          console.error('Error scanning local files:', err);
+          this.isPreloadComplete = false;
         }
       });
   }

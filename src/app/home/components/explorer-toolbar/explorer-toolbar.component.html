@@ -2,9 +2,9 @@
 <div class="toolbar-container">
     <div class="breadcrumb-section">
         <!-- Navigation Buttons -->
-        <button (click)="onBack()" [disabled]="isUpdatingLocalPath || !canGoBack">←</button>
-        <button (click)="onForward()" [disabled]="isUpdatingLocalPath || !canGoForward">→</button>
-        <button (click)="onRefresh()" [disabled]="isUpdatingLocalPath">⟳</button>
+        <button (click)="onBack()" [disabled]="isPreloadComplete || !canGoBack">←</button>
+        <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
+        <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
 
         <!-- If user is in breadcrumb mode, display the breadcrumb chips -->
         <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
@@ -18,7 +18,7 @@
 
         <!-- If user is in edit mode, display a text box for the path -->
         <div *ngIf="isEditingPath" class="edit-view">
-            <input type="text" class="path-input" [value]="currentPath" [disabled]="isUpdatingLocalPath"
+            <input type="text" class="path-input" [value]="currentPath" [disabled]="isPreloadComplete"
                 (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
                 autofocus />
         </div>

@@ -9,7 +9,7 @@ export class ExplorerToolbarComponent {
   @Input() currentPath: string | null = null;
   @Input() canGoBack: boolean = false;
   @Input() canGoForward: boolean = false;
-  @Input() isUpdatingLocalPath: boolean = false;
+  @Input() isPreloadComplete: boolean = false;
   @Output() back = new EventEmitter<void>();
   @Output() forward = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
