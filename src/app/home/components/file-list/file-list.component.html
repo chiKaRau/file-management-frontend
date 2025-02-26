@@ -1,3 +1,4 @@
+<!--file-list.component.html-->
 <div class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
     <div class="file-item" *ngFor="let item of items; let i = index" (click)="onItemClick(item, $event, i)"
         (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"

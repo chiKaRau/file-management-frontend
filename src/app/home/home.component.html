@@ -78,14 +78,15 @@
       </div>
     </div>
     <div class="menu-item" (click)="sortBy('name')">Sort by Name</div>
+    <div class="menu-item" *ngIf="clipboard" (click)="pasteFiles()">Paste</div>
     <div class="menu-item" (click)="refresh()">Refresh</div>
   </div>
 
   <!-- File-Based Context Menu -->
   <div class="context-menu" *ngIf="showFileContextMenu" [style.left.px]="menuX" [style.top.px]="menuY"
     (click)="onMenuClick($event)" (contextmenu)="$event.preventDefault()">
-    <div class="menu-item" (click)="cutFile()">Cut</div>
-    <div class="menu-item" (click)="copyFile()">Copy</div>
+    <div class="menu-item" *ngIf="!hasDeletedFiles()" (click)="cutFile()">Cut</div>
+    <div class="menu-item" *ngIf="!hasDeletedFiles()" (click)="copyFile()">Copy</div>
     <div class="menu-item" *ngIf="recycleService.arePathsSet" (click)="deleteFiles()">
       Delete
     </div>

@@ -77,6 +77,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // Add near your other properties at the top of the class
   isPreloadComplete: boolean = false;
 
+  // In HomeComponent
+  clipboard: { type: 'cut' | 'copy'; items: DirectoryItem[] } | null = null;
+
+
   constructor(
     private electronService: ElectronService,
     private scrollState: ScrollStateService,
@@ -682,25 +686,155 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // =============== File-Based Menu Items =================
   cutFile() {
     this.showFileContextMenu = false;
-    if (!this.selectedFile) return;
+    // Use selectedFiles if available; otherwise, use contextFile.
+    const filesToCut: DirectoryItem[] =
+      (this.selectedFiles && this.selectedFiles.length > 0)
+        ? this.selectedFiles
+        : (this.contextFile ? [this.contextFile] : []);
+    if (filesToCut.length === 0) return;
 
-    if (this.selectedFile.civitaiGroup) {
-      console.log('[CivitaiMode] Cutting entire set:', this.selectedFile.civitaiGroup);
-    } else {
-      console.log('Cut file:', this.selectedFile.name);
+    // Do not allow cut if any file is marked as deleted.
+    if (filesToCut.some(file => file.isDeleted)) {
+      console.warn('Cannot cut deleted files.');
+      return;
     }
+
+    this.clipboard = { type: 'cut', items: filesToCut };
+    console.log(
+      filesToCut.length > 1
+        ? `[CivitaiMode] Cutting multiple files: ${filesToCut.map(f => f.name).join(', ')}`
+        : `Cut file: ${filesToCut[0].name}`
+    );
   }
 
   copyFile() {
     this.showFileContextMenu = false;
-    if (!this.selectedFile) return;
+    const filesToCopy: DirectoryItem[] =
+      (this.selectedFiles && this.selectedFiles.length > 0)
+        ? this.selectedFiles
+        : (this.contextFile ? [this.contextFile] : []);
+    if (filesToCopy.length === 0) return;
 
-    if (this.selectedFile.civitaiGroup) {
-      console.log('[CivitaiMode] Copying entire set:', this.selectedFile.civitaiGroup);
-    } else {
-      console.log('Copy file:', this.selectedFile.name);
+    if (filesToCopy.some(file => file.isDeleted)) {
+      console.warn('Cannot copy deleted files.');
+      return;
     }
+
+    this.clipboard = { type: 'copy', items: filesToCopy };
+    console.log(
+      filesToCopy.length > 1
+        ? `[CivitaiMode] Copying multiple files: ${filesToCopy.map(f => f.name).join(', ')}`
+        : `Copy file: ${filesToCopy[0].name}`
+    );
   }
+
+  hasDeletedFiles(): boolean {
+    // Check selectedFiles if available, otherwise check contextFile.
+    const files = (this.selectedFiles && this.selectedFiles.length > 0)
+      ? this.selectedFiles
+      : (this.contextFile ? [this.contextFile] : []);
+    return files.some(f => f.isDeleted);
+  }
+
+  pasteFiles() {
+
+    this.showEmptyAreaContextMenu = false;
+
+    if (!this.clipboard) {
+      console.warn('Clipboard is empty.');
+      return;
+    }
+    if (!this.selectedDirectory) {
+      console.warn('No target directory selected.');
+      return;
+    }
+    const targetDir = this.selectedDirectory;
+    const operations: Promise<any>[] = [];
+
+    const processFile = (sourcePath: string) => {
+      const baseName = path.basename(sourcePath);
+      let newPath = path.join(targetDir, baseName);
+
+      // Check if a file with the same name exists
+      if (fs.existsSync(newPath)) {
+        if (this.clipboard!.type === 'cut') {
+          if (!confirm(`A file named "${baseName}" already exists. Do you want to replace it?`)) {
+            console.log(`User canceled replacing "${baseName}".`);
+            return; // Skip this file
+          }
+        } else if (this.clipboard!.type === 'copy') {
+          newPath = this.getUniqueFilePath(newPath);
+        }
+      }
+
+      if (this.clipboard!.type === 'cut') {
+        operations.push(
+          fs.promises.rename(sourcePath, newPath)
+            .then(() => console.log(`Moved "${baseName}" to "${newPath}"`))
+            .catch(err => console.error(`Error moving "${baseName}":`, err))
+        );
+      } else if (this.clipboard!.type === 'copy') {
+        operations.push(
+          fs.promises.copyFile(sourcePath, newPath)
+            .then(() => console.log(`Copied "${baseName}" to "${newPath}"`))
+            .catch(err => console.error(`Error copying "${baseName}":`, err))
+        );
+      }
+    };
+
+    // Process each item in the clipboard
+    this.clipboard.items.forEach(file => {
+      if (file.civitaiGroup && file.civitaiGroup.length > 0) {
+        file.civitaiGroup.forEach(groupFilePath => {
+          processFile(groupFilePath);
+        });
+      } else {
+        processFile(file.path);
+      }
+    });
+
+    // Wait for all file operations to complete before refreshing the view.
+    Promise.all(operations)
+      .then(() => {
+        if (this.clipboard!.type === 'cut') {
+          this.clipboard = null;
+        }
+        this.onRefresh();
+      })
+      .catch(err => console.error('Error during paste operations:', err));
+  }
+
+
+  // Helper method to generate a unique file name for copy operations
+  private getUniqueFilePath(filePath: string): string {
+    let counter = 1;
+    const parsed = path.parse(filePath);
+    let baseName = parsed.name; // e.g. "993527_1406404_Illustrious_V2_Mud_Quicksand_Illustrious.preview"
+    let specialSuffix = "";
+
+    // Check if the baseName ends with ".preview"
+    if (baseName.endsWith(".preview")) {
+      // Remove the ".preview" part from baseName and store it in specialSuffix.
+      baseName = baseName.slice(0, -".preview".length);
+      specialSuffix = ".preview";
+    }
+
+    let newFilePath = filePath;
+
+    // Loop until we find a file name that doesn't exist.
+    while (fs.existsSync(newFilePath)) {
+      if (specialSuffix) {
+        newFilePath = path.join(parsed.dir, `${baseName} (${counter})${specialSuffix}${parsed.ext}`);
+      } else {
+        newFilePath = path.join(parsed.dir, `${parsed.name} (${counter})${parsed.ext}`);
+      }
+      counter++;
+    }
+
+    return newFilePath;
+  }
+
+
 
   deleteFiles() {
     this.showFileContextMenu = false;
