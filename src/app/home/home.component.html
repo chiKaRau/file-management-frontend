@@ -60,7 +60,9 @@
       <app-update-sidebar *ngIf="showUpdateSidebar" [item]="updateFile" (closed)="closeUpdateSidebar()">
       </app-update-sidebar>
 
-      <app-zip-sidebar *ngIf="showZipSidebar" (closed)="closeZipSidebar()"></app-zip-sidebar>
+      <app-zip-sidebar *ngIf="showZipSidebar" [directoryContents]="directoryContents" (closed)="closeZipSidebar()"
+        (selectSetsEvent)="handleSelectUnzippedSets($event)">
+      </app-zip-sidebar>
 
       <app-grouping-sidebar *ngIf="showGroupingSidebar" (closed)="closeGroupingSidebar()"></app-grouping-sidebar>
 

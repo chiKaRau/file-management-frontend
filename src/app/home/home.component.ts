@@ -977,6 +977,20 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.showZipSidebar = false;
   }
 
+  // Called when the zip sidebar emits a selection event.
+  handleSelectUnzippedSets(selectedItems: DirectoryItem[]): void {
+    console.log('Selected unzipped sets:', selectedItems);
+    // Update HomeComponent's selectedFiles property.
+    this.selectedFiles = selectedItems;
+    // Update the file list component's internal selection so that items are highlighted.
+    if (this.fileListComponent) {
+      this.fileListComponent.selectedItems = selectedItems;
+      // If your file list component uses an output event to signal selection change,
+      // you might also emit that event:
+      // this.fileListComponent.selectionChanged.emit(selectedItems);
+    }
+    // Optionally hide the sidebar.
+  }
   // Toggle method triggered by the toolbar's grouping sidebar event
   toggleGroupingSidebar(): void {
     console.log('Toggling grouping sidebar');
