@@ -7,10 +7,33 @@
         <!-- Button to load unzipped sets -->
         <button (click)="selectUnzippedSets()">Select Unzipped Sets</button>
 
-        <!-- Display current active zip count -->
+        <!-- Display status information -->
         <div class="zip-status">
-            Currently zipping {{ currentZipCount }} set(s)
+            Total Sets: {{ totalSets }}<br>
+            Total Original Files (each set x3): {{ totalOriginalFiles }}<br>
+            Expected Output Files (each set x2): {{ expectedOutputFiles }}<br>
+            <!-- Show scan results only after zipping is complete -->
+            <div *ngIf="zippingCompleted">
+                Total Output Files (scanned): {{ scanDirectoryForOutputFiles() }}<br>
+                Directory Integrity:
+                <span [style.color]="getInvalidSets().length === 0 ? 'green' : 'red'">
+                    {{ getInvalidSets().length === 0 ? 'Valid' : 'Mismatch' }}
+                </span>
+                <div *ngIf="getInvalidSets().length > 0">
+                    <strong>Invalid Sets:</strong>
+                    <ul>
+                        <li *ngFor="let err of getInvalidSets()">
+                            {{ err.setId }}: {{ err.message }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
+
+        <!-- Zip All button is disabled while zip all is in progress -->
+        <button (click)="zipAll()" [disabled]="!unzippedGroups || unzippedGroups.length === 0 || isZippingAll">
+            Zip All
+        </button>
 
         <!-- Table of unzipped groups -->
         <div *ngIf="unzippedGroups && unzippedGroups.length">
@@ -34,9 +57,15 @@
                             <span *ngIf="item.error" style="color:red;">{{ item.error }}</span>
                         </td>
                         <td>
-                            <button (click)="zipGroup(item)" [disabled]="item.isZipping || item.progress === 100">
+                            <button (click)="zipGroup(item)"
+                                [disabled]="item.isZipping || item.progress === 100 || isZippingAll">
                                 {{ item.error ? 'Retry' : 'Zip' }}
                             </button>
+                            <!-- Display individual set integrity status after zipping is complete -->
+                            <span *ngIf="item.progress === 100"
+                                [style.color]="checkGroupIntegrity(item) === 'Valid' ? 'green' : 'red'">
+                                {{ checkGroupIntegrity(item) }}
+                            </span>
                         </td>
                     </tr>
                 </tbody>
