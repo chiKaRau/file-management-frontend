@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as archiver from 'archiver';
+
 
 let win: BrowserWindow | null = null;
 
@@ -53,6 +55,37 @@ function createWindow(): BrowserWindow {
 
   return win;
 }
+
+ipcMain.on('zip-files', (event, files: string[], outputZipPath: string) => {
+  console.log('Received zip-files request');
+  console.log('Files to zip:', files); // Debug log
+
+  const output = fs.createWriteStream(outputZipPath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  output.on('close', () => {
+    // When zipping is complete, send a completion message.
+    event.reply('zip-complete', { outputZipPath, total: archive.pointer() });
+  });
+  archive.on('error', (err: any) => {
+    // On error, send an error message back.
+    event.reply('zip-error', err);
+  });
+  archive.on('progress', (progressData: archiver.ProgressData) => {
+    let percent = 0;
+    if (progressData.fs && progressData.fs.totalBytes) {
+      percent = Math.round((progressData.fs.processedBytes / progressData.fs.totalBytes) * 100);
+    } else if (progressData.entries.total) {
+      percent = Math.round((progressData.entries.processed / progressData.entries.total) * 100);
+    }
+    event.reply('zip-progress', percent);
+  });
+  archive.pipe(output);
+  files.forEach(file => {
+    archive.file(file, { name: path.basename(file) });
+  });
+  archive.finalize();
+});
 
 try {
   // This method will be called when Electron has finished

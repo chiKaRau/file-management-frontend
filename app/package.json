@@ -9,6 +9,7 @@
   "main": "main.js",
   "private": true,
   "dependencies": {
-    "angular-electron": "file:"
+    "angular-electron": "file:",
+    "archiver": "^7.0.1"
   }
 }

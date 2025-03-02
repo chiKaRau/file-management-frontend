@@ -4,7 +4,43 @@
         <button (click)="close()">Close</button>
     </div>
     <div class="content">
-        <!-- Button to select unzipped sets -->
+        <!-- Button to load unzipped sets -->
         <button (click)="selectUnzippedSets()">Select Unzipped Sets</button>
+
+        <!-- Display current active zip count -->
+        <div class="zip-status">
+            Currently zipping {{ currentZipCount }} set(s)
+        </div>
+
+        <!-- Table of unzipped groups -->
+        <div *ngIf="unzippedGroups && unzippedGroups.length">
+            <table class="zip-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">Thumb</th>
+                        <th style="width: 200px;">Progress</th>
+                        <th style="width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let item of unzippedGroups">
+                        <td>
+                            <img [src]="getThumbnail(item.group)" alt="thumbnail" width="32" height="32">
+                        </td>
+                        <td>
+                            <progress [value]="item.progress" max="100"></progress>
+                            <span>{{ item.progress }}%</span>
+                            <span *ngIf="item.progress === 100"> Zip Complete</span>
+                            <span *ngIf="item.error" style="color:red;">{{ item.error }}</span>
+                        </td>
+                        <td>
+                            <button (click)="zipGroup(item)" [disabled]="item.isZipping || item.progress === 100">
+                                {{ item.error ? 'Retry' : 'Zip' }}
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
