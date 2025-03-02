@@ -80,6 +80,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // In HomeComponent
   clipboard: { type: 'cut' | 'copy'; items: DirectoryItem[] } | null = null;
 
+  // Controls the visibility of the zip sidebar
+  showZipSidebar: boolean = false;
+
+  // Controls the visibility of the grouping sidebar
+  showGroupingSidebar: boolean = false;
 
   constructor(
     private electronService: ElectronService,
@@ -961,6 +966,26 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   closeModal() {
     this.selectedModelVersion = null;
+  }
+
+  // Toggle method triggered by the toolbar's event
+  toggleZipSidebar(): void {
+    this.showZipSidebar = !this.showZipSidebar;
+  }
+
+  closeZipSidebar(): void {
+    this.showZipSidebar = false;
+  }
+
+  // Toggle method triggered by the toolbar's grouping sidebar event
+  toggleGroupingSidebar(): void {
+    console.log('Toggling grouping sidebar');
+    this.showGroupingSidebar = !this.showGroupingSidebar;
+  }
+
+  // Method to close the grouping sidebar (triggered by the sidebar itself)
+  closeGroupingSidebar(): void {
+    this.showGroupingSidebar = false;
   }
 
 }

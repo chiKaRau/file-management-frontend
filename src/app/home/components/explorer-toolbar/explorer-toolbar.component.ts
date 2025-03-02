@@ -116,4 +116,16 @@ export class ExplorerToolbarComponent {
     const input = event.target as HTMLInputElement;
     input.select(); // highlight existing text for easy replacement
   }
+
+  @Output() toggleZipSidebarEvent = new EventEmitter<void>();
+
+  toggleZipSidebar(): void {
+    this.toggleZipSidebarEvent.emit();
+  }
+
+  @Output() toggleGroupingSidebarEvent = new EventEmitter<void>();
+
+  toggleGroupingSidebar(): void {
+    this.toggleGroupingSidebarEvent.emit();
+  }
 }

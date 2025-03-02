@@ -11,7 +11,9 @@
     <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
       [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
-      (pathChanged)="navigateByPath($event)">
+      (pathChanged)="navigateByPath($event)" (toggleZipSidebarEvent)="toggleZipSidebar()"
+      (toggleGroupingSidebarEvent)="toggleGroupingSidebar()">
+      >
     </app-explorer-toolbar>
   </div>
 
@@ -57,6 +59,11 @@
       <!-- Right Update Sidebar placed inside the flex container -->
       <app-update-sidebar *ngIf="showUpdateSidebar" [item]="updateFile" (closed)="closeUpdateSidebar()">
       </app-update-sidebar>
+
+      <app-zip-sidebar *ngIf="showZipSidebar" (closed)="closeZipSidebar()"></app-zip-sidebar>
+
+      <app-grouping-sidebar *ngIf="showGroupingSidebar" (closed)="closeGroupingSidebar()"></app-grouping-sidebar>
+
 
     </div>
   </div>

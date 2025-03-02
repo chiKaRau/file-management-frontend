@@ -27,4 +27,15 @@
     <div class="search-container">
         <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
     </div>
+
+    <!-- Toggle button for zip sidebar -->
+    <div class="sidebar-toggle-container">
+        <button (click)="toggleZipSidebar()">Zip</button>
+    </div>
+
+    <div class="sidebar-toggle-container">
+        <button (click)="toggleGroupingSidebar()">Grouping Mode</button>
+    </div>
+
+
 </div>
