@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { DirectoryItem } from './model/directory-item.model';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-file-list',
@@ -40,6 +41,28 @@ export class FileListComponent {
     }
   }
 
+  constructor(private sanitizer: DomSanitizer) { }
+
+  getBackgroundImage(originalPath: string): SafeStyle {
+    // 1) Convert backslashes to forward slashes:
+    let normalized = originalPath.replace(/\\/g, '/');
+
+    // 2) Prepend file:/// if not present
+    if (!normalized.startsWith('file:///')) {
+      normalized = 'file:///' + normalized;
+    }
+
+    // 3) Optionally encode spaces, parentheses, etc.
+    //    For example, encodeURI on the portion after file:///
+    //    but be careful not to double-encode. A simple approach:
+    // 
+    //    const prefix = 'file:///';
+    //    const pathPart = normalized.slice(prefix.length);
+    //    normalized = prefix + encodeURI(pathPart);
+    // 
+    // 4) Use DomSanitizer to mark the style as safe
+    return this.sanitizer.bypassSecurityTrustStyle(`url("${normalized}")`);
+  }
   /**
    * Handles click events on file items.
    * - Shift+click: select all items between the last clicked and the current item.
@@ -47,6 +70,8 @@ export class FileListComponent {
    * - Regular click: clear previous selection and select the clicked item.
    */
   onItemClick(item: DirectoryItem, event: MouseEvent, index: number) {
+    event.stopPropagation(); // Prevent the container's click from firing
+
     if (event.shiftKey && this.lastSelectedIndex !== null) {
       // Determine the range between lastSelectedIndex and the current index.
       const start = Math.min(this.lastSelectedIndex, index);
@@ -142,4 +167,14 @@ export class FileListComponent {
     // Basic check if extension is .png/.jpg/.jpeg/.gif, etc.
     return /\.(png|jpe?g|gif|webp)$/i.test(item.name);
   }
+
+  get directoryItems(): DirectoryItem[] {
+    return this.items.filter(item => item.isDirectory);
+  }
+
+  get fileItems(): DirectoryItem[] {
+    return this.items.filter(item => item.isFile);
+  }
+
+
 }

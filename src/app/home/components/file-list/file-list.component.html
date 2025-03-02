@@ -1,14 +1,140 @@
 <!--file-list.component.html-->
+<!-- directory view-->
 <div class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of items; let i = index" (click)="onItemClick(item, $event, i)"
+    <div class="file-item" *ngFor="let item of directoryItems; let i = index" (click)="onItemClick(item, $event, i)"
         (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
         <div class="icon">
-            <!-- Folder icon -->
+            <!-- Since this is a directory, show folder icon -->
             <svg *ngIf="item.isDirectory" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                 c-1.1 0-2-.9-2-2V9z" />
+                   c-1.1 0-2-.9-2-2V9z" />
             </svg>
+        </div>
+        <div class="filename">
+            {{ item.name }}
+        </div>
+    </div>
+</div>
+
+
+<!-- Extra Large View Mode: Display items as cards (files only) -->
+<div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
+    <div class="file-card" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
+        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}"
+        [style.background-image]="isImage(item) ? getBackgroundImage(item.path) : ''">
+
+        <!-- Top-left badge for Model ID / Version ID -->
+        <div class="badge top-left">
+            ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
+        </div>
+
+        <!-- Top-right badge for Base Model -->
+        <div class="badge top-right">
+            Base: {{ item.scanData?.baseModel }}
+        </div>
+
+        <!-- Footer overlay for Creator and Main Model -->
+        <div class="card-footer">
+            <div class="creator">{{ item.scanData?.creatorName }}</div>
+            <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- Large View Mode-->
+<div *ngIf="viewMode === 'large'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
+    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
+        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+        <div class="icon">
+            <!-- Image preview -->
+            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
+                style="object-fit: cover" />
+            <!-- Generic file icon -->
+            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+            </svg>
+        </div>
+        <div class="filename">
+            {{ item.name }}
+        </div>
+    </div>
+</div>
+
+<!-- medium View Mode-->
+<div *ngIf="viewMode === 'medium'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
+    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
+        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+        <div class="icon">
+            <!-- Image preview -->
+            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
+                style="object-fit: cover" />
+            <!-- Generic file icon -->
+            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+            </svg>
+        </div>
+        <div class="filename">
+            {{ item.name }}
+        </div>
+    </div>
+</div>
+
+<!-- small View Mode-->
+<div *ngIf="viewMode === 'small'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
+    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
+        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+        <div class="icon">
+            <!-- Image preview -->
+            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
+                style="object-fit: cover" />
+            <!-- Generic file icon -->
+            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+            </svg>
+        </div>
+        <div class="filename">
+            {{ item.name }}
+        </div>
+    </div>
+</div>
+
+<!-- list View Mode-->
+<div *ngIf="viewMode === 'list'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
+    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
+        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+        <div class="icon">
+            <!-- Image preview -->
+            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
+                style="object-fit: cover" />
+            <!-- Generic file icon -->
+            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+            </svg>
+        </div>
+        <div class="filename">
+            {{ item.name }}
+        </div>
+    </div>
+</div>
+
+<!-- details View Mode-->
+<div *ngIf="viewMode === 'details'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
+    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
+        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+        <div class="icon">
             <!-- Image preview -->
             <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
                 style="object-fit: cover" />

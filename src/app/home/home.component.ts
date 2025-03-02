@@ -407,8 +407,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response: any) => {
           console.log('Scan local files response:', response);
-          // Optionally store the result for later use
-          this.scannedModels = response.payload?.modelsList || [];
+          const scannedData = response.payload?.modelsList || [];
+          this.mergeScannedModelsIntoDirectoryContents(scannedData);
           // Re-enable explorer UI
           this.isPreloadComplete = false;
         },
@@ -418,6 +418,22 @@ export class HomeComponent implements OnInit, AfterViewInit {
         }
       });
   }
+
+  mergeScannedModelsIntoDirectoryContents(scannedModels: any[]): void {
+    this.explorerState.directoryContents = this.explorerState.directoryContents.map(item => {
+      if (!item.isDirectory && item.name.includes('_')) {
+        const parts = item.name.split('_');
+        const modelID = parts[0];
+        const versionID = parts[1];
+        const scanned = scannedModels.find(s =>
+          s.modelNumber === modelID && s.versionNumber === versionID
+        );
+        return scanned ? { ...item, scanData: scanned } : item;
+      }
+      return item;
+    });
+  }
+
 
   /**
    * Utility function:

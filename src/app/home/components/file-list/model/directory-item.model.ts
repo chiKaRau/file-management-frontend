@@ -5,4 +5,5 @@ export interface DirectoryItem {
     isDirectory: boolean;
     isDeleted?: boolean; // <-- New property
     civitaiGroup?: string[];
+    scanData?: any;  // Holds extra API data
 }

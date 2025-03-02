@@ -180,3 +180,118 @@
     /* Optional: add a border or outline for additional emphasis */
     border: 2px solid #0078d7;
 }
+
+/* =========================================== */
+/* Extra Large Card View Mode (for "extraLarge") */
+/* =========================================== */
+.file-card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 8px;
+}
+
+.file-card {
+    position: relative;
+    width: 300px; // Card width
+    height: 400px; // Card height
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: box-shadow 0.2s ease;
+
+    &:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    // Top-left badge for Model ID / Version ID
+    .badge.top-left {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(0, 0, 0, 0.5); // semi-transparent dark background
+        color: #fff;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    // Top-right badge for Base Model
+    .badge.top-right {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    // Footer overlay for creator and main model info
+    .card-footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 8px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .creator {
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .main-model {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+}
+
+/* Optional styles for deleted cards */
+.file-card.deleted {
+    filter: grayscale(50%) brightness(90%);
+    border: 2px dashed #ff4d4d;
+    box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+
+    &:after {
+        content: 'Recycled';
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(255, 77, 77, 0.85);
+        color: #fff;
+        padding: 2px 6px;
+        font-size: 12px;
+        font-weight: bold;
+        border-radius: 2px;
+        text-transform: uppercase;
+    }
+}
+
+/* Optional styles for selected cards */
+.file-card.selected {
+    border: 2px solid #0078d7;
+}

@@ -1422,3 +1422,174 @@ file-management-frontend
 └─ _config.yml
 
 ```
+```
+file-management-frontend
+├─ .angular
+├─ .editorconfig
+├─ .eslintignore
+├─ .eslintrc.json
+├─ .node-version
+├─ .npmrc
+├─ .nx
+│  └─ cache
+│     └─ 18.3.4-nx.win32-x64-msvc.node
+├─ angular.json
+├─ angular.webpack.js
+├─ app
+│  ├─ main.ts
+│  ├─ package-lock.json
+│  └─ package.json
+├─ CHANGELOG.md
+├─ CODE_OF_CONDUCT.md
+├─ e2e
+│  ├─ main.spec.ts
+│  └─ playwright.config.ts
+├─ electron-builder.json
+├─ file_structure.txt
+├─ HOW_TO.md
+├─ jest.config.js
+├─ LICENSE.md
+├─ package-lock.json
+├─ package.json
+├─ README.md
+├─ src
+│  ├─ app
+│  │  ├─ app-routing.module.ts
+│  │  ├─ app.component.html
+│  │  ├─ app.component.scss
+│  │  ├─ app.component.spec.ts
+│  │  ├─ app.component.ts
+│  │  ├─ app.module.ts
+│  │  ├─ core
+│  │  │  ├─ core.module.ts
+│  │  │  └─ services
+│  │  │     ├─ electron
+│  │  │     │  ├─ electron.service.spec.ts
+│  │  │     │  └─ electron.service.ts
+│  │  │     └─ index.ts
+│  │  ├─ detail
+│  │  │  ├─ detail-routing.module.ts
+│  │  │  ├─ detail.component.html
+│  │  │  ├─ detail.component.scss
+│  │  │  ├─ detail.component.spec.ts
+│  │  │  ├─ detail.component.ts
+│  │  │  └─ detail.module.ts
+│  │  ├─ home
+│  │  │  ├─ components
+│  │  │  │  ├─ explorer-toolbar
+│  │  │  │  │  ├─ explorer-toolbar.component.html
+│  │  │  │  │  ├─ explorer-toolbar.component.scss
+│  │  │  │  │  ├─ explorer-toolbar.component.spec.ts
+│  │  │  │  │  └─ explorer-toolbar.component.ts
+│  │  │  │  ├─ file-info-sidebar
+│  │  │  │  │  ├─ file-info-sidebar.component.html
+│  │  │  │  │  ├─ file-info-sidebar.component.scss
+│  │  │  │  │  ├─ file-info-sidebar.component.spec.ts
+│  │  │  │  │  └─ file-info-sidebar.component.ts
+│  │  │  │  ├─ file-list
+│  │  │  │  │  ├─ file-list.component.html
+│  │  │  │  │  ├─ file-list.component.scss
+│  │  │  │  │  ├─ file-list.component.spec.ts
+│  │  │  │  │  ├─ file-list.component.ts
+│  │  │  │  │  └─ model
+│  │  │  │  │     └─ directory-item.model.ts
+│  │  │  │  ├─ grouping-sidebar
+│  │  │  │  │  ├─ grouping-sidebar.component.html
+│  │  │  │  │  ├─ grouping-sidebar.component.scss
+│  │  │  │  │  ├─ grouping-sidebar.component.spec.ts
+│  │  │  │  │  └─ grouping-sidebar.component.ts
+│  │  │  │  ├─ model-modal
+│  │  │  │  │  ├─ model-modal.component.html
+│  │  │  │  │  ├─ model-modal.component.scss
+│  │  │  │  │  ├─ model-modal.component.spec.ts
+│  │  │  │  │  └─ model-modal.component.ts
+│  │  │  │  ├─ update-sidebar
+│  │  │  │  │  ├─ update-sidebar.component.html
+│  │  │  │  │  ├─ update-sidebar.component.scss
+│  │  │  │  │  ├─ update-sidebar.component.spec.ts
+│  │  │  │  │  └─ update-sidebar.component.ts
+│  │  │  │  └─ zip-sidebar
+│  │  │  │     ├─ zip-sidebar.component.html
+│  │  │  │     ├─ zip-sidebar.component.scss
+│  │  │  │     ├─ zip-sidebar.component.spec.ts
+│  │  │  │     └─ zip-sidebar.component.ts
+│  │  │  ├─ home-routing.module.ts
+│  │  │  ├─ home.component.html
+│  │  │  ├─ home.component.scss
+│  │  │  ├─ home.component.spec.ts
+│  │  │  ├─ home.component.ts
+│  │  │  ├─ home.module.ts
+│  │  │  └─ services
+│  │  │     ├─ explorer-state.service.ts
+│  │  │     ├─ home-refresh.service.ts
+│  │  │     ├─ navigation.service.ts
+│  │  │     ├─ scroll-state.service.ts
+│  │  │     ├─ search.service.ts
+│  │  │     ├─ selection.service.ts
+│  │  │     └─ zip.service.ts
+│  │  ├─ preferences
+│  │  │  ├─ preferences-routing.module.ts
+│  │  │  ├─ preferences.component.html
+│  │  │  ├─ preferences.component.scss
+│  │  │  ├─ preferences.component.spec.ts
+│  │  │  ├─ preferences.component.ts
+│  │  │  ├─ preferences.module.ts
+│  │  │  └─ preferences.service.ts
+│  │  ├─ recycle
+│  │  │  ├─ model
+│  │  │  │  └─ recycle-record.model.ts
+│  │  │  ├─ recycle.component.html
+│  │  │  ├─ recycle.component.scss
+│  │  │  ├─ recycle.component.spec.ts
+│  │  │  ├─ recycle.component.ts
+│  │  │  └─ recycle.service.ts
+│  │  ├─ shared
+│  │  │  ├─ components
+│  │  │  │  ├─ index.ts
+│  │  │  │  └─ page-not-found
+│  │  │  │     ├─ page-not-found.component.html
+│  │  │  │     ├─ page-not-found.component.scss
+│  │  │  │     ├─ page-not-found.component.spec.ts
+│  │  │  │     └─ page-not-found.component.ts
+│  │  │  ├─ directives
+│  │  │  │  ├─ index.ts
+│  │  │  │  └─ webview
+│  │  │  │     ├─ webview.directive.spec.ts
+│  │  │  │     └─ webview.directive.ts
+│  │  │  └─ shared.module.ts
+│  │  └─ update
+│  │     ├─ update-routing.module.ts
+│  │     ├─ update.component.html
+│  │     ├─ update.component.scss
+│  │     ├─ update.component.spec.ts
+│  │     ├─ update.component.ts
+│  │     └─ update.module.ts
+│  ├─ assets
+│  │  ├─ background.jpg
+│  │  ├─ i18n
+│  │  └─ icons
+│  │     ├─ electron.bmp
+│  │     ├─ favicon.256x256.png
+│  │     ├─ favicon.512x512.png
+│  │     ├─ favicon.icns
+│  │     ├─ favicon.ico
+│  │     └─ favicon.png
+│  ├─ environments
+│  │  ├─ environment.dev.ts
+│  │  ├─ environment.prod.ts
+│  │  ├─ environment.ts
+│  │  ├─ environment.web.prod.ts
+│  │  └─ environment.web.ts
+│  ├─ favicon.ico
+│  ├─ index.html
+│  ├─ main.ts
+│  ├─ polyfills-test.ts
+│  ├─ polyfills.ts
+│  ├─ styles.scss
+│  ├─ tsconfig.app.json
+│  └─ tsconfig.spec.json
+├─ tsconfig.json
+├─ tsconfig.serve.json
+└─ _config.yml
+
+```
