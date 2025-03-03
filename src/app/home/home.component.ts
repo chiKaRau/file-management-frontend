@@ -22,6 +22,7 @@ import { HomeRefreshService } from './services/home-refresh.service';
 import { PreferencesService } from '../preferences/preferences.service';
 import { FileListComponent } from './components/file-list/file-list.component';
 import { HttpClient } from '@angular/common/http';
+import { shell } from 'electron';
 
 
 @Component({
@@ -1018,4 +1019,21 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.showGroupingSidebar = false;
   }
 
+  // Import shell if needed (depending on your electronService implementation)
+  // import { shell } from 'electron';
+
+  openNativeFileExplorer(): void {
+    this.showEmptyAreaContextMenu = false;
+    if (this.selectedDirectory) {
+      shell.openPath(this.selectedDirectory)
+        .then(result => {
+          if (result) {
+            console.error('Error opening file explorer:', result);
+          }
+        })
+        .catch(err => console.error('Error invoking openPath:', err));
+    } else {
+      console.warn('No directory selected.');
+    }
+  }
 }

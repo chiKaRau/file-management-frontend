@@ -78,6 +78,7 @@ ipcMain.on('zip-files', (event, files: string[], outputZipPath: string) => {
     } else if (progressData.entries.total) {
       percent = Math.round((progressData.entries.processed / progressData.entries.total) * 100);
     }
+    console.log('Zip progress:', percent, '%');
     event.reply('zip-progress', percent);
   });
   archive.pipe(output);
