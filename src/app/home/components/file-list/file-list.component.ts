@@ -173,6 +173,8 @@ export class FileListComponent {
   }
 
   get fileItems(): DirectoryItem[] {
+    console.log("Testing")
+    console.log(this.items)
     return this.items.filter(item => item.isFile);
   }
 

@@ -120,6 +120,7 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
               isDirectory: false
             } as DirectoryItem;
           });
+
           // Update grouping in real time.
           this.groupedItems = this.groupItems(this.foundItems);
         },
@@ -396,4 +397,16 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
       this.timerSubscription.unsubscribe();
     }
   }
+
+  getModelLink(setId: string): string {
+    const parts = setId.split('_');
+    if (parts.length >= 2) {
+      const modelID = parts[0];
+      const versionID = parts[1];
+      return `https://civitai.com/models/${modelID}?modelVersionId=${versionID}`;
+    }
+    return '';
+  }
+
+
 }

@@ -29,6 +29,13 @@
                             style="max-width:200px; max-height:200px; display:block; margin: 0.5rem 0;">
                     </div>
                     <p *ngIf="!set.previewPath">No preview available.</p>
+
+                    <p *ngIf="getModelLink(set.setId)">
+                        <a [href]="getModelLink(set.setId)" target="_blank" rel="noopener noreferrer">
+                            Go to Model
+                        </a>
+                    </p>
+
                     <!-- Action buttons -->
                     <div>
                         <button (click)="upgradeSet(set)" [disabled]="set.isProcessing">Upgrade</button>

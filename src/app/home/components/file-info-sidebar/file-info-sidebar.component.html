@@ -44,5 +44,11 @@
                 Thumbs Up: {{ modelVersion.stats.thumbsUpCount }}
             </p>
         </div>
+
+        <a [href]="'https://civitai.com/models/' + ( modelVersion.modelId) + '?modelVersionId=' + modelVersion.id"
+            target="_blank" rel="noopener noreferrer">
+            Go to Model
+        </a>
+
     </div>
 </div>

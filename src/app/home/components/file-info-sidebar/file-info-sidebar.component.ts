@@ -43,6 +43,7 @@ export class FileInfoSidebarComponent implements OnChanges {
     const url = `https://civitai.com/api/v1/model-versions/${versionID}`;
     this.http.get(url).subscribe(
       (data) => {
+        console.log(data);
         this.modelVersion = data;
         this.currentImageIndex = 0;
         this.isLoading = false;

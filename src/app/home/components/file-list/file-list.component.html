@@ -32,14 +32,23 @@
 
         <!-- Top-right badge for Base Model -->
         <div class="badge top-right">
-            Base: {{ item.scanData?.baseModel }}
+            {{ item.scanData?.baseModel }}
         </div>
-        
+
 
         <!-- Footer overlay for Creator and Main Model -->
         <div class="card-footer">
             <div class="creator">{{ item.scanData?.creatorName }}</div>
             <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+            <div class="stats">
+                <span>Downloads: {{ item.scanData?.stats ? JSON.parse(item.scanData.stats).downloadCount : 'N/A'
+                    }}</span>
+                <span>Rating: {{ item.scanData?.stats ? JSON.parse(item.scanData.stats).rating : 'N/A' }}</span>
+                <span>Thumbs Up: {{ item.scanData?.stats ? JSON.parse(item.scanData.stats).thumbsUpCount : 'N/A'
+                    }}</span>
+                <span>Thumbs Down: {{ item.scanData?.stats ? JSON.parse(item.scanData.stats).thumbsDownCount : 'N/A'
+                    }}</span>
+            </div>
         </div>
 
     </div>

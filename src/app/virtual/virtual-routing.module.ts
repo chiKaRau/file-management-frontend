@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { UpdateComponent } from './update.component';
+import { VirtualComponent } from './virtual.component';
 
 const routes: Routes = [
-    { path: '', component: UpdateComponent }
+    { path: '', component: VirtualComponent }
 ];
 
 @NgModule({
     imports: [RouterModule.forChild(routes)],
     exports: [RouterModule]
 })
-export class UpdateRoutingModule { }
+export class VirtualRoutingModule { }
