@@ -40,6 +40,29 @@
         <div class="card-footer">
             <div class="creator">{{ item.scanData?.creatorName }}</div>
             <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+            <div class="stats">
+                <span>
+                    <span class="material-icons icon-download" aria-label="Downloads">file_download</span>
+                    {{ getParsedStats(item).downloadCount ?? 'N/A' }}
+                </span>
+                <span>
+                    <span class="material-icons icon-rating-count" aria-label="Rating Count">rate_review</span>
+                    {{ getParsedStats(item).ratingCount ?? 'N/A' }}
+                </span>
+                <span>
+                    <span class="material-icons icon-rating" aria-label="Rating">star_rate</span>
+                    {{ getParsedStats(item).rating ?? 'N/A' }}
+                </span>
+                <span>
+                    <span class="material-icons icon-thumb-up" aria-label="Thumbs Up">thumb_up</span>
+                    {{ getParsedStats(item).thumbsUpCount ?? 'N/A' }}
+                </span>
+                <span>
+                    <span class="material-icons icon-thumb-down" aria-label="Thumbs Down">thumb_down</span>
+                    {{ getParsedStats(item).thumbsDownCount ?? 'N/A' }}
+                </span>
+            </div>
+
         </div>
 
     </div>

@@ -43,6 +43,20 @@ export class FileListComponent {
 
   constructor(private sanitizer: DomSanitizer) { }
 
+  /**
+ * Returns the parsed stats for the given item.
+ */
+  getParsedStats(item: DirectoryItem): any {
+    try {
+      console.log(item.scanData)
+      // If the scanData and stats property exist, parse the JSON
+      return item.scanData && item.scanData.stats ? JSON.parse(item.scanData.stats) : {};
+    } catch (error) {
+      console.error('Error parsing stats for item', item, error);
+      return {};
+    }
+  }
+
   getBackgroundImage(originalPath: string): SafeStyle {
     // 1) Convert backslashes to forward slashes:
     let normalized = originalPath.replace(/\\/g, '/');
