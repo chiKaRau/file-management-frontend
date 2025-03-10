@@ -952,6 +952,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
     } else {
       this.selectedFile = null;
     }
+
+    // Trigger scroll after the sidebar animation completes.
+    setTimeout(() => {
+      if (this.fileListComponent) {
+        this.fileListComponent.scrollToSelected();
+      }
+    }, 300); // Adjust delay if sidebar animation duration is different
+
   }
 
   // Method called from context menu "Update" option:

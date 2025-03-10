@@ -1,75 +1,69 @@
 <!--file-list.component.html-->
-<!-- directory view-->
-<div class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of directoryItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
-        <div class="icon">
-            <!-- Since this is a directory, show folder icon -->
-            <svg *ngIf="item.isDirectory" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+<!-- Extra Large View Mode -->
+<div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
+    <ng-container *ngFor="let item of combinedItems; let i = index">
+        <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile}"
+            [style.background-image]="item.isFile && isImage(item) ? getBackgroundImage(item.path) : ''">
+
+            <!-- Directory Icon -->
+            <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
                    c-1.1 0-2-.9-2-2V9z" />
             </svg>
+
+            <!-- File content -->
+            <ng-container *ngIf="item.isFile">
+                <div class="badge top-left">
+                    ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
+                </div>
+                <div class="badge top-right">
+                    {{ item.scanData?.baseModel }}
+                </div>
+                <div class="card-footer">
+                    <div class="creator">{{ item.scanData?.creatorName }}</div>
+                    <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+                    <div class="stats">
+                        <span>
+                            <span class="material-icons icon-download">file_download</span>
+                            {{ getParsedStats(item).downloadCount ?? 'N/A' }}
+                        </span>
+                        <span>
+                            <span class="material-icons icon-rating-count">rate_review</span>
+                            {{ getParsedStats(item).ratingCount ?? 'N/A' }}
+                        </span>
+                        <span>
+                            <span class="material-icons icon-rating">star_rate</span>
+                            {{ getParsedStats(item).rating ?? 'N/A' }}
+                        </span>
+                        <span>
+                            <span class="material-icons icon-thumb-up">thumb_up</span>
+                            {{ getParsedStats(item).thumbsUpCount ?? 'N/A' }}
+                        </span>
+                    </div>
+                </div>
+            </ng-container>
+
+            <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
         </div>
-        <div class="filename">
-            {{ item.name }}
-        </div>
-    </div>
-</div>
-
-
-<!-- Extra Large View Mode: Display items as cards (files only) -->
-<div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
-    <div class="file-card" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}"
-        [style.background-image]="isImage(item) ? getBackgroundImage(item.path) : ''">
-
-        <!-- Top-left badge for Model ID / Version ID -->
-        <div class="badge top-left">
-            ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
-        </div>
-
-        <!-- Top-right badge for Base Model -->
-        <div class="badge top-right">
-            {{ item.scanData?.baseModel }}
-        </div>
-
-
-        <!-- Footer overlay for Creator and Main Model -->
-        <div class="card-footer">
-            <div class="creator">{{ item.scanData?.creatorName }}</div>
-            <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
-            <div class="stats">
-                <span>
-                    <span class="material-icons icon-download" aria-label="Downloads">file_download</span>
-                    {{ getParsedStats(item).downloadCount ?? 'N/A' }}
-                </span>
-                <span>
-                    <span class="material-icons icon-rating-count" aria-label="Rating Count">rate_review</span>
-                    {{ getParsedStats(item).ratingCount ?? 'N/A' }}
-                </span>
-                <span>
-                    <span class="material-icons icon-rating" aria-label="Rating">star_rate</span>
-                    {{ getParsedStats(item).rating ?? 'N/A' }}
-                </span>
-                <span>
-                    <span class="material-icons icon-thumb-up" aria-label="Thumbs Up">thumb_up</span>
-                    {{ getParsedStats(item).thumbsUpCount ?? 'N/A' }}
-                </span>
-            </div>
-
-        </div>
-
-    </div>
+    </ng-container>
 </div>
 
 
 <!-- Large View Mode-->
 <div *ngIf="viewMode === 'large'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
+        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+        (contextmenu)="onFileRightClick(item, $event)"
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+
+        <!-- Directory Icon -->
+        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+        </svg>
+
         <div class="icon">
             <!-- Image preview -->
             <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
@@ -88,9 +82,18 @@
 
 <!-- medium View Mode-->
 <div *ngIf="viewMode === 'medium'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
+        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+        (contextmenu)="onFileRightClick(item, $event)"
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+
+        <!-- Directory Icon -->
+        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+        </svg>
+
+
         <div class="icon">
             <!-- Image preview -->
             <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
@@ -109,9 +112,18 @@
 
 <!-- small View Mode-->
 <div *ngIf="viewMode === 'small'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
+        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+        (contextmenu)="onFileRightClick(item, $event)"
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+
+        <!-- Directory Icon -->
+        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+        </svg>
+
+
         <div class="icon">
             <!-- Image preview -->
             <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
@@ -130,9 +142,18 @@
 
 <!-- list View Mode-->
 <div *ngIf="viewMode === 'list'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
+        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+        (contextmenu)="onFileRightClick(item, $event)"
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+
+        <!-- Directory Icon -->
+        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+        </svg>
+
+
         <div class="icon">
             <!-- Image preview -->
             <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
@@ -151,9 +172,18 @@
 
 <!-- details View Mode-->
 <div *ngIf="viewMode === 'details'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" *ngFor="let item of fileItems; let i = index" (click)="onItemClick(item, $event, i)"
-        (dblclick)="onItemDblClick(item)" (contextmenu)="onFileRightClick(item, $event)"
+    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
+        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+        (contextmenu)="onFileRightClick(item, $event)"
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+
+        <!-- Directory Icon -->
+        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+        </svg>
+
+
         <div class="icon">
             <!-- Image preview -->
             <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"

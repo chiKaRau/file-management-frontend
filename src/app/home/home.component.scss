@@ -112,6 +112,8 @@
         flex: 1;
         margin-left: 16px;
         /* space from sidebar */
+        overflow-y: auto;
+        scroll-behavior: smooth; // Smooth scrolling
     }
 }
 

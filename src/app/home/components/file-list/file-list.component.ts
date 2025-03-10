@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChildren, QueryList, ElementRef, SimpleChanges } from '@angular/core';
 import { DirectoryItem } from './model/directory-item.model';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
@@ -8,6 +8,34 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
   styleUrls: ['./file-list.component.scss']
 })
 export class FileListComponent {
+
+  @ViewChildren('fileCard') fileCards!: QueryList<ElementRef>;
+
+  ngAfterViewInit() {
+    this.scrollToSelected();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['selectedItems'] || changes['viewMode']) {
+      setTimeout(() => this.scrollToSelected(), 0);
+    }
+  }
+
+  scrollToSelected() {
+    if (this.selectedItems.length === 1 && this.fileCards) {
+      const selectedItem = this.selectedItems[0];
+      const index = this.combinedItems.findIndex(item => item.path === selectedItem.path);
+
+      if (index !== -1 && this.fileCards.toArray()[index]) {
+        this.fileCards.toArray()[index].nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }
+  }
+
   @Input() items: DirectoryItem[] = [];
   @Input() viewMode: string = 'large'; // default to "large"
 
@@ -83,32 +111,30 @@ export class FileListComponent {
    * - Regular click: clear previous selection and select the clicked item.
    */
   onItemClick(item: DirectoryItem, event: MouseEvent, index: number) {
-    event.stopPropagation(); // Prevent the container's click from firing
+    event.stopPropagation();
+
+    const items = this.combinedItems; // Now uses the combined list
 
     if (event.shiftKey && this.lastSelectedIndex !== null) {
-      // Determine the range between lastSelectedIndex and the current index.
       const start = Math.min(this.lastSelectedIndex, index);
       const end = Math.max(this.lastSelectedIndex, index);
-      // Select the items in that range.
-      this.selectedItems = this.items.slice(start, end + 1);
+      this.selectedItems = items.slice(start, end + 1);
     } else if (event.ctrlKey) {
-      // Toggle the clicked item in the selection.
       const existingIndex = this.selectedItems.indexOf(item);
       if (existingIndex === -1) {
         this.selectedItems.push(item);
       } else {
         this.selectedItems.splice(existingIndex, 1);
       }
-      // Update lastSelectedIndex to the index of the toggled item.
       this.lastSelectedIndex = index;
     } else {
-      // Regular click: clear selection and select only this item.
       this.selectedItems = [item];
       this.lastSelectedIndex = index;
     }
+
     this.selectionChanged.emit(this.selectedItems);
-    console.log('Current selection:', this.selectedItems.map(i => i.name));
   }
+
 
   onItemDblClick(item: DirectoryItem) {
     // Double-click => if it's a directory, emit openFolder
@@ -188,6 +214,11 @@ export class FileListComponent {
   get fileItems(): DirectoryItem[] {
     return this.items.filter(item => item.isFile);
   }
+
+  get combinedItems(): DirectoryItem[] {
+    return [...this.directoryItems, ...this.fileItems];
+  }
+
 
 
 }
