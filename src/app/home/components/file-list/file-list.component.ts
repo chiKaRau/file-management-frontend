@@ -48,7 +48,6 @@ export class FileListComponent {
  */
   getParsedStats(item: DirectoryItem): any {
     try {
-      console.log(item.scanData)
       // If the scanData and stats property exist, parse the JSON
       return item.scanData && item.scanData.stats ? JSON.parse(item.scanData.stats) : {};
     } catch (error) {
@@ -187,8 +186,6 @@ export class FileListComponent {
   }
 
   get fileItems(): DirectoryItem[] {
-    console.log("Testing")
-    console.log(this.items)
     return this.items.filter(item => item.isFile);
   }
 

@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { HttpClient } from '@angular/common/http';
+import { ExplorerStateService } from '../../services/explorer-state.service';
 
 @Component({
   selector: 'app-file-info-sidebar',
@@ -20,7 +21,7 @@ export class FileInfoSidebarComponent implements OnChanges {
   isLoading: boolean = false;
   error: string | null = null;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private explorerState: ExplorerStateService) { }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['item'] && this.item && !this.item.isDirectory) {
@@ -41,12 +42,17 @@ export class FileInfoSidebarComponent implements OnChanges {
 
   fetchModelVersion(versionID: string) {
     const url = `https://civitai.com/api/v1/model-versions/${versionID}`;
-    this.http.get(url).subscribe(
+    this.http.get<any>(url).subscribe(
       (data) => {
+        console.log("Civitai API result: ");
         console.log(data);
         this.modelVersion = data;
         this.currentImageIndex = 0;
         this.isLoading = false;
+
+        this.updateModel({
+          stats: this.modelVersion?.stats
+        });
       },
       (err) => {
         console.error('Error fetching model version data:', err);
@@ -55,6 +61,63 @@ export class FileInfoSidebarComponent implements OnChanges {
       }
     );
   }
+
+  updateModel(updateFields: { [key: string]: any }): void {
+    if (!this.item) {
+      console.error('No item selected');
+      return;
+    }
+    const parts = this.item.name.split('_');
+    if (parts.length < 2) {
+      console.error('Invalid file name format.');
+      return;
+    }
+
+    const modelId = parts[0];    // Assumes modelId is the first part
+    const versionId = parts[1];  // Assumes versionId is the second part
+
+    // Create payload with the keys of the updateFields object as fieldsToUpdate
+    const payload = ({
+      modelId: modelId,
+      versionId: versionId,
+      fieldsToUpdate: Object.keys(updateFields),
+      ...updateFields
+    } as any);
+
+    const apiUrl = 'http://localhost:3000/api/update-record-by-model-and-version';
+
+    this.http.post(apiUrl, payload).subscribe({
+      next: (response) => {
+        console.log('Update successful:', response);
+        // Manually update the local file object:
+        if (this.item) {
+          if (!this.item.scanData) {
+            this.item.scanData = {};
+          }
+          // Since payload is cast as any, TS will allow us to access .stats
+          this.item.scanData.stats = JSON.stringify(payload.stats);
+          console.log('Local item updated with new stats:', this.item.scanData.stats);
+
+          // Now update the shared state stored in ExplorerStateService.
+          const index = this.explorerState.directoryContents.findIndex(
+            (i) => i.path === this.item!.path
+          );
+          if (index !== -1) {
+            this.explorerState.directoryContents[index] = { ...this.item! };
+            // Reassign the array to trigger change detection
+            this.explorerState.directoryContents = [
+              ...this.explorerState.directoryContents
+            ];
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Update failed:', error);
+        // Optionally, display an error message to the user
+      }
+    });
+  }
+
 
   // Called when the carousel image is clicked.
   openModal() {
