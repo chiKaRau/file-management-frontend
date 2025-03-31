@@ -139,13 +139,28 @@ export class VirtualComponent implements OnInit {
   }
 
   onSearch(query: string): void {
+    // If no query, show full list
     if (!query) {
       this.combineItems();
-    } else {
-      const lower = query.toLowerCase();
-      this.virtualItems = [...this.fullDirectories, ...this.fullFiles].filter(item =>
-        item.name.toLowerCase().includes(lower)
-      );
+      return;
     }
+
+    const lowerQuery = query.toLowerCase();
+
+    this.virtualItems = [...this.fullDirectories, ...this.fullFiles].filter(item => {
+      if (item.isFile && item.scanData) {
+        // Build combined string for files
+        const modelID = item.scanData.modelNumber || '';
+        const versionID = item.scanData.versionNumber || '';
+        const baseModel = item.scanData.baseModel || '';
+        const name = item.name || '';
+        const combined = `${modelID}_${versionID}_${baseModel}_${name}`.toLowerCase();
+        return combined.includes(lowerQuery);
+      } else {
+        // For directories, search by name
+        return item.name.toLowerCase().includes(lowerQuery);
+      }
+    });
   }
+
 }
