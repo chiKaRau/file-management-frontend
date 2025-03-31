@@ -1,4 +1,3 @@
-// src/app/virtual/virtual-file-list/virtual-file-list.component.ts
 import { Component, Input, Output, EventEmitter, ViewChildren, QueryList, ElementRef, OnChanges, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
@@ -63,7 +62,6 @@ export class VirtualFileListComponent implements OnChanges {
   onItemClick(item: any, event: MouseEvent, index: number): void {
     event.stopPropagation();
     const items = this.combinedItems;
-
     if (event.shiftKey && this.lastSelectedIndex !== null) {
       const start = Math.min(this.lastSelectedIndex, index);
       const end = Math.max(this.lastSelectedIndex, index);
@@ -88,9 +86,17 @@ export class VirtualFileListComponent implements OnChanges {
 
   onItemDblClick(item: any): void {
     if (item.isDirectory) {
-      // Emit the directory path to open it
       this.openFolder.emit(item.path);
     }
+  }
+
+  onFileRightClick(item: any, event: MouseEvent): void {
+    event.preventDefault();
+    if (!this.selectedItems.some(x => x.path === item.path)) {
+      this.selectedItems = [item];
+      this.selectionChanged.emit(this.selectedItems);
+    }
+    // You can emit a custom right-click event if needed.
   }
 
   isSelected(item: any): boolean {
@@ -107,5 +113,14 @@ export class VirtualFileListComponent implements OnChanges {
       normalized = 'file:///' + normalized;
     }
     return this.sanitizer.bypassSecurityTrustStyle(`url("${normalized}")`);
+  }
+
+  getParsedStats(item: any): any {
+    try {
+      return item.scanData && item.scanData.stats ? JSON.parse(item.scanData.stats) : {};
+    } catch (error) {
+      console.error('Error parsing stats for item', item, error);
+      return {};
+    }
   }
 }

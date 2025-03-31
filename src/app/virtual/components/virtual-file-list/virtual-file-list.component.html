@@ -1,20 +1,17 @@
-<!-- src/app/virtual/virtual-file-list/virtual-file-list.component.html -->
-<div class="file-card-container" (click)="onContainerClick($event)">
+<div *ngIf="viewMode === 'extraLarge'" class="file-card-container" (click)="onContainerClick($event)">
     <ng-container *ngFor="let item of combinedItems; let i = index">
-        <div class="file-card" #fileCard [class.selected]="isSelected(item)" (click)="onItemClick(item, $event, i)"
-            (dblclick)="onItemDblClick(item)" (contextmenu)="onItemClick(item, $event, i)"
+        <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile}"
             [style.background-image]="item.isFile && isImage(item) && item.imageUrl ? getBackgroundImage(item.imageUrl) : ''">
 
-            <!-- Directory display -->
-            <ng-container *ngIf="item.isDirectory">
-                <svg width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                     c-1.1 0-2-.9-2-2V9z" />
-                </svg>
-                <div class="filename">{{ item.name }}</div>
-            </ng-container>
+            <!-- Directory Icon -->
+            <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                   c-1.1 0-2-.9-2-2V9z" />
+            </svg>
 
-            <!-- File display -->
+            <!-- File content -->
             <ng-container *ngIf="item.isFile">
                 <div class="badge top-left">
                     ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
@@ -25,9 +22,28 @@
                 <div class="card-footer">
                     <div class="creator">{{ item.scanData?.creatorName }}</div>
                     <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+                    <div class="stats">
+                        <span>
+                            <span class="material-icons icon-download">file_download</span>
+                            {{ getParsedStats(item).downloadCount ?? 'N/A' }}
+                        </span>
+                        <span>
+                            <span class="material-icons icon-rating-count">rate_review</span>
+                            {{ getParsedStats(item).ratingCount ?? 'N/A' }}
+                        </span>
+                        <span>
+                            <span class="material-icons icon-rating">star_rate</span>
+                            {{ getParsedStats(item).rating ?? 'N/A' }}
+                        </span>
+                        <span>
+                            <span class="material-icons icon-thumb-up">thumb_up</span>
+                            {{ getParsedStats(item).thumbsUpCount ?? 'N/A' }}
+                        </span>
+                    </div>
                 </div>
-                <div class="filename">{{ item.name }}</div>
             </ng-container>
+
+            <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
         </div>
     </ng-container>
 </div>
