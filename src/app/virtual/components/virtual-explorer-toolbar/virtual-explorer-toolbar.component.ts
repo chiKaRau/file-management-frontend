@@ -1,20 +1,26 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 
 @Component({
   selector: 'app-virtual-explorer-toolbar',
   templateUrl: './virtual-explorer-toolbar.component.html',
   styleUrls: ['./virtual-explorer-toolbar.component.scss']
 })
-export class VirtualExplorerToolbarComponent {
+export class VirtualExplorerToolbarComponent implements OnChanges {
   @Input() currentPath: string = '\\ACG\\';
   @Output() pathChanged: EventEmitter<string> = new EventEmitter<string>();
 
-  // Holds the input value (in case you want to use two-way binding)
+  // Internal variable to hold the current path for display/editing
   inputPath: string = this.currentPath;
 
-  // When user presses the "Go" button or hits Enter in the input
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.currentPath) {
+      // Update the inputPath whenever the currentPath input changes from the parent
+      this.inputPath = changes.currentPath.currentValue;
+    }
+  }
+
+  // Called when user presses "Go" or hits Enter
   triggerPathChange(): void {
-    // Emit the path entered by the user
     this.currentPath = this.inputPath;
     this.pathChanged.emit(this.inputPath);
   }
@@ -25,7 +31,7 @@ export class VirtualExplorerToolbarComponent {
     const trimmedPath = this.currentPath.endsWith('\\')
       ? this.currentPath.slice(0, -1)
       : this.currentPath;
-    // Find the last backslash index to get the parent path
+    // Find the last backslash index to get the parent directory
     const lastIndex = trimmedPath.lastIndexOf('\\');
     if (lastIndex > 0) {
       const newPath = trimmedPath.substring(0, lastIndex + 1);

@@ -19,50 +19,51 @@ export class VirtualComponent implements OnInit {
   constructor(private virtualService: VirtualService) { }
 
   ngOnInit(): void {
-    // Use stored path or default to "\ACG\"
+    // Start with a default path
     this.currentPath = this.virtualService.getCurrentPath() || '\\ACG\\';
     this.loadContent(this.currentPath);
   }
 
   loadContent(path: string): void {
-    // Clear previous data
+    // Clear previous items and set loading flag
     this.directories = [];
     this.files = [];
     this.virtualItems = [];
     this.loading = true;
 
     this.virtualService.setCurrentPath(path);
+    const basePath = path; // current path to use for relative mapping
 
-    // Use forkJoin to wait for both API calls
     forkJoin({
       dirs: this.virtualService.getDirectories(path),
       files: this.virtualService.getFiles(path)
     }).subscribe({
       next: ({ dirs, files }) => {
-        // Normalize responses: if there's a 'payload' property use it, otherwise assume the response itself is the payload
-        const dirPayload = dirs && dirs.payload ? dirs.payload : dirs;
-        const filePayload = files && files.payload ? files.payload : files;
+        // Normalize responses: if there's a payload, use it; otherwise assume the response is the payload.
+        const dirPayload = (dirs && dirs.payload) ? dirs.payload : dirs;
+        const filePayload = (files && files.payload) ? files.payload : files;
 
+        // For directories, build the path relative to the current path.
         this.directories = Array.isArray(dirPayload)
           ? dirPayload.map((dir: any) => ({
             isDirectory: true,
             name: dir.directory,
-            drive: dir.drive,
-            path: `\\${dir.drive}\\${dir.directory}\\`
+            // New path is currentPath + directory name + trailing backslash
+            path: basePath + (basePath.endsWith('\\') ? '' : '\\') + dir.directory + '\\'
           }))
           : [];
 
+        // For files, you can build a similar relative path.
         this.files = Array.isArray(filePayload)
           ? filePayload.map((item: any) => {
             const model = item.model;
             return {
               isFile: true,
-              name: model.name, // or model.mainModelName if preferred
-              drive: item.drive,
-              path: `\\${item.drive}\\${model.name}`,
+              name: model.name, // or use model.mainModelName if preferred
+              // Build file path relative to the current path.
+              path: basePath + (basePath.endsWith('\\') ? '' : '\\') + model.name,
               scanData: model,
               isDeleted: false,
-              // Use first image URL from imageUrls if available
               imageUrl: (model.imageUrls && model.imageUrls.length > 0)
                 ? model.imageUrls[0].url
                 : ''
@@ -85,6 +86,10 @@ export class VirtualComponent implements OnInit {
   }
 
   onPathChange(newPath: string): void {
+    // Ensure newPath ends with a backslash
+    if (!newPath.endsWith('\\')) {
+      newPath += '\\';
+    }
     this.currentPath = newPath;
     this.loadContent(newPath);
   }

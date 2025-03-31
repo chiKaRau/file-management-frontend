@@ -1,4 +1,4 @@
-/* virtual-file-list.component.scss */
+/* src/app/virtual/virtual-file-list/virtual-file-list.component.scss */
 .file-card-container {
     display: flex;
     flex-wrap: wrap;
@@ -8,8 +8,8 @@
 
 .file-card {
     position: relative;
-    width: 300px; // Card width
-    height: 400px; // Card height
+    width: 300px; // Adjust card width as needed
+    height: 400px; // Adjust card height as needed
     border: 1px solid #ccc;
     border-radius: 8px;
     overflow: hidden;
@@ -17,6 +17,15 @@
     background-position: center;
     background-repeat: no-repeat;
     transition: box-shadow 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+        background-color: #f0f0f0;
+    }
+
+    &.selected {
+        border: 2px solid #0078d7;
+    }
 
     .badge {
         position: absolute;

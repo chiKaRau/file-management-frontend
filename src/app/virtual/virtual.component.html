@@ -1,19 +1,17 @@
 <div class="virtual-container">
-    <!-- Virtual Explorer Toolbar -->
     <app-virtual-explorer-toolbar [currentPath]="currentPath" (pathChanged)="onPathChange($event)">
     </app-virtual-explorer-toolbar>
 
     <div class="main-content">
-        <!-- Virtual File Info Sidebar -->
         <app-virtual-file-info-sidebar [selectedFile]="selectedFile"></app-virtual-file-info-sidebar>
 
-        <!-- Files Section -->
         <div class="files">
             <div *ngIf="loading" class="loading-indicator">
                 Loading...
             </div>
             <div *ngIf="!loading">
-                <app-virtual-file-list [items]="virtualItems" (fileSelected)="selectedFile = $event">
+                <app-virtual-file-list [items]="virtualItems" [viewMode]="viewMode"
+                    (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
                 </app-virtual-file-list>
             </div>
         </div>

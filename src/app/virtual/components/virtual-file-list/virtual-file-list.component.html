@@ -1,8 +1,11 @@
-<div *ngIf="items && items.length" class="file-card-container">
-    <ng-container *ngFor="let item of items">
-        <div class="file-card"
+<!-- src/app/virtual/virtual-file-list/virtual-file-list.component.html -->
+<div class="file-card-container" (click)="onContainerClick($event)">
+    <ng-container *ngFor="let item of combinedItems; let i = index">
+        <div class="file-card" #fileCard [class.selected]="isSelected(item)" (click)="onItemClick(item, $event, i)"
+            (dblclick)="onItemDblClick(item)" (contextmenu)="onItemClick(item, $event, i)"
             [style.background-image]="item.isFile && isImage(item) && item.imageUrl ? getBackgroundImage(item.imageUrl) : ''">
-            <!-- Display for Directory -->
+
+            <!-- Directory display -->
             <ng-container *ngIf="item.isDirectory">
                 <svg width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
@@ -11,7 +14,7 @@
                 <div class="filename">{{ item.name }}</div>
             </ng-container>
 
-            <!-- Display for File -->
+            <!-- File display -->
             <ng-container *ngIf="item.isFile">
                 <div class="badge top-left">
                     ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
@@ -23,6 +26,7 @@
                     <div class="creator">{{ item.scanData?.creatorName }}</div>
                     <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
                 </div>
+                <div class="filename">{{ item.name }}</div>
             </ng-container>
         </div>
     </ng-container>
