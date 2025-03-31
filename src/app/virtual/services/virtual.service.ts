@@ -11,7 +11,6 @@ export class VirtualService {
 
     constructor(private http: HttpClient) { }
 
-    // Persist the current path
     setCurrentPath(path: string): void {
         this.currentPath = path;
     }
@@ -20,13 +19,12 @@ export class VirtualService {
         return this.currentPath;
     }
 
-    // API call to fetch directories
-    getDirectories(path: string): Observable<any[]> {
-        return this.http.post<any[]>('http://localhost:3000/api/find-virtual-directories', { path });
+    // Note the inline type annotation so TypeScript expects an object with a payload property.
+    getFiles(path: string): Observable<{ payload: any[] }> {
+        return this.http.post<{ payload: any[] }>('http://localhost:3000/api/find-virtual-files', { path });
     }
 
-    // API call to fetch files
-    getFiles(path: string): Observable<any[]> {
-        return this.http.post<any[]>('http://localhost:3000/api/find-virtual-files', { path });
+    getDirectories(path: string): Observable<{ payload: any[] }> {
+        return this.http.post<{ payload: any[] }>('http://localhost:3000/api/find-virtual-directories', { path });
     }
 }

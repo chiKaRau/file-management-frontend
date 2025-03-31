@@ -1,21 +1,29 @@
-<!-- virtual-file-list.component.html -->
-<div class="virtual-file-list">
-    <ng-container *ngIf="files && files.length; else noFiles">
-        <div *ngFor="let file of files" class="file-item" (click)="onSelectFile(file)">
-            <div class="file-thumbnail">
-                <!-- Placeholder icon; adjust or replace with actual icon logic -->
-                <i class="file-icon"></i>
-            </div>
-            <div class="file-details">
-                <div class="file-name">{{ file.name }}</div>
-                <div class="file-meta">
-                    <span *ngIf="file.versionId">Version: {{ file.versionId }}</span>
-                    <span *ngIf="file.modelId">Model: {{ file.modelId }}</span>
+<div *ngIf="items && items.length" class="file-card-container">
+    <ng-container *ngFor="let item of items">
+        <div class="file-card"
+            [style.background-image]="item.isFile && isImage(item) && item.imageUrl ? getBackgroundImage(item.imageUrl) : ''">
+            <!-- Display for Directory -->
+            <ng-container *ngIf="item.isDirectory">
+                <svg width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                     c-1.1 0-2-.9-2-2V9z" />
+                </svg>
+                <div class="filename">{{ item.name }}</div>
+            </ng-container>
+
+            <!-- Display for File -->
+            <ng-container *ngIf="item.isFile">
+                <div class="badge top-left">
+                    ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
                 </div>
-            </div>
+                <div class="badge top-right">
+                    {{ item.scanData?.baseModel }}
+                </div>
+                <div class="card-footer">
+                    <div class="creator">{{ item.scanData?.creatorName }}</div>
+                    <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+                </div>
+            </ng-container>
         </div>
     </ng-container>
-    <ng-template #noFiles>
-        <p>No files found.</p>
-    </ng-template>
 </div>

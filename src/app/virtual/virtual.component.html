@@ -1,15 +1,12 @@
-<!-- virtual.component.html -->
 <div class="virtual-container">
     <app-virtual-explorer-toolbar [currentPath]="currentPath" (pathChanged)="onPathChange($event)">
     </app-virtual-explorer-toolbar>
 
     <div class="main-content">
-        <!-- Left Sidebar: Display file details of the selected file -->
         <app-virtual-file-info-sidebar [selectedFile]="selectedFile"></app-virtual-file-info-sidebar>
 
-        <!-- Files Section using the new Virtual File List component -->
         <div class="files">
-            <app-virtual-file-list [files]="files" (fileSelected)="selectedFile = $event">
+            <app-virtual-file-list [items]="virtualItems" (fileSelected)="selectedFile = $event">
             </app-virtual-file-list>
         </div>
     </div>

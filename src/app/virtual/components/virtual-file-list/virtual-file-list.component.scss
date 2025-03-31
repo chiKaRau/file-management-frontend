@@ -1,45 +1,71 @@
 /* virtual-file-list.component.scss */
-.virtual-file-list {
+.file-card-container {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 8px;
+}
 
-    .file-item {
-        display: flex;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
+.file-card {
+    position: relative;
+    width: 300px; // Card width
+    height: 400px; // Card height
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: box-shadow 0.2s ease;
+
+    .badge {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        font-weight: bold;
+        padding: 4px 8px;
         border-radius: 4px;
-        cursor: pointer;
-        transition: background 0.2s;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-        &:hover {
-            background: #f5f5f5;
+    .top-left {
+        top: 8px;
+        left: 8px;
+    }
+
+    .top-right {
+        top: 8px;
+        right: 8px;
+    }
+
+    .card-footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 8px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .creator {
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .file-thumbnail {
-            margin-right: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: #e0e0e0;
-            border-radius: 4px;
+        .main-model {
+            font-size: 14px;
         }
+    }
 
-        .file-details {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-
-            .file-name {
-                font-weight: bold;
-            }
-
-            .file-meta {
-                font-size: 0.8rem;
-                color: #666;
-            }
-        }
+    .filename {
+        text-align: center;
+        margin-top: 10px;
+        font-weight: bold;
     }
 }
