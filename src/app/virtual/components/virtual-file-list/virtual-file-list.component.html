@@ -1,3 +1,4 @@
+<!-- In virtual-file-list.component.html -->
 <div *ngIf="viewMode === 'extraLarge'" class="file-card-container" (click)="onContainerClick($event)">
     <ng-container *ngFor="let item of combinedItems; let i = index">
         <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
@@ -10,6 +11,9 @@
                 <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
                    c-1.1 0-2-.9-2-2V9z" />
             </svg>
+
+            <!-- For directories, show displayName if available -->
+            <div class="filename" *ngIf="item.isDirectory">{{ item.displayName || item.name }}</div>
 
             <!-- File content -->
             <ng-container *ngIf="item.isFile">
@@ -42,8 +46,6 @@
                     </div>
                 </div>
             </ng-container>
-
-            <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
         </div>
     </ng-container>
 </div>

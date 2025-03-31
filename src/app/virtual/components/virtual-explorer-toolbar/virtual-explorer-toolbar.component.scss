@@ -2,7 +2,7 @@
     display: flex;
     align-items: center;
     padding: 8px 10px;
-    background-color: #e9ecef; // light gray reminiscent of Windows Explorer
+    background-color: #e9ecef;
     border-bottom: 1px solid #ccc;
     gap: 10px;
     font-family: "Segoe UI", sans-serif;
@@ -68,6 +68,16 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     outline: none;
+}
+
+.drive-dropdown {
+    select {
+        padding: 4px 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        outline: none;
+    }
 }
 
 .search-container {

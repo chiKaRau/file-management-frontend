@@ -10,11 +10,13 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
   @Input() canGoBack: boolean = false;
   @Input() canGoForward: boolean = false;
   @Input() isPreloadComplete: boolean = false;
+  @Input() availableDrives: string[] = [];  // New: list of available drives
   @Output() back = new EventEmitter<void>();
   @Output() forward = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
   @Output() searchQuery = new EventEmitter<string>();
   @Output() pathChanged = new EventEmitter<string>();
+  @Output() driveChanged = new EventEmitter<string>();
 
   isEditingPath = false;
   displayedPath: string = this.currentPath || '';
@@ -43,7 +45,31 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
     this.searchQuery.emit(value);
   }
 
-  /** Return an array of path segments, truncated if too deep */
+  onDriveChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const drive = target ? target.value : '';
+    this.driveChanged.emit(drive);
+  }
+
+
+  enterEditMode(): void {
+    this.isEditingPath = true;
+  }
+
+  exitEditMode(newPath: string): void {
+    this.isEditingPath = false;
+  }
+
+  onPathEnter(newPath: string): void {
+    this.isEditingPath = false;
+    if (newPath) {
+      if (!newPath.endsWith('\\')) {
+        newPath += '\\';
+      }
+      this.pathChanged.emit(newPath);
+    }
+  }
+
   get truncatedBreadcrumbs(): string[] {
     if (!this.currentPath) {
       return [];
@@ -54,26 +80,6 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
       return parts;
     }
     return ['...', ...parts.slice(parts.length - (maxSegments - 1))];
-  }
-
-  enterEditMode(): void {
-    this.isEditingPath = true;
-  }
-
-  exitEditMode(newPath: string): void {
-    this.isEditingPath = false;
-    // You could trigger onPathEnter here if desired.
-  }
-
-  onPathEnter(newPath: string): void {
-    this.isEditingPath = false;
-    if (newPath) {
-      // Ensure the path ends with a backslash
-      if (!newPath.endsWith('\\')) {
-        newPath += '\\';
-      }
-      this.pathChanged.emit(newPath);
-    }
   }
 
   onBreadcrumbClick(index: number, event: MouseEvent): void {

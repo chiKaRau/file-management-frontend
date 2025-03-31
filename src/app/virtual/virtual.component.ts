@@ -1,3 +1,4 @@
+// src/app/virtual/virtual.component.ts
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { VirtualService } from './services/virtual.service';
@@ -16,18 +17,20 @@ export class VirtualComponent implements OnInit {
   viewMode: string = 'extraLarge';
   loading: boolean = false;
 
-  // History tracking properties
+  // Navigation history
   history: string[] = [];
   historyIndex: number = -1;
-
-  // Navigation flags
   canGoBack: boolean = false;
   canGoForward: boolean = false;
+
+  // Drive filtering
+  availableDrives: string[] = [];
+  selectedDrive: string = 'all'; // "all" means show all drives
 
   constructor(private virtualService: VirtualService) { }
 
   ngOnInit(): void {
-    // Start with a default path if none set
+    // Start with default path (or from service)
     this.currentPath = this.virtualService.getCurrentPath() || '\\ACG\\';
     this.addToHistory(this.currentPath);
     this.loadContent(this.currentPath);
@@ -51,30 +54,46 @@ export class VirtualComponent implements OnInit {
         const dirPayload = (dirs && dirs.payload) ? dirs.payload : dirs;
         const filePayload = (files && files.payload) ? files.payload : files;
 
+        // Map directories with a displayName that appends drive if "all" drives are selected
         this.fullDirectories = Array.isArray(dirPayload)
-          ? dirPayload.map((dir: any) => ({
-            isDirectory: true,
-            name: dir.directory,
-            path: basePath + (basePath.endsWith('\\') ? '' : '\\') + dir.directory + '\\'
-          }))
+          ? dirPayload.map((dir: any) => {
+            const displayName = this.selectedDrive === 'all'
+              ? `${dir.directory} (${dir.drive})`
+              : dir.directory;
+            return {
+              isDirectory: true,
+              name: dir.directory,
+              displayName,
+              drive: dir.drive,
+              path: basePath + (basePath.endsWith('\\') ? '' : '\\') + dir.directory + '\\'
+            };
+          })
           : [];
 
+        // Map files
         this.fullFiles = Array.isArray(filePayload)
           ? filePayload.map((item: any) => {
             const model = item.model;
             return {
               isFile: true,
               name: model.name,
+              drive: item.drive,
               path: basePath + (basePath.endsWith('\\') ? '' : '\\') + model.name,
               scanData: model,
               isDeleted: false,
-              imageUrl: (model.imageUrls && model.imageUrls.length > 0)
-                ? model.imageUrls[0].url
-                : ''
+              imageUrl: (model.imageUrls && model.imageUrls.length > 0) ? model.imageUrls[0].url : ''
             };
           })
           : [];
 
+        // Update available drives (unique values)
+        const drivesSet = new Set<string>();
+        this.fullDirectories.forEach(dir => drivesSet.add(dir.drive));
+        this.fullFiles.forEach(file => drivesSet.add(file.drive));
+        this.availableDrives = Array.from(drivesSet);
+        console.log('Available Drives:', this.availableDrives);
+
+        // Combine items and filter by drive
         this.combineItems();
         this.loading = false;
         this.updateNavigationFlags();
@@ -87,16 +106,22 @@ export class VirtualComponent implements OnInit {
   }
 
   combineItems(): void {
-    this.virtualItems = [...this.fullDirectories, ...this.fullFiles];
+    let allItems = [...this.fullDirectories, ...this.fullFiles];
+    // Filter items if a specific drive is selected (case-insensitively)
+    if (this.selectedDrive !== 'all') {
+      allItems = allItems.filter(item =>
+        item.drive && item.drive.toUpperCase() === this.selectedDrive.toUpperCase()
+      );
+    }
+    this.virtualItems = allItems;
+    console.log('Filtered virtualItems:', this.virtualItems);
   }
 
   onPathChange(newPath: string): void {
-    // Ensure newPath ends with a backslash
     if (!newPath.endsWith('\\')) {
       newPath += '\\';
     }
     if (newPath !== this.currentPath) {
-      // When a new path is chosen, discard any "forward" history
       this.history = this.history.slice(0, this.historyIndex + 1);
       this.addToHistory(newPath);
       this.currentPath = newPath;
@@ -139,28 +164,28 @@ export class VirtualComponent implements OnInit {
   }
 
   onSearch(query: string): void {
-    // If no query, show full list
     if (!query) {
       this.combineItems();
-      return;
+    } else {
+      const lower = query.toLowerCase();
+      this.virtualItems = [...this.fullDirectories, ...this.fullFiles].filter(item => {
+        if (item.isFile && item.scanData) {
+          const modelID = item.scanData.modelNumber || '';
+          const versionID = item.scanData.versionNumber || '';
+          const baseModel = item.scanData.baseModel || '';
+          const name = item.name || '';
+          const combined = `${modelID}_${versionID}_${baseModel}_${name}`.toLowerCase();
+          return combined.includes(lower);
+        } else {
+          return item.name.toLowerCase().includes(lower);
+        }
+      });
     }
-
-    const lowerQuery = query.toLowerCase();
-
-    this.virtualItems = [...this.fullDirectories, ...this.fullFiles].filter(item => {
-      if (item.isFile && item.scanData) {
-        // Build combined string for files
-        const modelID = item.scanData.modelNumber || '';
-        const versionID = item.scanData.versionNumber || '';
-        const baseModel = item.scanData.baseModel || '';
-        const name = item.name || '';
-        const combined = `${modelID}_${versionID}_${baseModel}_${name}`.toLowerCase();
-        return combined.includes(lowerQuery);
-      } else {
-        // For directories, search by name
-        return item.name.toLowerCase().includes(lowerQuery);
-      }
-    });
   }
 
+  onDriveChange(drive: string): void {
+    console.log('Drive changed to:', drive);
+    this.selectedDrive = drive;
+    this.combineItems();
+  }
 }

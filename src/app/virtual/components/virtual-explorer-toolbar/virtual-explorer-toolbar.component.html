@@ -5,7 +5,7 @@
         <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
     </div>
 
-    <!-- Breadcrumb or Edit Mode -->
+    <!-- Breadcrumb / Path Display -->
     <div class="breadcrumb-section">
         <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
             <ng-container *ngFor="let crumb of truncatedBreadcrumbs; let i = index">
@@ -22,7 +22,15 @@
         </div>
     </div>
 
-    <!-- Search Container -->
+    <!-- Drive Dropdown -->
+    <div class="drive-dropdown">
+        <select (change)="onDriveChange($event)">
+            <option value="all">All Drives</option>
+            <option *ngFor="let drive of availableDrives" [value]="drive">{{ drive }}</option>
+        </select>
+    </div>
+
+    <!-- Search Box -->
     <div class="search-container">
         <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)"
             [value]="searchText" />

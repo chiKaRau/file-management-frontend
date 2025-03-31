@@ -2,20 +2,18 @@
     <!-- Top Toolbar -->
     <div class="home-toolbar">
         <app-virtual-explorer-toolbar [currentPath]="currentPath" [canGoBack]="canGoBack" [canGoForward]="canGoForward"
-            [isPreloadComplete]="loading" (back)="onBack()" (forward)="onForward()" (refresh)="onRefresh()"
-            (searchQuery)="onSearch($event)" (pathChanged)="onPathChange($event)">
+            [isPreloadComplete]="loading" [availableDrives]="availableDrives" (back)="onBack()" (forward)="onForward()"
+            (refresh)="onRefresh()" (searchQuery)="onSearch($event)" (pathChanged)="onPathChange($event)"
+            (driveChanged)="onDriveChange($event)">
         </app-virtual-explorer-toolbar>
     </div>
 
     <!-- Main Content Area -->
     <div class="actual-content">
         <div class="main-container" [ngClass]="{'with-sidebar': selectedFile}">
-            <!-- Virtual File Info Sidebar (shown when a file is selected) -->
             <app-virtual-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory"
                 [selectedFile]="selectedFile">
             </app-virtual-file-info-sidebar>
-
-            <!-- File List Panel -->
             <div class="file-list-container">
                 <div *ngIf="loading" class="loading">Loading files...</div>
                 <div *ngIf="!loading">
