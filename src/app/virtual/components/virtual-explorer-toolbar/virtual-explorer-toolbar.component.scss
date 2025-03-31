@@ -2,9 +2,11 @@
     display: flex;
     align-items: center;
     padding: 8px 10px;
-    background: #f1f1f1;
+    background-color: #e9ecef; // light gray reminiscent of Windows Explorer
     border-bottom: 1px solid #ccc;
     gap: 10px;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 14px;
 }
 
 .nav-buttons {
@@ -13,56 +15,69 @@
 }
 
 .nav-buttons button {
-    background: #fff;
+    background-color: #f8f9fa;
     border: 1px solid #ccc;
-    padding: 4px 6px;
     border-radius: 4px;
+    padding: 4px 8px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background-color 0.2s;
 
     &:disabled {
         opacity: 0.5;
         cursor: default;
     }
+
+    &:hover:not(:disabled) {
+        background-color: #e2e6ea;
+    }
 }
 
-.path-area {
+.breadcrumb-section {
     flex: 1;
-    padding: 4px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
     cursor: pointer;
+}
+
+.breadcrumb-view,
+.edit-view {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.breadcrumb-part {
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
 }
 
-.path-area .crumb {
-    margin-right: 4px;
-    cursor: pointer;
-}
-
-.path-area .separator {
-    margin-right: 4px;
+.separator {
+    margin: 0 2px;
     color: #666;
 }
 
-.path-edit {
-    flex: 1;
-}
-
-.path-edit input {
+.path-input {
     width: 100%;
-    padding: 4px;
+    padding: 4px 6px;
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    outline: none;
 }
 
-.search-box {
+.search-container {
     width: 180px;
 }
 
-.search-box input {
+.search-container input {
     width: 100%;
     padding: 4px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    outline: none;
 }

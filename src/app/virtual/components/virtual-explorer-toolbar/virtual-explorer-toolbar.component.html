@@ -1,20 +1,29 @@
 <div class="virtual-toolbar">
     <div class="nav-buttons">
-        <button (click)="onBack()" [disabled]="!canGoBack">←</button>
-        <button (click)="onForward()" [disabled]="!canGoForward">→</button>
-        <button (click)="onRefresh()">⟳</button>
+        <button (click)="onBack()" [disabled]="isPreloadComplete || !canGoBack">←</button>
+        <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
+        <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
     </div>
-    <div class="path-area" *ngIf="!isEditingPath" (click)="enterEditMode()">
-        <ng-container *ngFor="let crumb of breadcrumbs; let i = index">
-            <span class="crumb" (click)="onBreadcrumbClick(i, $event)">{{ crumb }}</span>
-            <span class="separator" *ngIf="i < breadcrumbs.length - 1">></span>
-        </ng-container>
+
+    <!-- Breadcrumb or Edit Mode -->
+    <div class="breadcrumb-section">
+        <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
+            <ng-container *ngFor="let crumb of truncatedBreadcrumbs; let i = index">
+                <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">
+                    {{ crumb }}
+                </span>
+                <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
+            </ng-container>
+        </div>
+        <div class="edit-view" *ngIf="isEditingPath">
+            <input type="text" class="path-input" [value]="displayedPath" [disabled]="isPreloadComplete"
+                (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
+                autofocus />
+        </div>
     </div>
-    <div class="path-edit" *ngIf="isEditingPath">
-        <input type="text" [value]="displayedPath" (keyup.enter)="onPathEnter($any($event.target).value)"
-            (blur)="exitEditMode($any($event.target).value)" autofocus />
-    </div>
-    <div class="search-box">
+
+    <!-- Search Container -->
+    <div class="search-container">
         <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)"
             [value]="searchText" />
     </div>
