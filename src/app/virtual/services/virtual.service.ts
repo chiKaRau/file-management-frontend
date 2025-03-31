@@ -1,4 +1,4 @@
-// virtual.service.ts
+// src/app/services/virtual.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -19,7 +19,6 @@ export class VirtualService {
         return this.currentPath;
     }
 
-    // Note the inline type annotation so TypeScript expects an object with a payload property.
     getFiles(path: string): Observable<{ payload: any[] }> {
         return this.http.post<{ payload: any[] }>('http://localhost:3000/api/find-virtual-files', { path });
     }
