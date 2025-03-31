@@ -1,18 +1,28 @@
-<div class="virtual-container">
-    <app-virtual-explorer-toolbar [currentPath]="currentPath" (pathChanged)="onPathChange($event)">
-    </app-virtual-explorer-toolbar>
+<div class="home-page">
+    <!-- Top Toolbar -->
+    <div class="home-toolbar">
+        <app-virtual-explorer-toolbar [currentPath]="currentPath" [canGoBack]="canGoBack" [canGoForward]="canGoForward"
+            [isPreloadComplete]="loading" (back)="onBack()" (forward)="onForward()" (refresh)="onRefresh()"
+            (searchQuery)="onSearch($event)" (pathChanged)="onPathChange($event)">
+        </app-virtual-explorer-toolbar>
+    </div>
 
-    <div class="main-content">
-        <app-virtual-file-info-sidebar [selectedFile]="selectedFile"></app-virtual-file-info-sidebar>
+    <!-- Main Content Area -->
+    <div class="actual-content">
+        <div class="main-container" [ngClass]="{'with-sidebar': selectedFile}">
+            <!-- Virtual File Info Sidebar (shown when a file is selected) -->
+            <app-virtual-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory"
+                [selectedFile]="selectedFile">
+            </app-virtual-file-info-sidebar>
 
-        <div class="files">
-            <div *ngIf="loading" class="loading-indicator">
-                Loading...
-            </div>
-            <div *ngIf="!loading">
-                <app-virtual-file-list [items]="virtualItems" [viewMode]="viewMode"
-                    (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
-                </app-virtual-file-list>
+            <!-- File List Panel -->
+            <div class="file-list-container">
+                <div *ngIf="loading" class="loading">Loading files...</div>
+                <div *ngIf="!loading">
+                    <app-virtual-file-list [items]="virtualItems" [viewMode]="viewMode"
+                        (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
+                    </app-virtual-file-list>
+                </div>
             </div>
         </div>
     </div>

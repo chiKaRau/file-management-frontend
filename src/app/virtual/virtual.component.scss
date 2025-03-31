@@ -1,3 +1,71 @@
-.virtual-container {
-    margin-top: 90px;
+// virtual.component.scss
+.home-page {
+    min-height: 100vh;
+    background-color: #fff;
+}
+
+.home-toolbar {
+    position: fixed;
+    top: 40px; // assuming there's a top-level tab bar of 40px
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background-color: #fafafa;
+    border-bottom: 1px solid #ccc;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 8px;
+}
+
+.browse-icon {
+    background: #e9e9e9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    svg {
+        fill: #444;
+    }
+
+    &:hover {
+        background: #ddd;
+    }
+}
+
+.actual-content {
+    margin-top: 90px; // 40px + 50px toolbar
+    padding: 10px;
+}
+
+.main-container {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+}
+
+.file-list-container {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.virtual-file-info-sidebar {
+    width: 300px;
+    border-right: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f8f8f8;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    color: #666;
 }

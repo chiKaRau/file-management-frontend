@@ -7,43 +7,77 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 })
 export class VirtualExplorerToolbarComponent implements OnChanges {
   @Input() currentPath: string = '\\ACG\\';
-  @Output() pathChanged: EventEmitter<string> = new EventEmitter<string>();
+  @Input() canGoBack: boolean = false;
+  @Input() canGoForward: boolean = false;
+  @Input() isPreloadComplete: boolean = false;
+  @Output() back = new EventEmitter<void>();
+  @Output() forward = new EventEmitter<void>();
+  @Output() refresh = new EventEmitter<void>();
+  @Output() searchQuery = new EventEmitter<string>();
+  @Output() pathChanged = new EventEmitter<string>();
 
-  // Internal variable to hold the current path for display/editing
-  inputPath: string = this.currentPath;
+  isEditingPath = false;
+  displayedPath: string = this.currentPath;
+  searchText: string = '';
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.currentPath) {
-      // Update the inputPath whenever the currentPath input changes from the parent
-      this.inputPath = changes.currentPath.currentValue;
+      this.displayedPath = changes.currentPath.currentValue;
     }
   }
 
-  // Called when user presses "Go" or hits Enter
-  triggerPathChange(): void {
-    this.currentPath = this.inputPath;
-    this.pathChanged.emit(this.inputPath);
+  onBack(): void {
+    this.back.emit();
   }
 
-  // Called when the user wants to navigate back
-  goBack(): void {
-    // Remove trailing backslash if present
-    const trimmedPath = this.currentPath.endsWith('\\')
-      ? this.currentPath.slice(0, -1)
-      : this.currentPath;
-    // Find the last backslash index to get the parent directory
-    const lastIndex = trimmedPath.lastIndexOf('\\');
-    if (lastIndex > 0) {
-      const newPath = trimmedPath.substring(0, lastIndex + 1);
-      this.currentPath = newPath;
-      this.inputPath = newPath;
+  onForward(): void {
+    this.forward.emit();
+  }
+
+  onRefresh(): void {
+    this.refresh.emit();
+  }
+
+  onSearchChange(value: string): void {
+    this.searchText = value;
+    this.searchQuery.emit(value);
+  }
+
+  enterEditMode(): void {
+    this.isEditingPath = true;
+  }
+
+  exitEditMode(newPath: string): void {
+    this.isEditingPath = false;
+    if (newPath) {
+      if (!newPath.endsWith('\\')) {
+        newPath += '\\';
+      }
       this.pathChanged.emit(newPath);
     }
   }
 
-  // Optionally update the inputPath on each keystroke (if not using ngModel)
-  onInputChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.inputPath = target.value;
+  onPathEnter(newPath: string): void {
+    this.isEditingPath = false;
+    if (newPath) {
+      if (!newPath.endsWith('\\')) {
+        newPath += '\\';
+      }
+      this.pathChanged.emit(newPath);
+    }
+  }
+
+  get breadcrumbs(): string[] {
+    if (!this.displayedPath) return [];
+    // Remove leading/trailing backslashes and split on "\"
+    return this.displayedPath.replace(/^\\|\\$/g, '').split('\\');
+  }
+
+  onBreadcrumbClick(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    const parts = this.breadcrumbs;
+    if (parts.length === 0) return;
+    const partialPath = '\\' + parts.slice(0, index + 1).join('\\') + '\\';
+    this.pathChanged.emit(partialPath);
   }
 }
