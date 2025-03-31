@@ -1,0 +1,12 @@
+<div class="sidebar">
+    <ng-container *ngIf="selectedFile; else noFileSelected">
+        <h3>File Information</h3>
+        <p><strong>Name:</strong> {{ selectedFile.name }}</p>
+        <p><strong>Version:</strong> {{ selectedFile.versionId }}</p>
+        <p><strong>Model:</strong> {{ selectedFile.modelId }}</p>
+        <!-- Add any other file details as needed -->
+    </ng-container>
+    <ng-template #noFileSelected>
+        <p>No file selected</p>
+    </ng-template>
+</div>

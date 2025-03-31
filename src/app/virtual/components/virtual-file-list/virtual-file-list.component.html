@@ -1,0 +1,21 @@
+<!-- virtual-file-list.component.html -->
+<div class="virtual-file-list">
+    <ng-container *ngIf="files && files.length; else noFiles">
+        <div *ngFor="let file of files" class="file-item" (click)="onSelectFile(file)">
+            <div class="file-thumbnail">
+                <!-- Placeholder icon; adjust or replace with actual icon logic -->
+                <i class="file-icon"></i>
+            </div>
+            <div class="file-details">
+                <div class="file-name">{{ file.name }}</div>
+                <div class="file-meta">
+                    <span *ngIf="file.versionId">Version: {{ file.versionId }}</span>
+                    <span *ngIf="file.modelId">Model: {{ file.modelId }}</span>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+    <ng-template #noFiles>
+        <p>No files found.</p>
+    </ng-template>
+</div>
