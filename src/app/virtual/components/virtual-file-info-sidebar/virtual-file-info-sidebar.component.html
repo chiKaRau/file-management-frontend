@@ -1,12 +1,50 @@
 <div class="sidebar">
-    <ng-container *ngIf="selectedFile; else noFileSelected">
+    <div class="header">
         <h3>File Information</h3>
-        <p><strong>Name:</strong> {{ selectedFile.name }}</p>
-        <p><strong>Version:</strong> {{ selectedFile.versionId }}</p>
-        <p><strong>Model:</strong> {{ selectedFile.modelId }}</p>
-        <!-- Add any other file details as needed -->
-    </ng-container>
+        <button (click)="close()">X</button>
+    </div>
+    <div *ngIf="selectedFile; else noFileSelected">
+        <ng-container *ngIf="!selectedFile.isDirectory; else folderInfo">
+            <!-- Carousel for file images -->
+            <div class="carousel" *ngIf="!isLoading && modelVersion?.images?.length">
+                <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
+                <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
+                <button class="carousel-btn" (click)="nextImage()">&#10095;</button>
+            </div>
+            <div *ngIf="isLoading" class="loading">Loading model details...</div>
+            <div *ngIf="error" class="error">{{ error }}</div>
+            <div *ngIf="!isLoading && !error && modelVersion">
+                <p><strong>Name:</strong> {{ selectedFile.name }}</p>
+                <p><strong>Path:</strong> {{ selectedFile.path }}</p>
+                <p><strong>Type:</strong> File</p>
+                <p><strong>Base Model:</strong> {{ modelVersion.baseModel }}</p>
+                <p><strong>Model Name:</strong> {{ modelVersion.model?.name }}</p>
+                <p>
+                    <strong>Trained Words:</strong>
+                    <span *ngIf="modelVersion.trainedWords && modelVersion.trainedWords.length">
+                        {{ modelVersion.trainedWords.join(', ') }}
+                    </span>
+                </p>
+                <p>
+                    <strong>Stats:</strong>
+                    Downloads: {{ modelVersion.stats.downloadCount }},
+                    Thumbs Up: {{ modelVersion.stats.thumbsUpCount }}
+                </p>
+                <a [href]="'https://civitai.com/models/' + modelVersion.modelId + '?modelVersionId=' + modelVersion.id"
+                    target="_blank" rel="noopener noreferrer">
+                    Go to Model
+                </a>
+            </div>
+        </ng-container>
+
+        <ng-template #folderInfo>
+            <h4>Folder Information</h4>
+            <p><strong>Name:</strong> {{ selectedFile.name }}</p>
+            <p><strong>Path:</strong> {{ selectedFile.path }}</p>
+            <p><strong>Type:</strong> Folder</p>
+        </ng-template>
+    </div>
     <ng-template #noFileSelected>
-        <p>No file selected</p>
+        <p>No file selected.</p>
     </ng-template>
 </div>

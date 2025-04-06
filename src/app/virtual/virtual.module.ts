@@ -6,10 +6,11 @@ import { VirtualComponent } from './virtual.component';
 import { VirtualFileListComponent } from './components/virtual-file-list/virtual-file-list.component';
 import { VirtualFileInfoSidebarComponent } from './components/virtual-file-info-sidebar/virtual-file-info-sidebar.component';
 import { VirtualExplorerToolbarComponent } from './components/virtual-explorer-toolbar/virtual-explorer-toolbar.component';
+import { VirtualModelModalComponent } from './components/virtual-model-modal/virtual-model-modal.component';
 
 @NgModule({
     declarations: [VirtualComponent, VirtualFileListComponent,
-        VirtualFileInfoSidebarComponent, VirtualExplorerToolbarComponent],
+        VirtualFileInfoSidebarComponent, VirtualExplorerToolbarComponent, VirtualModelModalComponent],
     imports: [
         CommonModule,
         FormsModule,

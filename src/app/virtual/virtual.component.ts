@@ -16,6 +16,7 @@ export class VirtualComponent implements OnInit {
   selectedFile: any = null;
   viewMode: string = 'extraLarge';
   loading: boolean = false;
+  selectedModelVersion: any = null; // Add this property to hold the model data for the modal
 
   // Navigation history
   history: string[] = [];
@@ -188,4 +189,9 @@ export class VirtualComponent implements OnInit {
     this.selectedDrive = drive;
     this.combineItems();
   }
+
+  onFileModalOpen(modelVersion: any): void {
+    this.selectedModelVersion = modelVersion;
+  }
+
 }
