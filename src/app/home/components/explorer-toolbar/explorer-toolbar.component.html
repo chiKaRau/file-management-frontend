@@ -28,6 +28,14 @@
         <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
     </div>
 
+    <!-- Add the checkbox for auto-updating the local path -->
+    <div class="update-checkbox">
+        <label>
+            <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
+            Auto Update Local Path
+        </label>
+    </div>
+
     <!-- Toggle button for zip sidebar -->
     <div class="sidebar-toggle-container">
         <button (click)="toggleZipSidebar()">Zip</button>

@@ -331,6 +331,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   updateLocalPath() {
+
+    // Only perform the update if the flag is enabled
+    if (!this.explorerState.updateLocalPathEnabled) {
+      return;
+    }
+
     // Disable explorer interactions until update finishes
     this.isPreloadComplete = true;
 

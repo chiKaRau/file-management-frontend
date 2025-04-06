@@ -11,6 +11,7 @@ export class ExplorerStateService {
     infoMessage: string | null = null;
     isLoading: boolean = false;
     enableCivitaiMode = true;
+    updateLocalPathEnabled: boolean = true;
 
     viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
 

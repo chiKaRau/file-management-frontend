@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ExplorerStateService } from '../../services/explorer-state.service';
 
 @Component({
   selector: 'app-explorer-toolbar',
@@ -18,6 +19,7 @@ export class ExplorerToolbarComponent {
 
   isEditingPath = false;
 
+  constructor(public explorerState: ExplorerStateService) { } // Injected as public to bind in the template
 
   // In the future, you can also emit an event for "enter new path"
   // @Output() pathEntered = new EventEmitter<string>();
