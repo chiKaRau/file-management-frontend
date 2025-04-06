@@ -1,5 +1,5 @@
 // src/app/virtual/virtual.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { VirtualService } from './services/virtual.service';
 
@@ -104,6 +104,15 @@ export class VirtualComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    // If the click is not inside the sidebar, close the file info sidebar.
+    if (!target.closest('.sidebar')) {
+      this.selectedFile = null;
+    }
   }
 
   combineItems(): void {

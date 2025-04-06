@@ -19,15 +19,21 @@ export class VirtualFileInfoSidebarComponent implements OnChanges {
   constructor(private http: HttpClient) { }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['selectedFile'] && this.selectedFile && !this.selectedFile.isDirectory) {
+    if (changes['selectedFile']) {
+      // Reset previous modelVersion and error on file change.
+      this.modelVersion = null;
       this.error = null;
-      this.isLoading = true;
-      const versionID = this.selectedFile.scanData?.versionNumber;
-      if (versionID) {
-        this.fetchModelVersion(versionID);
-      } else {
-        this.error = 'Invalid file format: Missing version information.';
-        this.isLoading = false;
+
+      // Only fetch model details for files.
+      if (this.selectedFile && !this.selectedFile.isDirectory) {
+        this.isLoading = true;
+        const versionID = this.selectedFile.scanData?.versionNumber;
+        if (versionID) {
+          this.fetchModelVersion(versionID);
+        } else {
+          this.error = 'Invalid file format: Missing version information.';
+          this.isLoading = false;
+        }
       }
     }
   }
@@ -43,6 +49,8 @@ export class VirtualFileInfoSidebarComponent implements OnChanges {
       error: (err) => {
         console.error('Error fetching model version data:', err);
         this.error = 'Failed to load model details.';
+        // Clear modelVersion to avoid showing stale data.
+        this.modelVersion = null;
         this.isLoading = false;
       }
     });
@@ -70,8 +78,10 @@ export class VirtualFileInfoSidebarComponent implements OnChanges {
   }
 
   openModal(): void {
-    // Emit the loaded model version to the parent
-    this.openModalEvent.emit(this.modelVersion);
+    // Only emit if modelVersion is loaded; if there was an error, do nothing.
+    if (this.modelVersion) {
+      this.openModalEvent.emit(this.modelVersion);
+    }
   }
 
   close(): void {

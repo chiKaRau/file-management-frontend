@@ -5,39 +5,50 @@
     </div>
     <div *ngIf="selectedFile; else noFileSelected">
         <ng-container *ngIf="!selectedFile.isDirectory; else folderInfo">
-            <!-- Carousel for file images -->
-            <div class="carousel" *ngIf="!isLoading && modelVersion?.images?.length">
-                <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
-                <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
-                <button class="carousel-btn" (click)="nextImage()">&#10095;</button>
-            </div>
-            <div *ngIf="isLoading" class="loading">Loading model details...</div>
-            <div *ngIf="error" class="error">{{ error }}</div>
-            <div *ngIf="!isLoading && !error && modelVersion">
-                <p><strong>Name:</strong> {{ selectedFile.name }}</p>
-                <p><strong>Path:</strong> {{ selectedFile.path }}</p>
-                <p><strong>Type:</strong> File</p>
-                <p><strong>Base Model:</strong> {{ modelVersion.baseModel }}</p>
-                <p><strong>Model Name:</strong> {{ modelVersion.model?.name }}</p>
-                <p>
-                    <strong>Trained Words:</strong>
-                    <span *ngIf="modelVersion.trainedWords && modelVersion.trainedWords.length">
-                        {{ modelVersion.trainedWords.join(', ') }}
-                    </span>
-                </p>
-                <p>
-                    <strong>Stats:</strong>
-                    Downloads: {{ modelVersion.stats.downloadCount }},
-                    Thumbs Up: {{ modelVersion.stats.thumbsUpCount }}
-                </p>
-                <a [href]="'https://civitai.com/models/' + modelVersion.modelId + '?modelVersionId=' + modelVersion.id"
+            <!-- If there's an error fetching model details, display the error and the link -->
+            <div *ngIf="error" class="error">
+                {{ error }}
+                <br />
+                <a *ngIf="selectedFile?.scanData"
+                    [href]="'https://civitai.com/models/' + selectedFile.scanData.modelId + '?modelVersionId=' + selectedFile.scanData.versionNumber"
                     target="_blank" rel="noopener noreferrer">
                     Go to Model
                 </a>
             </div>
+            <ng-container *ngIf="!error">
+                <!-- Carousel for file images -->
+                <div class="carousel" *ngIf="!isLoading && modelVersion?.images?.length">
+                    <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
+                    <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
+                    <button class="carousel-btn" (click)="nextImage()">&#10095;</button>
+                </div>
+                <div *ngIf="isLoading" class="loading">Loading model details...</div>
+                <div *ngIf="!isLoading && modelVersion">
+                    <p><strong>Name:</strong> {{ selectedFile.name }}</p>
+                    <p><strong>Path:</strong> {{ selectedFile.path }}</p>
+                    <p><strong>Type:</strong> File</p>
+                    <p><strong>Base Model:</strong> {{ modelVersion.baseModel }}</p>
+                    <p><strong>Model Name:</strong> {{ modelVersion.model?.name }}</p>
+                    <p>
+                        <strong>Trained Words:</strong>
+                        <span *ngIf="modelVersion.trainedWords && modelVersion.trainedWords.length">
+                            {{ modelVersion.trainedWords.join(', ') }}
+                        </span>
+                    </p>
+                    <p>
+                        <strong>Stats:</strong>
+                        Downloads: {{ modelVersion.stats.downloadCount }},
+                        Thumbs Up: {{ modelVersion.stats.thumbsUpCount }}
+                    </p>
+                    <a [href]="'https://civitai.com/models/' + modelVersion.modelId + '?modelVersionId=' + modelVersion.id"
+                        target="_blank" rel="noopener noreferrer">
+                        Go to Model
+                    </a>
+                </div>
+            </ng-container>
         </ng-container>
-
         <ng-template #folderInfo>
+            <!-- For folders -->
             <h4>Folder Information</h4>
             <p><strong>Name:</strong> {{ selectedFile.name }}</p>
             <p><strong>Path:</strong> {{ selectedFile.path }}</p>
