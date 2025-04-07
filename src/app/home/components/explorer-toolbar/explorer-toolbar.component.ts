@@ -16,6 +16,7 @@ export class ExplorerToolbarComponent {
   @Output() refresh = new EventEmitter<void>();
   @Output() searchQuery = new EventEmitter<string>();
   @Output() pathChanged = new EventEmitter<string>(); // user enters new path
+  @Output() updateAllModels = new EventEmitter<void>();
 
   isEditingPath = false;
 
@@ -130,4 +131,9 @@ export class ExplorerToolbarComponent {
   toggleGroupingSidebar(): void {
     this.toggleGroupingSidebarEvent.emit();
   }
+
+  onUpdateAllModels() {
+    this.updateAllModels.emit();
+  }
+
 }

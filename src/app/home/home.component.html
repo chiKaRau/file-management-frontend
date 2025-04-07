@@ -12,7 +12,7 @@
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
       [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
       (pathChanged)="navigateByPath($event)" (toggleZipSidebarEvent)="toggleZipSidebar()"
-      (toggleGroupingSidebarEvent)="toggleGroupingSidebar()">
+      (toggleGroupingSidebarEvent)="toggleGroupingSidebar()" (updateAllModels)="updateAllModels()">
       >
     </app-explorer-toolbar>
   </div>
@@ -114,5 +114,14 @@
   <!-- Full-screen modal overlay rendered at the root level -->
   <app-model-modal *ngIf="selectedModelVersion" [modelVersion]="selectedModelVersion" (close)="closeModal()">
   </app-model-modal>
+
+  <!-- Full-screen update overlay -->
+  <div *ngIf="isUpdatingAllModels" class="update-overlay-full">
+    <div class="update-message-full">
+      <h2>Updating models...</h2>
+      <p>Currently updating: {{ currentUpdateModel }}</p>
+    </div>
+  </div>
+
 
 </div>

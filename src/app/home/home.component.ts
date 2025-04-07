@@ -17,7 +17,7 @@ import { ScrollStateService } from './services/scroll-state.service';
 import { RecycleService } from '../recycle/recycle.service';
 import { RecycleRecord } from '../recycle/model/recycle-record.model';
 import { DirectoryItem } from './components/file-list/model/directory-item.model';
-import { Subscription } from 'rxjs';
+import { Subscription, lastValueFrom } from 'rxjs';
 import { HomeRefreshService } from './services/home-refresh.service';
 import { PreferencesService } from '../preferences/preferences.service';
 import { FileListComponent } from './components/file-list/file-list.component';
@@ -86,6 +86,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   // Controls the visibility of the grouping sidebar
   showGroupingSidebar: boolean = false;
+
+  // New properties for update-all overlay.
+  isUpdatingAllModels: boolean = false;
+  currentUpdateModel: string = '';
 
   constructor(
     private electronService: ElectronService,
@@ -1050,4 +1054,62 @@ export class HomeComponent implements OnInit, AfterViewInit {
       console.warn('No directory selected.');
     }
   }
+
+  async updateAllModels(): Promise<void> {
+    // Set flag to show overlay.
+    this.isUpdatingAllModels = true;
+    this.currentUpdateModel = 'Starting update...';
+
+    // Filter for model files (assuming file names with '_' denote model files)
+    const filesToUpdate = this.explorerState.directoryContents.filter(
+      file => file.isFile && file.name.includes('_')
+    );
+
+    for (const file of filesToUpdate) {
+      // Update the overlay with the file being processed.
+      this.currentUpdateModel = file.name;
+      try {
+        // Parse file name to get model and version IDs.
+        const parts = file.name.split('_');
+        if (parts.length < 2) {
+          console.error(`Invalid file name format for ${file.name}`);
+          continue;
+        }
+        const modelId = parts[0];
+        const versionId = parts[1];
+
+        // Fetch updated model version details from Civitai API.
+        const civitaiUrl = `https://civitai.com/api/v1/model-versions/${versionId}`;
+        const modelVersion = await lastValueFrom(this.http.get<any>(civitaiUrl));
+        console.log(`Fetched updated data for ${file.name}`);
+
+        // Update local file model info (e.g. scanData.stats)
+        file.scanData = file.scanData || {};
+        file.scanData.stats = JSON.stringify(modelVersion.stats);
+
+        // Build payload for local API update.
+        const payload = {
+          modelId,
+          versionId,
+          fieldsToUpdate: ['stats'],
+          stats: modelVersion.stats
+        };
+
+        // Call your local update API.
+        await lastValueFrom(
+          this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload)
+        );
+        console.log(`Updated model ${file.name} successfully`);
+      } catch (err) {
+        console.error(`Error updating model for file ${file.name}:`, err);
+      }
+
+      // Wait for 2 seconds before processing the next file.
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    // Clear overlay.
+    this.isUpdatingAllModels = false;
+    this.currentUpdateModel = '';
+  }
+
 }
