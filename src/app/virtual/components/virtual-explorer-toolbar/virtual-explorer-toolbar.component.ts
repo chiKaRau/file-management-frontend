@@ -10,13 +10,15 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
   @Input() canGoBack: boolean = false;
   @Input() canGoForward: boolean = false;
   @Input() isPreloadComplete: boolean = false;
-  @Input() availableDrives: string[] = [];  // New: list of available drives
+  @Input() availableDrives: string[] = [];
   @Output() back = new EventEmitter<void>();
   @Output() forward = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
   @Output() searchQuery = new EventEmitter<string>();
   @Output() pathChanged = new EventEmitter<string>();
   @Output() driveChanged = new EventEmitter<string>();
+  // New event for updating stats across all file items
+  @Output() updateStats = new EventEmitter<void>();
 
   isEditingPath = false;
   displayedPath: string = this.currentPath || '';
@@ -51,6 +53,10 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
     this.driveChanged.emit(drive);
   }
 
+  // New method: when this button is clicked, emit updateStats.
+  onUpdateStats(): void {
+    this.updateStats.emit();
+  }
 
   enterEditMode(): void {
     this.isEditingPath = true;

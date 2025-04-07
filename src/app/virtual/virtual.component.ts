@@ -1,5 +1,6 @@
 import { Component, HostListener, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { VirtualService } from './services/virtual.service';
 
 @Component({
@@ -27,7 +28,10 @@ export class VirtualComponent implements OnInit {
   availableDrives: string[] = [];
   selectedDrive: string = 'all';
 
-  constructor(private virtualService: VirtualService) { }
+  // New property to display updating status
+  updateStatus: string = '';
+
+  constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
   ngOnInit(): void {
     this.currentPath = this.virtualService.getCurrentPath() || '\\ACG\\';
@@ -208,4 +212,50 @@ export class VirtualComponent implements OnInit {
       console.log('Virtual file list updated for', updatedFile.name);
     }
   }
+
+  // Helper: returns a Promise that resolves after ms milliseconds.
+  delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // New method: update stats for all files sequentially with a 2-second delay between calls.
+  onUpdateAllStats(): void {
+    const filesToUpdate = this.virtualItems.filter(item =>
+      item.isFile && item.scanData && item.scanData.versionNumber
+    );
+    const updateSequentially = async () => {
+      for (const file of filesToUpdate) {
+        this.updateStatus = `Updating ${file.name}...`;
+        const versionID = file.scanData.versionNumber;
+        const civitaiUrl = `https://civitai.com/api/v1/model-versions/${versionID}`;
+        try {
+          const data = await this.http.get<any>(civitaiUrl).toPromise();
+          // Update the file's scanData.stats with the latest stats.
+          file.scanData.stats = JSON.stringify(data.stats);
+          console.log(`Updated stats for ${file.name} from API.`);
+          // Prepare payload to update your local database.
+          const modelId = file.scanData.modelNumber;
+          const payload = {
+            modelId,
+            versionId: versionID,
+            fieldsToUpdate: ['stats'],
+            stats: file.scanData.stats
+          };
+          await this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload).toPromise();
+          console.log(`Database updated for ${file.name}.`);
+        } catch (err) {
+          console.error(`Failed to update stats for ${file.name}:`, err);
+        }
+        // Wait for 2 seconds between each file update.
+        await this.delay(2000);
+      }
+      this.updateStatus = ''; // clear status after all updates
+      // Force change detection.
+      this.virtualItems = [...this.virtualItems];
+      console.log('All file updates completed.');
+    };
+
+    updateSequentially();
+  }
+
 }

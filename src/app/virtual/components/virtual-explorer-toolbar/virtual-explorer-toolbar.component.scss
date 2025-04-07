@@ -91,3 +91,26 @@
     border-radius: 4px;
     outline: none;
 }
+
+/* New style for the Update Stats button */
+.update-stats-button {
+    margin-left: 10px;
+}
+
+.update-stats-button button {
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    &:hover:not(:disabled) {
+        background-color: #e2e6ea;
+    }
+}

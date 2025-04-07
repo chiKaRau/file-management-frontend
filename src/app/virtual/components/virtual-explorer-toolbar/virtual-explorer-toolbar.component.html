@@ -16,9 +16,8 @@
             </ng-container>
         </div>
         <div class="edit-view" *ngIf="isEditingPath">
-            <input type="text" class="path-input" [value]="displayedPath" [disabled]="isPreloadComplete"
-                (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
-                autofocus />
+            <input #pathInput type="text" class="path-input" [value]="displayedPath" [disabled]="isPreloadComplete"
+                (keyup.enter)="onPathEnter(pathInput.value)" (blur)="exitEditMode(pathInput.value)" autofocus />
         </div>
     </div>
 
@@ -32,7 +31,13 @@
 
     <!-- Search Box -->
     <div class="search-container">
-        <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)"
+        <input #searchInput type="text" placeholder="Search files..." (input)="onSearchChange(searchInput.value)"
             [value]="searchText" />
     </div>
+
+    <!-- Update Stats Button -->
+    <div class="update-stats-button">
+        <button (click)="onUpdateStats()" [disabled]="isPreloadComplete">Update Stats</button>
+    </div>
+
 </div>
