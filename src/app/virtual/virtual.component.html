@@ -1,5 +1,5 @@
 <div class="home-page">
-    <!-- Top Toolbar and other components... -->
+    <!-- Top Toolbar -->
     <div class="home-toolbar">
         <app-virtual-explorer-toolbar [currentPath]="currentPath" [canGoBack]="canGoBack" [canGoForward]="canGoForward"
             [isPreloadComplete]="loading" [availableDrives]="availableDrives" (back)="onBack()" (forward)="onForward()"
@@ -10,10 +10,13 @@
 
     <div class="actual-content">
         <div class="main-container" [ngClass]="{'with-sidebar': selectedFile}">
+            <!-- Sidebar: Virtual File Info Sidebar -->
             <app-virtual-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory"
-                [selectedFile]="selectedFile" (openModalEvent)="onFileModalOpen($event)">
+                [selectedFile]="selectedFile" (openModalEvent)="onFileModalOpen($event)"
+                (modelUpdated)="onModelUpdated($event)" (closed)="selectedFile = null">
             </app-virtual-file-info-sidebar>
 
+            <!-- File List Container -->
             <div class="file-list-container">
                 <div *ngIf="loading" class="loading">Loading files...</div>
                 <div *ngIf="!loading">
@@ -25,9 +28,8 @@
         </div>
     </div>
 
-    <!-- Modal Component -->
+    <!-- (Optional) Modal Component -->
     <app-virtual-model-modal *ngIf="selectedModelVersion" [modelVersion]="selectedModelVersion"
         (close)="selectedModelVersion = null">
     </app-virtual-model-modal>
-
 </div>

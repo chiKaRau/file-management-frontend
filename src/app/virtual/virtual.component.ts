@@ -1,4 +1,3 @@
-// src/app/virtual/virtual.component.ts
 import { Component, HostListener, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { VirtualService } from './services/virtual.service';
@@ -16,7 +15,7 @@ export class VirtualComponent implements OnInit {
   selectedFile: any = null;
   viewMode: string = 'extraLarge';
   loading: boolean = false;
-  selectedModelVersion: any = null; // Add this property to hold the model data for the modal
+  selectedModelVersion: any = null;
 
   // Navigation history
   history: string[] = [];
@@ -26,19 +25,18 @@ export class VirtualComponent implements OnInit {
 
   // Drive filtering
   availableDrives: string[] = [];
-  selectedDrive: string = 'all'; // "all" means show all drives
+  selectedDrive: string = 'all';
 
   constructor(private virtualService: VirtualService) { }
 
   ngOnInit(): void {
-    // Start with default path (or from service)
     this.currentPath = this.virtualService.getCurrentPath() || '\\ACG\\';
     this.addToHistory(this.currentPath);
     this.loadContent(this.currentPath);
   }
 
   loadContent(path: string): void {
-    // Clear previous data
+    // Clear previous data.
     this.fullDirectories = [];
     this.fullFiles = [];
     this.virtualItems = [];
@@ -55,7 +53,7 @@ export class VirtualComponent implements OnInit {
         const dirPayload = (dirs && dirs.payload) ? dirs.payload : dirs;
         const filePayload = (files && files.payload) ? files.payload : files;
 
-        // Map directories with a displayName that appends drive if "all" drives are selected
+        // Map directories.
         this.fullDirectories = Array.isArray(dirPayload)
           ? dirPayload.map((dir: any) => {
             const displayName = this.selectedDrive === 'all'
@@ -71,7 +69,7 @@ export class VirtualComponent implements OnInit {
           })
           : [];
 
-        // Map files
+        // Map files.
         this.fullFiles = Array.isArray(filePayload)
           ? filePayload.map((item: any) => {
             const model = item.model;
@@ -80,21 +78,21 @@ export class VirtualComponent implements OnInit {
               name: model.name,
               drive: item.drive,
               path: basePath + (basePath.endsWith('\\') ? '' : '\\') + model.name,
-              scanData: model,
+              scanData: model,  // from database; may be outdated
               isDeleted: false,
               imageUrl: (model.imageUrls && model.imageUrls.length > 0) ? model.imageUrls[0].url : ''
             };
           })
           : [];
 
-        // Update available drives (unique values)
+        // Update available drives.
         const drivesSet = new Set<string>();
         this.fullDirectories.forEach(dir => drivesSet.add(dir.drive));
         this.fullFiles.forEach(file => drivesSet.add(file.drive));
         this.availableDrives = Array.from(drivesSet);
         console.log('Available Drives:', this.availableDrives);
 
-        // Combine items and filter by drive
+        // Combine items.
         this.combineItems();
         this.loading = false;
         this.updateNavigationFlags();
@@ -109,7 +107,6 @@ export class VirtualComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    // If the click is not inside the sidebar, close the file info sidebar.
     if (!target.closest('.sidebar')) {
       this.selectedFile = null;
     }
@@ -117,7 +114,6 @@ export class VirtualComponent implements OnInit {
 
   combineItems(): void {
     let allItems = [...this.fullDirectories, ...this.fullFiles];
-    // Filter items if a specific drive is selected (case-insensitively)
     if (this.selectedDrive !== 'all') {
       allItems = allItems.filter(item =>
         item.drive && item.drive.toUpperCase() === this.selectedDrive.toUpperCase()
@@ -203,4 +199,13 @@ export class VirtualComponent implements OnInit {
     this.selectedModelVersion = modelVersion;
   }
 
+  onModelUpdated(updatedFile: any): void {
+    const index = this.virtualItems.findIndex(item => item.path === updatedFile.path);
+    if (index !== -1) {
+      this.virtualItems[index].scanData = updatedFile.scanData;
+      // Force change detection.
+      this.virtualItems = [...this.virtualItems];
+      console.log('Virtual file list updated for', updatedFile.name);
+    }
+  }
 }
