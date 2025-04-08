@@ -31,6 +31,12 @@ export class VirtualComponent implements OnInit {
   // New property to display updating status
   updateStatus: string = '';
 
+  // True = grouping mode on, false = normal mode
+  groupingMode = false;
+
+  // If groupingMode = true, user can pick "grouped" or "ungrouped"
+  groupingSubTab: 'grouped' | 'ungrouped' = 'grouped';
+
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
   ngOnInit(): void {
@@ -88,6 +94,9 @@ export class VirtualComponent implements OnInit {
             };
           })
           : [];
+
+        console.log("Current Path files: ")
+        console.log(this.fullFiles);
 
         // Update available drives.
         const drivesSet = new Set<string>();
@@ -256,6 +265,43 @@ export class VirtualComponent implements OnInit {
     };
 
     updateSequentially();
+  }
+
+  // Called when the grouping button is toggled in the toolbar.
+  onGroupingToggle(): void {
+    this.groupingMode = !this.groupingMode;
+    // Reset sub-tab if needed
+    if (this.groupingMode) {
+      this.groupingSubTab = 'grouped';
+    }
+  }
+
+  // Getter for files without tags
+  get ungroupedFiles(): any[] {
+    return this.virtualItems.filter(item =>
+      item.isFile && (!item.scanData?.local_tags || item.scanData.local_tags.length === 0)
+    );
+  }
+
+  // Getter for building a map of files by tag.
+  get filesByTag(): { [tag: string]: any[] } {
+    const map: { [tag: string]: any[] } = {};
+    this.virtualItems.forEach(item => {
+      if (item.isFile && item.scanData?.local_tags && item.scanData.local_tags.length > 0) {
+        item.scanData.local_tags.forEach((tag: string) => {
+          if (!map[tag]) {
+            map[tag] = [];
+          }
+          map[tag].push(item);
+        });
+      }
+    });
+    return map;
+  }
+
+  // Getter for unique tag names (for iterating in template)
+  get uniqueTags(): string[] {
+    return Object.keys(this.filesByTag).sort();
   }
 
 }

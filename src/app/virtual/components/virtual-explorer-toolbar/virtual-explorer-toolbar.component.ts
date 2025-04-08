@@ -11,14 +11,17 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
   @Input() canGoForward: boolean = false;
   @Input() isPreloadComplete: boolean = false;
   @Input() availableDrives: string[] = [];
+  @Input() groupingMode = false;
+
   @Output() back = new EventEmitter<void>();
   @Output() forward = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
   @Output() searchQuery = new EventEmitter<string>();
   @Output() pathChanged = new EventEmitter<string>();
   @Output() driveChanged = new EventEmitter<string>();
-  // New event for updating stats across all file items
   @Output() updateStats = new EventEmitter<void>();
+  @Output() groupingToggled = new EventEmitter<void>();
+
 
   isEditingPath = false;
   displayedPath: string = this.currentPath || '';
@@ -113,4 +116,9 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
     const input = event.target as HTMLInputElement;
     input.select();
   }
+
+  onGroupingToggle() {
+    this.groupingToggled.emit();
+  }
+
 }

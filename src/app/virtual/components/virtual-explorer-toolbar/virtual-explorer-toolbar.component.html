@@ -40,4 +40,9 @@
         <button (click)="onUpdateStats()" [disabled]="isPreloadComplete">Update Stats</button>
     </div>
 
+    <!-- Grouping Toggle Button -->
+    <button (click)="onGroupingToggle()">
+        {{ groupingMode ? 'Exit Grouping' : 'Enter Grouping' }}
+    </button>
+
 </div>

@@ -11,7 +11,8 @@
         <app-virtual-explorer-toolbar [currentPath]="currentPath" [canGoBack]="canGoBack" [canGoForward]="canGoForward"
             [isPreloadComplete]="loading" [availableDrives]="availableDrives" (back)="onBack()" (forward)="onForward()"
             (refresh)="onRefresh()" (searchQuery)="onSearch($event)" (pathChanged)="onPathChange($event)"
-            (driveChanged)="onDriveChange($event)" (updateStats)="onUpdateAllStats()">
+            (driveChanged)="onDriveChange($event)" (updateStats)="onUpdateAllStats()"
+            (groupingToggled)="onGroupingToggle()">
         </app-virtual-explorer-toolbar>
     </div>
 
@@ -22,12 +23,49 @@
                 (modelUpdated)="onModelUpdated($event)" (closed)="selectedFile = null">
             </app-virtual-file-info-sidebar>
 
+            <!-- File list container with mode toggling -->
             <div class="file-list-container">
                 <div *ngIf="loading" class="loading">Loading files...</div>
                 <div *ngIf="!loading">
-                    <app-virtual-file-list [items]="virtualItems" [viewMode]="viewMode"
-                        (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
-                    </app-virtual-file-list>
+                    <!-- Normal Mode: groupingMode is off -->
+                    <ng-container *ngIf="!groupingMode; else groupingView">
+                        <app-virtual-file-list [items]="virtualItems" [viewMode]="viewMode"
+                            (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
+                        </app-virtual-file-list>
+                    </ng-container>
+
+                    <!-- Grouping Mode: show two sub-tabs -->
+                    <ng-template #groupingView>
+                        <!-- Tabs for switching between "Grouped" and "Ungrouped" -->
+                        <div class="grouping-tabs">
+                            <div class="tab" [class.active]="groupingSubTab === 'grouped'"
+                                (click)="groupingSubTab = 'grouped'">
+                                Grouped
+                            </div>
+                            <div class="tab" [class.active]="groupingSubTab === 'ungrouped'"
+                                (click)="groupingSubTab = 'ungrouped'">
+                                Ungrouped
+                            </div>
+                        </div>
+                        <!-- Content area for the selected sub-tab -->
+                        <div class="grouping-content">
+                            <ng-container *ngIf="groupingSubTab === 'grouped'">
+                                <ng-container *ngFor="let tag of uniqueTags">
+                                    <div class="tag-header">{{ tag }}</div>
+                                    <div class="tag-file-list">
+                                        <app-virtual-file-list [items]="filesByTag[tag]" [viewMode]="viewMode"
+                                            (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
+                                        </app-virtual-file-list>
+                                    </div>
+                                </ng-container>
+                            </ng-container>
+                            <ng-container *ngIf="groupingSubTab === 'ungrouped'">
+                                <app-virtual-file-list [items]="ungroupedFiles" [viewMode]="viewMode"
+                                    (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
+                                </app-virtual-file-list>
+                            </ng-container>
+                        </div>
+                    </ng-template>
                 </div>
             </div>
         </div>
