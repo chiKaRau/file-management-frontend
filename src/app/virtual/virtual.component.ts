@@ -37,6 +37,9 @@ export class VirtualComponent implements OnInit {
   // If groupingMode = true, user can pick "grouped" or "ungrouped"
   groupingSubTab: 'grouped' | 'ungrouped' = 'grouped';
 
+  // Sidebar state: open/closed.
+  groupingSidebarOpen: boolean = false;
+
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
   ngOnInit(): void {
@@ -302,6 +305,51 @@ export class VirtualComponent implements OnInit {
   // Getter for unique tag names (for iterating in template)
   get uniqueTags(): string[] {
     return Object.keys(this.filesByTag).sort();
+  }
+
+  // Toggle the sidebar.
+  toggleGroupingSidebar(): void {
+    this.groupingSidebarOpen = !this.groupingSidebarOpen;
+  }
+
+  // Aggregated options grouped by property.
+  get aggregatedOptions(): { [key: string]: string[] } {
+    const result: { [key: string]: Set<string> } = {
+      "Name": new Set<string>(),
+      "scanData.name": new Set<string>(),
+      "scanData.tags": new Set<string>(),
+      "scanData.mainModelName": new Set<string>(),
+      "scanData.triggerWords": new Set<string>()
+    };
+
+    this.virtualItems.forEach(item => {
+      // File name
+      if (item.name) {
+        result["Name"].add(item.name);
+      }
+      // scanData.name
+      if (item.scanData && item.scanData.name) {
+        result["scanData.name"].add(item.scanData.name);
+      }
+      // scanData.tags: assume array
+      if (item.scanData && Array.isArray(item.scanData.tags)) {
+        item.scanData.tags.forEach((tag: string) => result["scanData.tags"].add(tag));
+      }
+      // scanData.mainModelName
+      if (item.scanData && item.scanData.mainModelName) {
+        result["scanData.mainModelName"].add(item.scanData.mainModelName);
+      }
+      // scanData.triggerWords: assume array
+      if (item.scanData && Array.isArray(item.scanData.triggerWords)) {
+        item.scanData.triggerWords.forEach((word: string) => result["scanData.triggerWords"].add(word));
+      }
+    });
+
+    const final: { [key: string]: string[] } = {};
+    for (const key in result) {
+      final[key] = Array.from(result[key]).sort();
+    }
+    return final;
   }
 
 }

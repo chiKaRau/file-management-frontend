@@ -16,14 +16,25 @@
         </app-virtual-explorer-toolbar>
     </div>
 
-    <div class="actual-content">
-        <div class="main-container" [ngClass]="{'with-sidebar': selectedFile}">
+    <div class="blocker"></div>
+
+    <!-- Toggle button for virtual grouping sidebar, visible only when grouping mode is active -->
+    <div class="grouping-sidebar-toggle" *ngIf="groupingMode">
+        <button (click)="toggleGroupingSidebar()">
+            {{ groupingSidebarOpen ? 'Close Virtual Grouping Sidebar' : 'Open Virtual Grouping Sidebar' }}
+        </button>
+    </div>
+
+    <!-- Actual content arranged in a flex container -->
+    <div class="actual-content" [ngClass]="{'with-virtual-grouping-sidebar': groupingSidebarOpen}">
+        <div class="main-container">
+            <!-- File-Info Sidebar (left) -->
             <app-virtual-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory"
                 [selectedFile]="selectedFile" (openModalEvent)="onFileModalOpen($event)"
                 (modelUpdated)="onModelUpdated($event)" (closed)="selectedFile = null">
             </app-virtual-file-info-sidebar>
 
-            <!-- File list container with mode toggling -->
+            <!-- File List Container (middle) -->
             <div class="file-list-container">
                 <div *ngIf="loading" class="loading">Loading files...</div>
                 <div *ngIf="!loading">
@@ -36,7 +47,6 @@
 
                     <!-- Grouping Mode: show two sub-tabs -->
                     <ng-template #groupingView>
-                        <!-- Tabs for switching between "Grouped" and "Ungrouped" -->
                         <div class="grouping-tabs">
                             <div class="tab" [class.active]="groupingSubTab === 'grouped'"
                                 (click)="groupingSubTab = 'grouped'">
@@ -47,7 +57,6 @@
                                 Ungrouped
                             </div>
                         </div>
-                        <!-- Content area for the selected sub-tab -->
                         <div class="grouping-content">
                             <ng-container *ngIf="groupingSubTab === 'grouped'">
                                 <ng-container *ngFor="let tag of uniqueTags">
@@ -68,8 +77,19 @@
                     </ng-template>
                 </div>
             </div>
+
+            <!-- Virtual Grouping Sidebar positioned on the right -->
+            <app-virtual-grouping-sidebar *ngIf="groupingSidebarOpen" [aggregatedOptions]="aggregatedOptions"
+                (closed)="toggleGroupingSidebar()">
+            </app-virtual-grouping-sidebar>
+
+
+
+
+
         </div>
     </div>
+
 
     <!-- Modal Component -->
     <app-virtual-model-modal *ngIf="selectedModelVersion" [modelVersion]="selectedModelVersion"

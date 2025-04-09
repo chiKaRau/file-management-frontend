@@ -7,10 +7,12 @@ import { VirtualFileListComponent } from './components/virtual-file-list/virtual
 import { VirtualFileInfoSidebarComponent } from './components/virtual-file-info-sidebar/virtual-file-info-sidebar.component';
 import { VirtualExplorerToolbarComponent } from './components/virtual-explorer-toolbar/virtual-explorer-toolbar.component';
 import { VirtualModelModalComponent } from './components/virtual-model-modal/virtual-model-modal.component';
+import { VirtualGroupingSidebarComponent } from './components/virtual-grouping-sidebar/virtual-grouping-sidebar.component';
 
 @NgModule({
     declarations: [VirtualComponent, VirtualFileListComponent,
-        VirtualFileInfoSidebarComponent, VirtualExplorerToolbarComponent, VirtualModelModalComponent],
+        VirtualFileInfoSidebarComponent, VirtualExplorerToolbarComponent,
+        VirtualModelModalComponent, VirtualGroupingSidebarComponent],
     imports: [
         CommonModule,
         FormsModule,

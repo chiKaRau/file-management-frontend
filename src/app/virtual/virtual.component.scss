@@ -1,4 +1,3 @@
-// virtual.component.scss
 .home-page {
     min-height: 100vh;
     background-color: #fff;
@@ -19,50 +18,56 @@
     gap: 8px;
 }
 
-.browse-icon {
-    background: #e9e9e9;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+.blocker {
+    margin-top: 90px; // 40px + 50px toolbar
+}
 
-    svg {
-        fill: #444;
-    }
+/* Toggle button for grouping sidebar */
+.grouping-sidebar-toggle {
+    margin: 10px;
+    text-align: right;
 
-    &:hover {
-        background: #ddd;
+    button {
+        padding: 6px 12px;
+        font-size: 14px;
     }
 }
 
+/* Actual content as a flex container */
 .actual-content {
-    margin-top: 90px; // 40px + 50px toolbar
     padding: 10px;
 }
 
+/* Main container now holds three columns */
 .main-container {
     display: flex;
     flex-direction: row;
-    gap: 16px;
 }
 
-.file-list-container {
-    flex: 1;
-    overflow-y: auto;
-    scroll-behavior: smooth;
-}
-
-.virtual-file-info-sidebar {
+/* File-info sidebar, same as before */
+app-virtual-file-info-sidebar {
     width: 300px;
     border-right: 1px solid #ccc;
     padding: 10px;
     background-color: #f8f8f8;
 }
 
+/* File list container occupies the remaining space */
+.file-list-container {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+/* Grouping sidebar */
+app-virtual-grouping-sidebar {
+    width: 300px;
+    border-right: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f8f8f8;
+}
+
+/* Loading overlay and other styles remain unchanged */
 .loading {
     text-align: center;
     padding: 20px;
@@ -91,6 +96,7 @@
     border-radius: 8px;
 }
 
+/* Grouping tabs and content inside the file list container remain as they were */
 .grouping-tabs {
     display: flex;
     border-bottom: 1px solid #ccc;
