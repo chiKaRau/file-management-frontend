@@ -59,21 +59,29 @@
                         </div>
                         <div class="grouping-content">
                             <ng-container *ngIf="groupingSubTab === 'ungrouped'">
-                                <div *ngIf="selectedTokens && selectedTokens.length > 0; else noFilter">
-                                    <h3>Matched</h3>
-                                    <app-virtual-file-list [items]="matchedUngroupedFiles" [viewMode]="viewMode"
-                                        (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
-                                    </app-virtual-file-list>
-                                    <h3>Unmatched</h3>
-                                    <app-virtual-file-list [items]="unmatchedUngroupedFiles" [viewMode]="viewMode"
-                                        (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
-                                    </app-virtual-file-list>
+                                <div class="files-container" (click)="clearFileSelection($event)">
+                                    <div *ngIf="selectedTokens && selectedTokens.length > 0; else noFilter">
+                                        <h3>Matched</h3>
+                                        <app-virtual-file-list [items]="matchedUngroupedFiles" [viewMode]="viewMode"
+                                            [selectedItems]="globalSelectedItems"
+                                            (selectionChanged)="onFileSelectionChanged($event)"
+                                            (fileSelected)="selectedFile = $event">
+                                        </app-virtual-file-list>
+                                        <h3>Unmatched</h3>
+                                        <app-virtual-file-list [items]="unmatchedUngroupedFiles" [viewMode]="viewMode"
+                                            [selectedItems]="globalSelectedItems"
+                                            (selectionChanged)="onFileSelectionChanged($event)"
+                                            (fileSelected)="selectedFile = $event">
+                                        </app-virtual-file-list>
+                                    </div>
+                                    <ng-template #noFilter>
+                                        <app-virtual-file-list [items]="ungroupedFiles" [viewMode]="viewMode"
+                                            [selectedItems]="globalSelectedItems"
+                                            (selectionChanged)="onFileSelectionChanged($event)"
+                                            (fileSelected)="selectedFile = $event">
+                                        </app-virtual-file-list>
+                                    </ng-template>
                                 </div>
-                                <ng-template #noFilter>
-                                    <app-virtual-file-list [items]="ungroupedFiles" [viewMode]="viewMode"
-                                        (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
-                                    </app-virtual-file-list>
-                                </ng-template>
                             </ng-container>
                         </div>
                     </ng-template>

@@ -15,7 +15,7 @@ export class VirtualFileListComponent implements OnChanges {
 
   @ViewChildren('fileCard') fileCards!: QueryList<ElementRef>;
 
-  selectedItems: any[] = [];
+  @Input() selectedItems: any[] = []; // Now bound to the parent's globalSelectedItems
   lastSelectedIndex: number | null = null;
 
   constructor(private sanitizer: DomSanitizer) { }

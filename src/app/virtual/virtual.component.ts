@@ -13,6 +13,8 @@ export class VirtualComponent implements OnInit {
   fullDirectories: any[] = [];
   fullFiles: any[] = [];
   virtualItems: any[] = [];
+  globalSelectedItems: any[] = [];
+
   selectedFile: any = null;
   viewMode: string = 'extraLarge';
   loading: boolean = false;
@@ -434,4 +436,18 @@ export class VirtualComponent implements OnInit {
       !this.fileMatchesTokens(file, this.selectedTokens)
     );
   }
+
+  clearFileSelection(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.file-card')) {
+      this.globalSelectedItems = [];
+    }
+  }
+
+
+  onFileSelectionChanged(selectedItems: any[]): void {
+    this.globalSelectedItems = selectedItems;
+  }
+
+
 }
