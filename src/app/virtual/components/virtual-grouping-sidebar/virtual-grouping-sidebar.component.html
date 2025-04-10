@@ -4,16 +4,15 @@
         <button class="close-btn" (click)="close()">Close</button>
     </div>
     <div class="content">
-        <!-- For each group (except "Name") -->
+        <!-- For each group (excluding "Name" if desired) -->
         <div class="group" *ngFor="let group of groupKeys">
             <div class="group-header">{{ group }}</div>
-            <div class="option-list">
-                <!-- Render a button for each option in the current group -->
-                <button *ngFor="let option of aggregatedOptions[group]"
-                    [ngClass]="{'selected': selectedOption === option}" (click)="onOptionClick(option)">
+            <ul class="option-list">
+                <li *ngFor="let option of aggregatedOptions[group]" [class.selected]="selectedOption === option"
+                    (click)="onOptionClick(option)">
                     {{ option }}
-                </button>
-            </div>
+                </li>
+            </ul>
         </div>
     </div>
 </div>

@@ -45,10 +45,11 @@
             }
 
             .option-list {
-                display: flex;
-                flex-direction: column;
+                list-style: none;
+                padding: 0;
+                margin: 0;
 
-                button {
+                li {
                     display: block;
                     width: 100%;
                     padding: 8px;
@@ -57,9 +58,14 @@
                     background: #f9f9f9;
                     text-align: left;
                     cursor: pointer;
+                    transition: background 0.2s ease;
+
+                    &:hover {
+                        background: #e6e6e6;
+                    }
                 }
 
-                button.selected {
+                li.selected {
                     background: #d0ebff;
                     font-weight: bold;
                 }
