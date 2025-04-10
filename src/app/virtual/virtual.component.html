@@ -58,9 +58,22 @@
                             </div>
                         </div>
                         <div class="grouping-content">
+                            <!-- Grouped Files Section -->
+                            <ng-container *ngIf="groupingSubTab === 'grouped'">
+                                <ng-container *ngFor="let group of uniqueGroups">
+                                    <div class="tag-header">{{ group }}</div>
+                                    <app-virtual-file-list [items]="filesByGroup[group]" [viewMode]="viewMode"
+                                        [selectedItems]="globalSelectedItems"
+                                        (selectionChanged)="onFileSelectionChanged($event)"
+                                        (fileSelected)="selectedFile = $event">
+                                    </app-virtual-file-list>
+                                </ng-container>
+                            </ng-container>
+
+                            <!-- Ungrouped Files Section remains the same -->
                             <ng-container *ngIf="groupingSubTab === 'ungrouped'">
                                 <div class="files-container" (click)="clearFileSelection($event)">
-                                    <div *ngIf="selectedTokens && selectedTokens.length > 0; else noFilter">
+                                    <ng-container *ngIf="selectedTokens && selectedTokens.length > 0; else noFilter">
                                         <h3>Matched</h3>
                                         <app-virtual-file-list [items]="matchedUngroupedFiles" [viewMode]="viewMode"
                                             [selectedItems]="globalSelectedItems"
@@ -73,7 +86,7 @@
                                             (selectionChanged)="onFileSelectionChanged($event)"
                                             (fileSelected)="selectedFile = $event">
                                         </app-virtual-file-list>
-                                    </div>
+                                    </ng-container>
                                     <ng-template #noFilter>
                                         <app-virtual-file-list [items]="ungroupedFiles" [viewMode]="viewMode"
                                             [selectedItems]="globalSelectedItems"
@@ -85,6 +98,7 @@
                             </ng-container>
                         </div>
                     </ng-template>
+
                 </div>
             </div>
 
@@ -93,8 +107,6 @@
                 (tokensChanged)="onTokensChanged($event)" (applyGrouping)="applyGrouping()"
                 (closed)="toggleGroupingSidebar()">
             </app-virtual-grouping-sidebar>
-
-
         </div>
     </div>
 

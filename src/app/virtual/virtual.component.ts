@@ -287,16 +287,38 @@ export class VirtualComponent implements OnInit {
   // Getter for files without tags
   get ungroupedFiles(): any[] {
     return this.virtualItems.filter(item =>
-      item.isFile && (!item.scanData?.local_tags || item.scanData.local_tags.length === 0)
+      item.isFile && (!item.scanData?.localTags || item.scanData.localTags.length === 0)
     );
   }
+
+  // In VirtualComponent.ts
+  get filesByGroup(): { [group: string]: any[] } {
+    const map: { [group: string]: any[] } = {};
+    this.virtualItems.forEach(item => {
+      if (item.isFile && item.scanData?.localTags && item.scanData.localTags.length > 0) {
+        // Sort the tokens to ensure consistent group keys, then join them.
+        const sortedTokens = [...item.scanData.localTags].sort();
+        const groupKey = `[${sortedTokens.join(', ')}]`; // e.g. "[ameku, takao]"
+        if (!map[groupKey]) {
+          map[groupKey] = [];
+        }
+        map[groupKey].push(item);
+      }
+    });
+    return map;
+  }
+
+  get uniqueGroups(): string[] {
+    return Object.keys(this.filesByGroup).sort();
+  }
+
 
   // Getter for building a map of files by tag.
   get filesByTag(): { [tag: string]: any[] } {
     const map: { [tag: string]: any[] } = {};
     this.virtualItems.forEach(item => {
-      if (item.isFile && item.scanData?.local_tags && item.scanData.local_tags.length > 0) {
-        item.scanData.local_tags.forEach((tag: string) => {
+      if (item.isFile && item.scanData?.localTags && item.scanData.localTags.length > 0) {
+        item.scanData.localTags.forEach((tag: string) => {
           if (!map[tag]) {
             map[tag] = [];
           }
@@ -450,12 +472,10 @@ export class VirtualComponent implements OnInit {
   }
 
   async applyGrouping(): Promise<void> {
-    // Validate that grouping tokens are selected.
     if (!this.selectedTokens || this.selectedTokens.length === 0) {
       console.warn('No grouping tokens selected. Please add grouping tags.');
       return;
     }
-    // Validate that files are selected.
     if (!this.globalSelectedItems || this.globalSelectedItems.length === 0) {
       console.warn('No files selected for grouping.');
       return;
@@ -463,8 +483,7 @@ export class VirtualComponent implements OnInit {
 
     for (const file of this.globalSelectedItems) {
       try {
-        // Update the file's localTags field with the selected tokens.
-        // Use "localTags" to match the API expectation.
+        // Update using "localTags" to match your DTO and getter logic.
         file.scanData.localTags = this.selectedTokens;
 
         const modelId = file.scanData.modelNumber;
@@ -472,18 +491,19 @@ export class VirtualComponent implements OnInit {
         const payload = {
           modelId,
           versionId,
-          fieldsToUpdate: ['localTags'],  // Use localTags here
-          localTags: file.scanData.localTags  // Use localTags here
+          fieldsToUpdate: ['localTags'],  // Make sure the API expects "localTags"
+          localTags: file.scanData.localTags
         };
 
-        // Update the file record via API.
         await this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload).toPromise();
         console.log(`Applied grouping for ${file.name}`);
       } catch (err) {
         console.error(`Error applying grouping for ${file.name}:`, err);
       }
     }
-    // Optionally, refresh the file list.
+    // Force change detection so the UI updates; for example, by reassigning virtualItems:
+    this.virtualItems = [...this.virtualItems];
+    // If needed, also combine items again.
     this.combineItems();
   }
 
