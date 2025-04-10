@@ -117,4 +117,36 @@
             }
         }
     }
+
+    .selected-tokens-container {
+        margin-bottom: 10px;
+
+        input.selected-tokens-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    }
+
+    .apply-grouping-container {
+        margin-bottom: 10px;
+
+        button.apply-grouping-btn {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #aaa;
+            background: #d0ebff;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+
+            &:hover {
+                background: #b0d4f0;
+            }
+        }
+    }
+
 }

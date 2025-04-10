@@ -11,6 +11,11 @@
             <input type="text" class="selected-tokens-input" [value]="getSelectedTokensAsString()" readonly />
         </div>
 
+        <!-- NEW: Apply Grouping Button -->
+        <div class="apply-grouping-container">
+            <button class="apply-grouping-btn" (click)="onApplyGrouping()">Apply Grouping</button>
+        </div>
+
         <!-- Single scrollable list containing group headers and options -->
         <ul class="option-list" [class.expanded]="listExpanded">
             <ng-container *ngFor="let group of groupKeys">

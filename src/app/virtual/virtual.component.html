@@ -90,8 +90,10 @@
 
             <!-- Virtual Grouping Sidebar positioned on the right -->
             <app-virtual-grouping-sidebar *ngIf="groupingSidebarOpen" [aggregatedOptions]="aggregatedOptions"
-                (closed)="toggleGroupingSidebar()" (tokensChanged)="onTokensChanged($event)">
+                (tokensChanged)="onTokensChanged($event)" (applyGrouping)="applyGrouping()"
+                (closed)="toggleGroupingSidebar()">
             </app-virtual-grouping-sidebar>
+
 
         </div>
     </div>

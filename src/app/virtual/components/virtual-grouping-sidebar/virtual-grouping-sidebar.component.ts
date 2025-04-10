@@ -12,6 +12,9 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   // NEW: Emit selected tokens array so parent can filter files.
   @Output() tokensChanged = new EventEmitter<string[]>();
 
+  // NEW: Event emitted when user clicks "Apply Grouping"
+  @Output() applyGrouping = new EventEmitter<void>();
+
   // Array of group headers – for example, excluding "Name"
   groupKeys: string[] = [];
   selectedOption: string | null = null;
@@ -60,4 +63,10 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   close(): void {
     this.closed.emit();
   }
+
+  // NEW: Called when the "Apply Grouping" button is clicked.
+  onApplyGrouping(): void {
+    this.applyGrouping.emit();
+  }
+
 }

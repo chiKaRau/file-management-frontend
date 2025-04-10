@@ -449,5 +449,42 @@ export class VirtualComponent implements OnInit {
     this.globalSelectedItems = selectedItems;
   }
 
+  async applyGrouping(): Promise<void> {
+    // Validate that grouping tokens are selected.
+    if (!this.selectedTokens || this.selectedTokens.length === 0) {
+      console.warn('No grouping tokens selected. Please add grouping tags.');
+      return;
+    }
+    // Validate that files are selected.
+    if (!this.globalSelectedItems || this.globalSelectedItems.length === 0) {
+      console.warn('No files selected for grouping.');
+      return;
+    }
+
+    for (const file of this.globalSelectedItems) {
+      try {
+        // Update the file's localTags field with the selected tokens.
+        // Use "localTags" to match the API expectation.
+        file.scanData.localTags = this.selectedTokens;
+
+        const modelId = file.scanData.modelNumber;
+        const versionId = file.scanData.versionNumber;
+        const payload = {
+          modelId,
+          versionId,
+          fieldsToUpdate: ['localTags'],  // Use localTags here
+          localTags: file.scanData.localTags  // Use localTags here
+        };
+
+        // Update the file record via API.
+        await this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload).toPromise();
+        console.log(`Applied grouping for ${file.name}`);
+      } catch (err) {
+        console.error(`Error applying grouping for ${file.name}:`, err);
+      }
+    }
+    // Optionally, refresh the file list.
+    this.combineItems();
+  }
 
 }
