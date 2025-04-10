@@ -40,6 +40,9 @@ export class VirtualComponent implements OnInit {
   // Sidebar state: open/closed.
   groupingSidebarOpen: boolean = false;
 
+  // NEW: Store the tokens coming from the sidebar input (e.g. ["Ameku", "Takao"])
+  selectedTokens: string[] = [];
+
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
   ngOnInit(): void {
@@ -98,7 +101,7 @@ export class VirtualComponent implements OnInit {
           })
           : [];
 
-        console.log("Current Path files: ")
+        console.log("Current Path files: ");
         console.log(this.fullFiles);
 
         // Update available drives.
@@ -313,7 +316,7 @@ export class VirtualComponent implements OnInit {
   }
 
   // Aggregated options grouped by property.
-  // In your VirtualComponent class
+  // (No changes here; your existing logic remains the same.)
   get aggregatedOptions(): { [key: string]: string[] } {
     const result: { [key: string]: Set<string> } = {
       "Name": new Set<string>(),
@@ -343,16 +346,17 @@ export class VirtualComponent implements OnInit {
     });
 
     // Helper: split strings by special characters (supports Unicode)
+    // Updated to only return tokens with more than 1 letter.
     const splitBySpecialChars = (input: string): string[] =>
-      input.split(/[^\p{L}\p{N}]+/u).filter((token) => token.length > 0);
+      input.split(/[^\p{L}\p{N}]+/u).filter((token) => token.length > 1);
 
     // Create a union set for the "All" group.
     const allSet: Set<string> = new Set<string>();
     for (const key in result) {
       for (const value of result[key].values()) {
-        // Split each value into tokens and add them to the "All" set.
+        // Split each value into tokens, convert to lowercase and add to the "All" set.
         const tokens = splitBySpecialChars(value);
-        tokens.forEach(token => allSet.add(token));
+        tokens.forEach(token => allSet.add(token.toLowerCase()));
       }
     }
     // Add the "All" key with the union of tokens.
@@ -367,4 +371,67 @@ export class VirtualComponent implements OnInit {
   }
 
 
+  // ---- New Section: Filtering Ungrouped Files Based on Selected Tokens ----
+
+  // Event handler to receive token updates from the sidebar.
+  onTokensChanged(tokens: string[]): void {
+    this.selectedTokens = tokens;
+  }
+
+  // Helper: Split a string by special characters (supports Unicode).
+  private splitBySpecialChars(input: string): string[] {
+    return input.split(/[^\p{L}\p{N}]+/u).filter(token => token.length > 0);
+  }
+
+  // Helper: Check if a given file matches at least one token from the selected tokens.
+  fileMatchesTokens(file: any, tokens: string[]): boolean {
+    if (!tokens || tokens.length === 0) return false;
+    const allFileTokens = new Set<string>();
+
+    // Aggregate tokens from file's properties.
+    if (file.name) {
+      this.splitBySpecialChars(file.name).forEach(token =>
+        allFileTokens.add(token.toLowerCase())
+      );
+    }
+    if (file.scanData) {
+      if (file.scanData.name) {
+        this.splitBySpecialChars(file.scanData.name).forEach(token =>
+          allFileTokens.add(token.toLowerCase())
+        );
+      }
+      if (Array.isArray(file.scanData.tags)) {
+        file.scanData.tags.forEach((tag: string) =>
+          this.splitBySpecialChars(tag).forEach(t => allFileTokens.add(t.toLowerCase()))
+        );
+      }
+      if (file.scanData.mainModelName) {
+        this.splitBySpecialChars(file.scanData.mainModelName).forEach(token =>
+          allFileTokens.add(token.toLowerCase())
+        );
+      }
+      if (Array.isArray(file.scanData.triggerWords)) {
+        file.scanData.triggerWords.forEach((word: string) =>
+          this.splitBySpecialChars(word).forEach(t => allFileTokens.add(t.toLowerCase()))
+        );
+      }
+    }
+
+    // Check if any selected token (lowercased) is found within the file tokens.
+    return tokens.every(token => allFileTokens.has(token.toLowerCase()));
+  }
+
+  // Getter for ungrouped files that match at least one of the selected tokens.
+  get matchedUngroupedFiles(): any[] {
+    return this.ungroupedFiles.filter(file =>
+      this.fileMatchesTokens(file, this.selectedTokens)
+    );
+  }
+
+  // Getter for ungrouped files that do not match any of the selected tokens.
+  get unmatchedUngroupedFiles(): any[] {
+    return this.ungroupedFiles.filter(file =>
+      !this.fileMatchesTokens(file, this.selectedTokens)
+    );
+  }
 }

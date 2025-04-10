@@ -9,18 +9,19 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   // Aggregated options passed in from the parent.
   @Input() aggregatedOptions: { [key: string]: string[] } = {};
   @Output() closed = new EventEmitter<void>();
+  // NEW: Emit selected tokens array so parent can filter files.
+  @Output() tokensChanged = new EventEmitter<string[]>();
 
-  // Group headers. For example, you might filter out "Name" if unnecessary.
+  // Array of group headers – for example, excluding "Name"
   groupKeys: string[] = [];
-  // Flag to track expanded/collapsed state for the list.
+  selectedOption: string | null = null;
   listExpanded: boolean = false;
-  // Set of tokens selected (to be displayed in the input box).
+  // Hold the selected tokens (as a Set to avoid duplicates).
   selectedTokens: Set<string> = new Set<string>();
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.aggregatedOptions) {
-      // For the sidebar, exclude any group you don't want (here, for example, "Name"),
-      // and force "All" to be at the top.
+      // Exclude the "Name" group if desired and force "All" to be the first group.
       this.groupKeys = Object.keys(this.aggregatedOptions)
         .filter(key => key !== 'Name')
         .sort((a, b) => {
@@ -31,13 +32,15 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
     }
   }
 
-  // Toggle token selection: add it if not present, remove if present.
+  // When a token is toggled, add or remove from the selected tokens set.
   toggleToken(token: string): void {
     if (this.selectedTokens.has(token)) {
       this.selectedTokens.delete(token);
     } else {
       this.selectedTokens.add(token);
     }
+    // Emit the updated tokens as an array.
+    this.tokensChanged.emit(Array.from(this.selectedTokens));
   }
 
   // Check if a token is already selected.
@@ -45,17 +48,15 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
     return this.selectedTokens.has(token);
   }
 
-  // Build a comma-separated string from the selected tokens for display.
+  // Build a comma-separated string for displaying in the input box.
   getSelectedTokensAsString(): string {
     return Array.from(this.selectedTokens).join(', ');
   }
 
-  // Toggle the expand/collapse state of the list.
   toggleList(): void {
     this.listExpanded = !this.listExpanded;
   }
 
-  // Emit the close event when needed.
   close(): void {
     this.closed.emit();
   }
