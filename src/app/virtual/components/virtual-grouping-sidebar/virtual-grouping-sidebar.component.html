@@ -4,15 +4,32 @@
         <button class="close-btn" (click)="close()">Close</button>
     </div>
     <div class="content">
-        <!-- For each group (excluding "Name" if desired) -->
-        <div class="group" *ngFor="let group of groupKeys">
-            <div class="group-header">{{ group }}</div>
-            <ul class="option-list">
-                <li *ngFor="let option of aggregatedOptions[group]" [class.selected]="selectedOption === option"
-                    (click)="onOptionClick(option)">
-                    {{ option }}
-                </li>
-            </ul>
+        <!-- New input box on top that shows selected tokens -->
+        <div class="selected-tokens-container">
+            <input type="text" class="selected-tokens-input" [value]="getSelectedTokensAsString()" readonly />
         </div>
+
+        <!-- The single scrollable list containing group headers and options -->
+        <ul class="option-list" [class.expanded]="listExpanded">
+            <ng-container *ngFor="let group of groupKeys">
+                <!-- Group header -->
+                <li class="group-header">{{ group }}</li>
+                <!-- Iterate through options of this group -->
+                <ng-container *ngFor="let option of aggregatedOptions[group]">
+                    <li class="option">
+                        <span class="option-text">{{ option }}</span>
+                        <!-- The toggle button: show '+' if token not selected; '-' if already selected -->
+                        <span class="toggle-token-btn" (click)="toggleToken(option); $event.stopPropagation();">
+                            {{ isTokenSelected(option) ? '-' : '+' }}
+                        </span>
+                    </li>
+                </ng-container>
+            </ng-container>
+        </ul>
+
+        <!-- Toggle button for expanding or collapsing the list -->
+        <button class="toggle-btn" (click)="toggleList()">
+            {{ listExpanded ? 'Collapse List' : 'Expand List' }}
+        </button>
     </div>
 </div>
