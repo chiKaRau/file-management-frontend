@@ -36,16 +36,28 @@
 
         // Container for the input box that displays selected tokens.
         .selected-tokens-container {
+            display: flex;
+            align-items: center;
             margin-bottom: 10px;
 
-            input.selected-tokens-input {
-                width: 100%;
+            .selected-tokens-input {
+                flex-grow: 1;
                 padding: 8px;
                 border: 1px solid #aaa;
                 border-radius: 4px;
                 font-size: 14px;
             }
+
+            .clear-btn {
+                margin-left: 5px;
+                padding: 8px;
+                border: 1px solid #aaa;
+                background: #f5f5f5;
+                cursor: pointer;
+                border-radius: 4px;
+            }
         }
+
 
         .option-list {
             list-style: none;

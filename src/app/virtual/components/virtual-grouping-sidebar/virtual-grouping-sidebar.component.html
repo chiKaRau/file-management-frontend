@@ -7,7 +7,9 @@
     <div class="content">
         <!-- Input box showing selected tokens -->
         <div class="selected-tokens-container">
-            <input type="text" class="selected-tokens-input" [value]="getSelectedTokensAsString()" readonly />
+            <input type="text" class="selected-tokens-input" [(ngModel)]="selectedTokensString"
+                (ngModelChange)="onTokensInputChange($event)" placeholder="Enter tokens separated by commas" />
+            <button type="button" class="clear-btn" (click)="clearTokens()">Clear</button>
         </div>
 
         <!-- Apply Grouping Button -->

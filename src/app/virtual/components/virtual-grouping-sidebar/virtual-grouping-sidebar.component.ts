@@ -21,6 +21,8 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   // Hold the selected tokens (as a Set to avoid duplicates).
   selectedTokens: Set<string> = new Set<string>();
 
+  selectedTokensString: string = '';
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.aggregatedOptions) {
       // Exclude "Name" if you wish; you may modify as desired.
@@ -41,7 +43,38 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
     } else {
       this.selectedTokens.add(token);
     }
+    // Update the input's string representation.
+    this.updateTokensString();
+    // Emit the updated tokens.
     this.tokensChanged.emit(Array.from(this.selectedTokens));
+  }
+
+
+
+  // Update the string representation from the selectedTokens set.
+  updateTokensString(): void {
+    this.selectedTokensString = Array.from(this.selectedTokens).join(', ');
+  }
+
+
+  // Called when the user changes the input.
+  onTokensInputChange(value: string): void {
+    const tokens = value.split(',')
+      .map(token => token.trim())
+      .filter(token => token.length > 0);
+    this.selectedTokens = new Set(tokens);
+    this.tokensChanged.emit(Array.from(this.selectedTokens));
+    // Update the string property (this should already be the case
+    // because the input uses two-way binding, but it's fine to ensure).
+    this.updateTokensString();
+  }
+
+
+  // Clear the input and tokens.
+  clearTokens(): void {
+    this.selectedTokens.clear();
+    this.selectedTokensString = '';
+    this.tokensChanged.emit([]);
   }
 
   // Returns a comma-separated string for display in the input box.
@@ -60,6 +93,7 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   // Called when the "Apply Grouping" button is clicked.
   onApplyGrouping(): void {
     this.groupingApplied.emit();
+    this.clearTokens(); // Clear the tokens and input box after grouping is applied.
   }
 
   // NEW: Aggregate properties of the selected models.
