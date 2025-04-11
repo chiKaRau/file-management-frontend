@@ -481,10 +481,13 @@ export class VirtualComponent implements OnInit {
       return;
     }
 
+    // Normalize the selected tokens by sorting them.
+    const normalizedTokens = [...this.selectedTokens].sort();
+
     for (const file of this.globalSelectedItems) {
       try {
-        // Update using "localTags" to match your DTO and getter logic.
-        file.scanData.localTags = this.selectedTokens;
+        // Set the file's localTags to the normalized tokens.
+        file.scanData.localTags = normalizedTokens;
 
         const modelId = file.scanData.modelNumber;
         const versionId = file.scanData.versionNumber;
@@ -503,7 +506,7 @@ export class VirtualComponent implements OnInit {
     }
     // Force change detection so the UI updates; for example, by reassigning virtualItems:
     this.virtualItems = [...this.virtualItems];
-    // If needed, also combine items again.
+    // Optionally, re-run combineItems() if it recalculates filtered lists.
     this.combineItems();
   }
 
