@@ -45,7 +45,7 @@
                         </app-virtual-file-list>
                     </ng-container>
 
-                    <!-- Grouping Mode: show two sub-tabs -->
+                    <!-- Grouping Mode: show three sub-tabs -->
                     <ng-template #groupingView>
                         <div class="grouping-tabs">
                             <div class="tab" [class.active]="groupingSubTab === 'grouped'"
@@ -56,9 +56,14 @@
                                 (click)="groupingSubTab = 'ungrouped'">
                                 Ungrouped
                             </div>
+                            <div class="tab" [class.active]="groupingSubTab === 'suggest'"
+                                (click)="groupingSubTab = 'suggest'">
+                                Suggest Ungrouped
+                            </div>
                         </div>
+
                         <div class="grouping-content">
-                            <!-- Grouped Files Section -->
+                            <!-- Grouped Files Section (existing) -->
                             <ng-container *ngIf="groupingSubTab === 'grouped'">
                                 <ng-container *ngFor="let group of uniqueGroups">
                                     <div class="tag-header">{{ group }}</div>
@@ -70,7 +75,7 @@
                                 </ng-container>
                             </ng-container>
 
-                            <!-- Ungrouped Files Section remains the same -->
+                            <!-- Ungrouped Files Section (existing) -->
                             <ng-container *ngIf="groupingSubTab === 'ungrouped'">
                                 <div class="files-container" (click)="clearFileSelection($event)">
                                     <ng-container *ngIf="selectedTokens && selectedTokens.length > 0; else noFilter">
@@ -96,8 +101,47 @@
                                     </ng-template>
                                 </div>
                             </ng-container>
+
+                            <!-- Suggest Ungrouped Section -->
+                            <ng-container *ngIf="groupingSubTab === 'suggest'">
+                                <div class="suggest-section">
+                                    <h3>Suggest Ungrouped</h3>
+                                    <!-- Numeric input for digit setting -->
+                                    <div class="digit-input-container">
+                                        <label for="suggestDigit">Minimum tokens:</label>
+                                        <input type="number" id="suggestDigit" [(ngModel)]="suggestDigit"
+                                            (change)="onSuggestDigitChange(suggestDigit)" min="2" />
+                                    </div>
+                                    <div class="suggestions-container"
+                                        *ngIf="(suggestionResults | keyvalue)?.length; else noSuggestions">
+                                        <div *ngFor="let result of suggestionResults | keyvalue">
+                                            <!-- result.key is the property (e.g., 'scanData.tags'), result.value is an array of suggestion objects -->
+                                            <h4>{{ result.key }}</h4>
+                                            <div *ngFor="let suggestion of result.value" class="suggestion-block">
+                                                <div class="suggestion-combination">
+                                                    Combination: [{{ suggestion.combination.join(', ') }}]
+                                                </div>
+                                                <ng-container *ngIf="suggestion.models.length > 0; else noMatch">
+                                                    <!-- Display the matching models as file-cards by reusing the file list component -->
+                                                    <app-virtual-file-list [items]="suggestion.models"
+                                                        [viewMode]="viewMode" (fileSelected)="selectedFile = $event">
+                                                    </app-virtual-file-list>
+                                                </ng-container>
+                                                <ng-template #noMatch>
+                                                    <div class="no-match">No models match this combination.</div>
+                                                </ng-template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ng-template #noSuggestions>
+                                        <p>No suggestions available for the selected digit.</p>
+                                    </ng-template>
+                                </div>
+                            </ng-container>
+
                         </div>
                     </ng-template>
+
 
                 </div>
             </div>

@@ -130,3 +130,57 @@ app-virtual-grouping-sidebar {
     margin-left: 20px;
     margin-bottom: 20px;
 }
+
+.suggest-section {
+    padding: 1rem;
+    background-color: #fafafa;
+
+    .digit-input-container {
+        margin-bottom: 1rem;
+
+        label {
+            margin-right: 0.5rem;
+        }
+
+        input {
+            width: 60px;
+            padding: 4px;
+        }
+    }
+
+    .suggestions-container {
+        h4 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            background: #eee;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .suggestion-block {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 8px;
+            margin-bottom: 8px;
+
+            .suggestion-combination {
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+
+            .matching-models {
+                font-size: 13px;
+
+                ul {
+                    list-style: disc;
+                    margin-left: 20px;
+                }
+            }
+
+            .no-match {
+                font-style: italic;
+                color: #888;
+            }
+        }
+    }
+}

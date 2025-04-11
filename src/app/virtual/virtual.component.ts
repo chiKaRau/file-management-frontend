@@ -36,14 +36,18 @@ export class VirtualComponent implements OnInit {
   // True = grouping mode on, false = normal mode
   groupingMode = false;
 
-  // If groupingMode = true, user can pick "grouped" or "ungrouped"
-  groupingSubTab: 'grouped' | 'ungrouped' = 'grouped';
+  // groupingSubTab now can be 'grouped', 'ungrouped', or 'suggest'
+  groupingSubTab: 'grouped' | 'ungrouped' | 'suggest' = 'grouped';
+
+  // New: The digit input for suggestion combinations (default is 2)
+  suggestDigit: number = 2;
 
   // Sidebar state: open/closed.
   groupingSidebarOpen: boolean = false;
 
   // NEW: Store the tokens coming from the sidebar input (e.g. ["Ameku", "Takao"])
   selectedTokens: string[] = [];
+
 
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
@@ -532,5 +536,65 @@ export class VirtualComponent implements OnInit {
     }
   }
 
+  // New: A helper method to generate suggestions for a given property.
+  generateSuggestions(property: string, digit: number): { combination: string[], models: any[] }[] {
+    // Get the aggregated options for that property
+    const aggregated: string[] = this.aggregatedOptions[property] || [];
+    // Only generate suggestions if we have at least `digit` tokens.
+    if (aggregated.length < digit) {
+      return [];
+    }
+    // Sort tokens to ensure consistent ordering.
+    const sortedTokens = [...aggregated].sort();
+    const suggestions = [];
+    // Generate sliding window contiguous combinations:
+    for (let i = 0; i <= sortedTokens.length - digit; i++) {
+      const combination = sortedTokens.slice(i, i + digit);
+      // Find models which have all tokens of this combination in the property.
+      const matchingModels = this.virtualItems.filter(file => {
+        if (!file.isFile || !file.scanData) {
+          return false;
+        }
+        // Resolve the property from file.scanData
+        const parts = property.split('.');
+        let value = file.scanData;
+        for (const part of parts.slice(1)) {
+          // For property like "scanData.tags", skip the first part as it is "scanData"
+          if (value && value[part]) {
+            value = value[part];
+          } else {
+            value = null;
+            break;
+          }
+        }
+        if (!Array.isArray(value)) {
+          return false;
+        }
+        // Normalize
+        const fileTokens = value.map((s: string) => s.toLowerCase());
+        return combination.every(token => fileTokens.includes(token.toLowerCase()));
+      });
+      suggestions.push({ combination, models: matchingModels });
+    }
+    return suggestions;
+  }
+
+  // New: A getter to generate suggestion results for all aggregated options.
+  get suggestionResults(): { [property: string]: { combination: string[], models: any[] }[] } {
+    const results: { [property: string]: { combination: string[], models: any[] }[] } = {};
+    // Iterate over aggregatedOptions keys (for example, "scanData.tags" etc.)
+    for (const prop in this.aggregatedOptions) {
+      // For each property, only generate if there are at least suggestDigit tokens.
+      if (this.aggregatedOptions[prop].length >= this.suggestDigit) {
+        results[prop] = this.generateSuggestions(prop, this.suggestDigit);
+      }
+    }
+    return results;
+  }
+
+  // When the suggest digit input changes, update the property.
+  onSuggestDigitChange(newVal: number): void {
+    this.suggestDigit = newVal;
+  }
 
 }
