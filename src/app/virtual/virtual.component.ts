@@ -510,5 +510,27 @@ export class VirtualComponent implements OnInit {
     this.combineItems();
   }
 
+  async removeGroup(file: any): Promise<void> {
+    try {
+      // Clear the grouping (localTags) for the file.
+      file.scanData.localTags = [];
+      const modelId = file.scanData.modelNumber;
+      const versionId = file.scanData.versionNumber;
+      const payload = {
+        modelId,
+        versionId,
+        fieldsToUpdate: ['localTags'],
+        localTags: []  // Sending an empty array
+      };
+      await this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload).toPromise();
+      console.log(`Removed grouping for ${file.name}`);
+      // Refresh the local data (update virtualItems or call combineItems).
+      this.virtualItems = [...this.virtualItems];
+      this.combineItems();
+    } catch (err) {
+      console.error(`Error removing grouping for ${file.name}:`, err);
+    }
+  }
+
 
 }

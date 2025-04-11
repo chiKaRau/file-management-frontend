@@ -15,6 +15,7 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   @Output() tokensChanged = new EventEmitter<string[]>();
   // Event emitted when the user clicks the "Apply Grouping" button.
   @Output() groupingApplied = new EventEmitter<void>();
+  @Output() groupingRemoved = new EventEmitter<any>();
 
   groupKeys: string[] = [];
   listExpanded: boolean = false;
@@ -94,6 +95,11 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
   onApplyGrouping(): void {
     this.groupingApplied.emit();
     this.clearTokens(); // Clear the tokens and input box after grouping is applied.
+  }
+
+  removeGrouping(file: any, event: MouseEvent): void {
+    event.stopPropagation(); // Prevent any parent click actions.
+    this.groupingRemoved.emit(file);
   }
 
   // NEW: Aggregate properties of the selected models.

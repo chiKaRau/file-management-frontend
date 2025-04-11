@@ -104,7 +104,8 @@
 
             <app-virtual-grouping-sidebar *ngIf="groupingSidebarOpen" [aggregatedOptions]="aggregatedOptions"
                 [selectedFiles]="globalSelectedItems" (tokensChanged)="onTokensChanged($event)"
-                (groupingApplied)="applyGrouping()" (closed)="toggleGroupingSidebar()">
+                (groupingApplied)="applyGrouping()" (groupingRemoved)="removeGroup($event)"
+                (closed)="toggleGroupingSidebar()">
             </app-virtual-grouping-sidebar>
 
 

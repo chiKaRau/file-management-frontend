@@ -5,6 +5,21 @@
     </div>
 
     <div class="content">
+
+        <!-- NEW: Remove Grouping Button for a selected model if it has localTags -->
+        <div class="remove-grouping-container" *ngIf="selectedFiles && selectedFiles.length > 0">
+            <ng-container *ngFor="let file of selectedFiles">
+                <div class="model-grouping" *ngIf="file.scanData?.localTags && file.scanData.localTags.length > 0">
+                    <span class="model-grouping-info">
+                        {{ file.scanData.localTags.join(', ') }}
+                    </span>
+                    <button type="button" class="remove-group-btn" (click)="removeGrouping(file, $event)">
+                        Remove Group
+                    </button>
+                </div>
+            </ng-container>
+        </div>
+
         <!-- Input box showing selected tokens -->
         <div class="selected-tokens-container">
             <input type="text" class="selected-tokens-input" [(ngModel)]="selectedTokensString"

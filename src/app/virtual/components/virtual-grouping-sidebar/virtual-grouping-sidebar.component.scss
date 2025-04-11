@@ -34,7 +34,53 @@
     .content {
         margin-top: 1rem;
 
-        // Container for the input box that displays selected tokens.
+        // Selected Grouping Removal Section
+        .remove-grouping-container {
+            margin-bottom: 10px;
+            padding: 6px 8px;
+            border: 1px solid #f0ad4e;
+            background-color: #fcf8e3;
+            border-radius: 4px;
+
+            .model-grouping {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 4px 0;
+                border-bottom: 1px solid #eee;
+
+                &:last-child {
+                    border-bottom: none;
+                }
+
+                .model-grouping-info {
+                    font-size: 13px;
+                    color: #8a6d3b;
+                    margin-right: 10px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    flex-grow: 1;
+                }
+
+                .remove-group-btn {
+                    background: #d9534f;
+                    color: #fff;
+                    font-size: 12px;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+
+                    &:hover {
+                        background: #c9302c;
+                    }
+                }
+            }
+        }
+
+        // Container for token input
         .selected-tokens-container {
             display: flex;
             align-items: center;
@@ -58,7 +104,27 @@
             }
         }
 
+        // Apply Grouping Button
+        .apply-grouping-container {
+            margin-bottom: 10px;
 
+            .apply-grouping-btn {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #aaa;
+                background: #d0ebff;
+                font-size: 14px;
+                cursor: pointer;
+                border-radius: 4px;
+                transition: background 0.2s ease;
+
+                &:hover {
+                    background: #b0d4f0;
+                }
+            }
+        }
+
+        // Option List for tokens and grouping options
         .option-list {
             list-style: none;
             margin: 0;
@@ -137,36 +203,4 @@
             }
         }
     }
-
-    .selected-tokens-container {
-        margin-bottom: 10px;
-
-        input.selected-tokens-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-    }
-
-    .apply-grouping-container {
-        margin-bottom: 10px;
-
-        button.apply-grouping-btn {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #aaa;
-            background: #d0ebff;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background 0.2s ease;
-
-            &:hover {
-                background: #b0d4f0;
-            }
-        }
-    }
-
 }
