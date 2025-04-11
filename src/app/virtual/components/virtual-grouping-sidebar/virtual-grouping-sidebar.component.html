@@ -1,30 +1,48 @@
 <div class="virtual-grouping-sidebar">
-    <!-- In virtual-grouping-sidebar.component.html -->
     <div class="header">
         <h3>Virtual Grouping Sidebar</h3>
         <button class="close-btn" (click)="close()">Close</button>
     </div>
 
     <div class="content">
-        <!-- Input box at the top showing selected tokens -->
+        <!-- Input box showing selected tokens -->
         <div class="selected-tokens-container">
             <input type="text" class="selected-tokens-input" [value]="getSelectedTokensAsString()" readonly />
         </div>
 
-        <!-- NEW: Apply Grouping Button -->
+        <!-- Apply Grouping Button -->
         <div class="apply-grouping-container">
             <button class="apply-grouping-btn" (click)="onApplyGrouping()">Apply Grouping</button>
         </div>
 
-        <!-- Single scrollable list containing group headers and options -->
+        <!-- Option List that now includes a header for Selected Models with each property as sub-header -->
         <ul class="option-list" [class.expanded]="listExpanded">
+            <!-- New header for Selected Models -->
+            <li class="group-header" *ngIf="selectedFiles && selectedFiles.length > 0">Selected Models</li>
+
+            <!-- For each property aggregated from the selected models -->
+            <ng-container *ngIf="selectedFiles && selectedFiles.length > 0">
+                <ng-container *ngFor="let prop of selectedModelsProperties">
+                    <li class="sub-header">{{ prop }}</li>
+                    <ng-container *ngFor="let value of selectedModelsAggregated[prop]">
+                        <li class="option" (click)="toggleToken(value)">
+                            <span class="option-text">{{ value }}</span>
+                            <span class="toggle-token-btn">
+                                {{ selectedTokens.has(value) ? '-' : '+' }}
+                            </span>
+                        </li>
+                    </ng-container>
+                </ng-container>
+            </ng-container>
+
+            <!-- Existing Grouping Options Section -->
             <ng-container *ngFor="let group of groupKeys">
                 <li class="group-header">{{ group }}</li>
                 <ng-container *ngFor="let option of aggregatedOptions[group]">
                     <li class="option" (click)="toggleToken(option)">
                         <span class="option-text">{{ option }}</span>
                         <span class="toggle-token-btn">
-                            {{ isTokenSelected(option) ? '-' : '+' }}
+                            {{ selectedTokens.has(option) ? '-' : '+' }}
                         </span>
                     </li>
                 </ng-container>

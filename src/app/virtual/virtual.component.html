@@ -102,11 +102,12 @@
                 </div>
             </div>
 
-            <!-- Virtual Grouping Sidebar positioned on the right -->
             <app-virtual-grouping-sidebar *ngIf="groupingSidebarOpen" [aggregatedOptions]="aggregatedOptions"
-                (tokensChanged)="onTokensChanged($event)" (applyGrouping)="applyGrouping()"
-                (closed)="toggleGroupingSidebar()">
+                [selectedFiles]="globalSelectedItems" (tokensChanged)="onTokensChanged($event)"
+                (groupingApplied)="applyGrouping()" (closed)="toggleGroupingSidebar()">
             </app-virtual-grouping-sidebar>
+
+
         </div>
     </div>
 

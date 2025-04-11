@@ -1,4 +1,5 @@
 import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
+import { Type } from '@angular/core';
 
 @Component({
   selector: 'app-virtual-grouping-sidebar',
@@ -8,23 +9,21 @@ import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from
 export class VirtualGroupingSidebarComponent implements OnChanges {
   // Aggregated options passed in from the parent.
   @Input() aggregatedOptions: { [key: string]: string[] } = {};
+  // The selected models passed in from the parent.
+  @Input() selectedFiles: any[] = [];
   @Output() closed = new EventEmitter<void>();
-  // NEW: Emit selected tokens array so parent can filter files.
   @Output() tokensChanged = new EventEmitter<string[]>();
+  // Event emitted when the user clicks the "Apply Grouping" button.
+  @Output() groupingApplied = new EventEmitter<void>();
 
-  // NEW: Event emitted when user clicks "Apply Grouping"
-  @Output() applyGrouping = new EventEmitter<void>();
-
-  // Array of group headers – for example, excluding "Name"
   groupKeys: string[] = [];
-  selectedOption: string | null = null;
   listExpanded: boolean = false;
   // Hold the selected tokens (as a Set to avoid duplicates).
   selectedTokens: Set<string> = new Set<string>();
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes.aggregatedOptions) {
-      // Exclude the "Name" group if desired and force "All" to be the first group.
+      // Exclude "Name" if you wish; you may modify as desired.
       this.groupKeys = Object.keys(this.aggregatedOptions)
         .filter(key => key !== 'Name')
         .sort((a, b) => {
@@ -35,23 +34,17 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
     }
   }
 
-  // When a token is toggled, add or remove from the selected tokens set.
+  // Toggle a token value in the selectedTokens set.
   toggleToken(token: string): void {
     if (this.selectedTokens.has(token)) {
       this.selectedTokens.delete(token);
     } else {
       this.selectedTokens.add(token);
     }
-    // Emit the updated tokens as an array.
     this.tokensChanged.emit(Array.from(this.selectedTokens));
   }
 
-  // Check if a token is already selected.
-  isTokenSelected(token: string): boolean {
-    return this.selectedTokens.has(token);
-  }
-
-  // Build a comma-separated string for displaying in the input box.
+  // Returns a comma-separated string for display in the input box.
   getSelectedTokensAsString(): string {
     return Array.from(this.selectedTokens).join(', ');
   }
@@ -64,9 +57,54 @@ export class VirtualGroupingSidebarComponent implements OnChanges {
     this.closed.emit();
   }
 
-  // NEW: Called when the "Apply Grouping" button is clicked.
+  // Called when the "Apply Grouping" button is clicked.
   onApplyGrouping(): void {
-    this.applyGrouping.emit();
+    this.groupingApplied.emit();
   }
 
+  // NEW: Aggregate properties of the selected models.
+  get selectedModelsAggregated(): { [prop: string]: string[] } {
+    const result: { [prop: string]: Set<string> } = {
+      "Name": new Set<string>(),
+      "scanData.name": new Set<string>(),
+      "scanData.tags": new Set<string>(),
+      "scanData.mainModelName": new Set<string>(),
+      "scanData.triggerWords": new Set<string>()
+    };
+
+    if (this.selectedFiles) {
+      for (const file of this.selectedFiles) {
+        // File name (the top-level file property)
+        if (file.name) {
+          result["Name"].add(file.name);
+        }
+        if (file.scanData) {
+          if (file.scanData.name) {
+            result["scanData.name"].add(file.scanData.name);
+          }
+          if (Array.isArray(file.scanData.tags)) {
+            file.scanData.tags.forEach((tag: string) => result["scanData.tags"].add(tag));
+          }
+          if (file.scanData.mainModelName) {
+            result["scanData.mainModelName"].add(file.scanData.mainModelName);
+          }
+          if (Array.isArray(file.scanData.triggerWords)) {
+            file.scanData.triggerWords.forEach((tw: string) => result["scanData.triggerWords"].add(tw));
+          }
+        }
+      }
+    }
+
+    // Convert sets to sorted arrays.
+    const final: { [prop: string]: string[] } = {};
+    for (const key in result) {
+      final[key] = Array.from(result[key]).sort();
+    }
+    return final;
+  }
+
+  // Getter for property headers in sorted order.
+  get selectedModelsProperties(): string[] {
+    return Object.keys(this.selectedModelsAggregated).sort();
+  }
 }

@@ -510,4 +510,5 @@ export class VirtualComponent implements OnInit {
     this.combineItems();
   }
 
+
 }
