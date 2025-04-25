@@ -103,41 +103,34 @@
                             </ng-container>
 
                             <!-- Suggest Ungrouped Section -->
+                            <!-- inside the Suggest Ungrouped section -->
                             <ng-container *ngIf="groupingSubTab === 'suggest'">
                                 <div class="suggest-section">
                                     <h3>Suggest Ungrouped</h3>
-                                    <!-- Numeric input for digit setting -->
-                                    <div class="digit-input-container">
-                                        <label for="suggestDigit">Minimum tokens:</label>
-                                        <input type="number" id="suggestDigit" [(ngModel)]="suggestDigit"
-                                            (change)="onSuggestDigitChange(suggestDigit)" min="2" />
-                                    </div>
+                                    <!-- digit input… -->
+
                                     <div class="suggestions-container"
-                                        *ngIf="(suggestionResults | keyvalue)?.length; else noSuggestions">
-                                        <div *ngFor="let result of suggestionResults | keyvalue">
-                                            <!-- result.key is the property (e.g., 'scanData.tags'), result.value is an array of suggestion objects -->
-                                            <h4>{{ result.key }}</h4>
-                                            <div *ngFor="let suggestion of result.value" class="suggestion-block">
+                                        *ngIf="filteredSuggestions.length > 0; else noSuggestions">
+                                        <div *ngFor="let group of filteredSuggestions">
+                                            <h4>{{ group.key }}</h4>
+                                            <div *ngFor="let suggestion of group.suggestions" class="suggestion-block">
                                                 <div class="suggestion-combination">
                                                     Combination: [{{ suggestion.combination.join(', ') }}]
                                                 </div>
-                                                <ng-container *ngIf="suggestion.models.length > 0; else noMatch">
-                                                    <!-- Display the matching models as file-cards by reusing the file list component -->
-                                                    <app-virtual-file-list [items]="suggestion.models"
-                                                        [viewMode]="viewMode" (fileSelected)="selectedFile = $event">
-                                                    </app-virtual-file-list>
-                                                </ng-container>
-                                                <ng-template #noMatch>
-                                                    <div class="no-match">No models match this combination.</div>
-                                                </ng-template>
+                                                <app-virtual-file-list [items]="suggestion.models" [viewMode]="viewMode"
+                                                    (fileSelected)="selectedFile = $event">
+                                                </app-virtual-file-list>
                                             </div>
                                         </div>
                                     </div>
+
                                     <ng-template #noSuggestions>
                                         <p>No suggestions available for the selected digit.</p>
                                     </ng-template>
                                 </div>
                             </ng-container>
+
+
 
                         </div>
                     </ng-template>

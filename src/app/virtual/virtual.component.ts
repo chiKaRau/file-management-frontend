@@ -537,45 +537,44 @@ export class VirtualComponent implements OnInit {
   }
 
   // New: A helper method to generate suggestions for a given property.
-  generateSuggestions(property: string, digit: number): { combination: string[], models: any[] }[] {
-    // Get the aggregated options for that property
-    const aggregated: string[] = this.aggregatedOptions[property] || [];
-    // Only generate suggestions if we have at least `digit` tokens.
-    if (aggregated.length < digit) {
-      return [];
-    }
-    // Sort tokens to ensure consistent ordering.
-    const sortedTokens = [...aggregated].sort();
-    const suggestions = [];
-    // Generate sliding window contiguous combinations:
-    for (let i = 0; i <= sortedTokens.length - digit; i++) {
-      const combination = sortedTokens.slice(i, i + digit);
-      // Find models which have all tokens of this combination in the property.
+  generateSuggestions(property: string, digit: number): { combination: string[]; models: any[] }[] {
+    // 1) Get the raw option strings in original order
+    const rawOptions = this.aggregatedOptions[property] || [];
+    // 2) Flatten them into a word list
+    const wordList = rawOptions.flatMap(opt => this.splitBySpecialChars(opt));
+    if (wordList.length < digit) return [];
+
+    const suggestions: { combination: string[]; models: any[] }[] = [];
+
+    // 3) Sliding window over the flat wordList
+    for (let i = 0; i <= wordList.length - digit; i++) {
+      const combination = wordList.slice(i, i + digit);
+
+      // 4) Find all files where the given property-array contains every word
       const matchingModels = this.virtualItems.filter(file => {
-        if (!file.isFile || !file.scanData) {
-          return false;
+        if (!file.isFile || !file.scanData) return false;
+
+        // Drill down to the array on file.scanData[property] (e.g. tags, triggerWords)
+        const parts = property.split('.'); // ["scanData","tags"] for example
+        let arr: any = file;
+        for (const part of parts) {
+          arr = arr && arr[part];
         }
-        // Resolve the property from file.scanData
-        const parts = property.split('.');
-        let value = file.scanData;
-        for (const part of parts.slice(1)) {
-          // For property like "scanData.tags", skip the first part as it is "scanData"
-          if (value && value[part]) {
-            value = value[part];
-          } else {
-            value = null;
-            break;
-          }
-        }
-        if (!Array.isArray(value)) {
-          return false;
-        }
-        // Normalize
-        const fileTokens = value.map((s: string) => s.toLowerCase());
-        return combination.every(token => fileTokens.includes(token.toLowerCase()));
+        if (!Array.isArray(arr)) return false;
+
+        // Lowercase for case-insensitive match
+        const fileWords = arr.flatMap((val: string) =>
+          this.splitBySpecialChars(val).map(w => w.toLowerCase())
+        );
+
+        return combination.every(tok =>
+          fileWords.includes(tok.toLowerCase())
+        );
       });
+
       suggestions.push({ combination, models: matchingModels });
     }
+
     return suggestions;
   }
 
@@ -595,6 +594,21 @@ export class VirtualComponent implements OnInit {
   // When the suggest digit input changes, update the property.
   onSuggestDigitChange(newVal: number): void {
     this.suggestDigit = newVal;
+  }
+
+  // Returns an array of { key, suggestions } where each suggestion has models.length>0
+  get filteredSuggestions(): {
+    key: string,
+    suggestions: { combination: string[]; models: any[] }[]
+  }[] {
+    return Object.entries(this.suggestionResults)
+      // suggestionResults: { [prop: string]: {combination,models}[] }
+      .map(([key, arr]) => ({
+        key,
+        suggestions: arr.filter(s => s.models.length > 0)
+      }))
+      // drop any property that ended up with zero suggestions
+      .filter(group => group.suggestions.length > 0);
   }
 
 }
