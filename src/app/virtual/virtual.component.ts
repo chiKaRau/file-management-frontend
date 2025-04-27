@@ -645,16 +645,21 @@ export class VirtualComponent implements OnInit {
   /** call your service with the locally-generated combos */
   /** call your service with the locally-generated combos */
   private loadBackendFilteredSuggestions(): void {
+    // keep track of which sub-tab is active now
+    const prevKey = this.suggestionSubTab;
+
     // flatten all local combinations
     const combos = this.filteredSuggestions
       .reduce((all, grp) => all.concat(grp.suggestions.map(s => s.combination)), [] as string[][]);
 
     if (combos.length === 0) {
+      this.backendFilteredSuggestions = [];
+      this.suggestionSubTab = '';
       return;
     }
 
     this.virtualService.compareCombinations(combos).subscribe(matchedCombos => {
-      // filter each group down to only those combos the API returned
+      // rebuild the groups
       this.backendFilteredSuggestions = this.filteredSuggestions
         .map(group => ({
           key: group.key,
@@ -667,12 +672,22 @@ export class VirtualComponent implements OnInit {
         }))
         .filter(g => g.suggestions.length > 0);
 
-      // ← default to the first sub-tab **after** the data has arrived
-      if (this.backendFilteredSuggestions.length > 0) {
-        this.suggestionSubTab = this.backendFilteredSuggestions[0].key;
+      // get the new list of keys
+      const keys = this.backendFilteredSuggestions.map(g => g.key);
+
+      // if the previous tab is still there, stick with it
+      if (prevKey && keys.includes(prevKey)) {
+        this.suggestionSubTab = prevKey;
+      }
+      // otherwise, default to the first, or clear if none
+      else if (keys.length) {
+        this.suggestionSubTab = keys[0];
+      } else {
+        this.suggestionSubTab = '';
       }
     });
   }
+
 
 
   get suggestionTabKeys(): string[] {       // for *ngFor tabs
@@ -683,5 +698,22 @@ export class VirtualComponent implements OnInit {
     const grp = this.suggestionsToShow.find(g => g.key === this.suggestionSubTab);
     return grp ? grp.suggestions : [];
   }
+
+
+  /** When the “×” next to a token is clicked */
+  onRemoveToken(tag: string): void {
+    this.virtualService
+      .addPendingRemoveTag(tag)
+      .subscribe({
+        next: () => {
+          // once the server has added it, re-load the suggestions
+          this.loadBackendFilteredSuggestions();
+        },
+        error: err => {
+          console.error('Failed to add pending-remove tag', err);
+        }
+      });
+  }
+
 
 }

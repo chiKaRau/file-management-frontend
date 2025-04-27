@@ -212,3 +212,23 @@ app-virtual-grouping-sidebar {
         }
     }
 }
+
+.token {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.25rem;
+
+    .remove-token {
+        margin-left: 0.25rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.9em;
+        line-height: 1;
+        color: #c00;
+
+        &:hover {
+            color: #900;
+        }
+    }
+}

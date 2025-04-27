@@ -114,8 +114,19 @@
                                     *ngIf="activeGroupSuggestions.length > 0; else noSuggestions">
                                     <div *ngFor="let suggestion of activeGroupSuggestions" class="suggestion-block">
                                         <div class="suggestion-combination">
-                                            Combination: [{{ suggestion.combination.join(', ') }}]
+                                            Combination:
+                                            <ng-container *ngFor="let token of suggestion.combination; let i = index">
+                                                <span class="token">
+                                                    {{ token }}
+                                                    <button class="remove-token" (click)="onRemoveToken(token)"
+                                                        title="Remove & refresh">
+                                                        ×
+                                                    </button>
+                                                </span>
+                                                <span *ngIf="i < suggestion.combination.length - 1">, </span>
+                                            </ng-container>
                                         </div>
+
                                         <app-virtual-file-list [items]="suggestion.models" [viewMode]="viewMode"
                                             (fileSelected)="selectedFile = $event">
                                         </app-virtual-file-list>

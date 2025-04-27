@@ -38,4 +38,14 @@ export class VirtualService {
                 map(res => res.payload.matchedCombinations)
             );
     }
+
+    /** Tell the server to add a new pending-remove tag */
+    addPendingRemoveTag(tag: string): Observable<void> {
+        return this.http
+            .post<void>(
+                'http://localhost:3000/api/add_pending_remove_tag',
+                { pendingRemoveTag: tag }
+            );
+    }
+
 }
