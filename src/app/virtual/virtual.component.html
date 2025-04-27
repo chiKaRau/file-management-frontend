@@ -49,19 +49,18 @@
                     <ng-template #groupingView>
                         <div class="grouping-tabs">
                             <div class="tab" [class.active]="groupingSubTab === 'grouped'"
-                                (click)="groupingSubTab = 'grouped'">
+                                (click)="onSelectTab('grouped')">
                                 Grouped
                             </div>
                             <div class="tab" [class.active]="groupingSubTab === 'ungrouped'"
-                                (click)="groupingSubTab = 'ungrouped'">
+                                (click)="onSelectTab('ungrouped')">
                                 Ungrouped
                             </div>
                             <div class="tab" [class.active]="groupingSubTab === 'suggest'"
-                                (click)="groupingSubTab = 'suggest'">
+                                (click)="onSelectTab('suggest')">
                                 Suggest Ungrouped
                             </div>
                         </div>
-
                         <div class="grouping-content">
                             <!-- Grouped Files Section (existing) -->
                             <ng-container *ngIf="groupingSubTab === 'grouped'">
@@ -103,15 +102,13 @@
                             </ng-container>
 
                             <!-- Suggest Ungrouped Section -->
-                            <!-- inside the Suggest Ungrouped section -->
                             <ng-container *ngIf="groupingSubTab === 'suggest'">
                                 <div class="suggest-section">
                                     <h3>Suggest Ungrouped</h3>
-                                    <!-- digit input… -->
 
                                     <div class="suggestions-container"
-                                        *ngIf="filteredSuggestions.length > 0; else noSuggestions">
-                                        <div *ngFor="let group of filteredSuggestions">
+                                        *ngIf="suggestionsToShow.length > 0; else noSuggestions">
+                                        <div *ngFor="let group of suggestionsToShow">
                                             <h4>{{ group.key }}</h4>
                                             <div *ngFor="let suggestion of group.suggestions" class="suggestion-block">
                                                 <div class="suggestion-combination">

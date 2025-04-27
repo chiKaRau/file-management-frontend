@@ -537,36 +537,42 @@ export class VirtualComponent implements OnInit {
   }
 
   // New: A helper method to generate suggestions for a given property.
-  generateSuggestions(property: string, digit: number): { combination: string[]; models: any[] }[] {
+  private generateSuggestions(property: string, digit: number): { combination: string[]; models: any[] }[] {
     // 1) Get the raw option strings in original order
     const rawOptions = this.aggregatedOptions[property] || [];
-    // 2) Flatten them into a word list
+    // 2) Flatten them into a word list of tokens
     const wordList = rawOptions.flatMap(opt => this.splitBySpecialChars(opt));
+
     if (wordList.length < digit) return [];
 
     const suggestions: { combination: string[]; models: any[] }[] = [];
 
-    // 3) Sliding window over the flat wordList
+    // 3) Sliding window over the tokens
     for (let i = 0; i <= wordList.length - digit; i++) {
       const combination = wordList.slice(i, i + digit);
 
-      // 4) Find all files where the given property-array contains every word
+      // 4) Find all files where the given property contains every token
       const matchingModels = this.virtualItems.filter(file => {
-        if (!file.isFile || !file.scanData) return false;
-
-        // Drill down to the array on file.scanData[property] (e.g. tags, triggerWords)
-        const parts = property.split('.'); // ["scanData","tags"] for example
-        let arr: any = file;
-        for (const part of parts) {
-          arr = arr && arr[part];
+        // drill down to file.scanData[property]
+        const parts = property.split('.');
+        let val: any = file;
+        for (const p of parts) {
+          val = val && val[p];
         }
-        if (!Array.isArray(arr)) return false;
 
-        // Lowercase for case-insensitive match
-        const fileWords = arr.flatMap((val: string) =>
-          this.splitBySpecialChars(val).map(w => w.toLowerCase())
-        );
+        // build a lowercase token list from val (string or array)
+        let fileWords: string[] = [];
+        if (typeof val === 'string') {
+          fileWords = this.splitBySpecialChars(val).map(w => w.toLowerCase());
+        } else if (Array.isArray(val)) {
+          fileWords = val
+            .flatMap((v: string) => this.splitBySpecialChars(v))
+            .map(w => w.toLowerCase());
+        } else {
+          return false; // neither string nor array → skip
+        }
 
+        // check that *all* tokens in this combination appear
         return combination.every(tok =>
           fileWords.includes(tok.toLowerCase())
         );
@@ -577,7 +583,7 @@ export class VirtualComponent implements OnInit {
 
     return suggestions;
   }
-
+  
   // New: A getter to generate suggestion results for all aggregated options.
   get suggestionResults(): { [property: string]: { combination: string[], models: any[] }[] } {
     const results: { [property: string]: { combination: string[], models: any[] }[] } = {};
@@ -610,5 +616,55 @@ export class VirtualComponent implements OnInit {
       // drop any property that ended up with zero suggestions
       .filter(group => group.suggestions.length > 0);
   }
+
+  /** holds only the combos the backend says to keep */
+  backendFilteredSuggestions: {
+    key: string;
+    suggestions: { combination: string[]; models: any[] }[];
+  }[] = [];
+
+  /** single handler for all three tabs */
+  onSelectTab(tab: 'grouped' | 'ungrouped' | 'suggest'): void {
+    this.groupingSubTab = tab;
+
+    if (tab === 'suggest') {
+      this.backendFilteredSuggestions = [];
+      this.loadBackendFilteredSuggestions();
+    }
+  }
+
+  /** choose between local vs. backend-filtered suggestions */
+  get suggestionsToShow() {
+    return this.groupingSubTab === 'suggest'
+      ? this.backendFilteredSuggestions
+      : this.filteredSuggestions;
+  }
+
+  /** call your service with the locally-generated combos */
+  private loadBackendFilteredSuggestions(): void {
+    // flatten all local combinations
+    const combos = this.filteredSuggestions
+      .reduce((all, grp) => all.concat(grp.suggestions.map(s => s.combination)), [] as string[][]);
+
+    if (combos.length === 0) {
+      return;
+    }
+
+    this.virtualService.compareCombinations(combos).subscribe(matchedCombos => {
+      // filter each group down to only those combos the API returned
+      this.backendFilteredSuggestions = this.filteredSuggestions
+        .map(group => ({
+          key: group.key,
+          suggestions: group.suggestions.filter(s =>
+            matchedCombos.some(mc =>
+              mc.length === s.combination.length &&
+              mc.every((tok, i) => tok === s.combination[i])
+            )
+          )
+        }))
+        .filter(g => g.suggestions.length > 0);
+    });
+  }
+
 
 }
