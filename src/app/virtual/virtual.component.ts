@@ -48,6 +48,8 @@ export class VirtualComponent implements OnInit {
   // NEW: Store the tokens coming from the sidebar input (e.g. ["Ameku", "Takao"])
   selectedTokens: string[] = [];
 
+  // inside VirtualComponent
+  suggestionSubTab = '';
 
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
@@ -583,7 +585,7 @@ export class VirtualComponent implements OnInit {
 
     return suggestions;
   }
-  
+
   // New: A getter to generate suggestion results for all aggregated options.
   get suggestionResults(): { [property: string]: { combination: string[], models: any[] }[] } {
     const results: { [property: string]: { combination: string[], models: any[] }[] } = {};
@@ -641,6 +643,7 @@ export class VirtualComponent implements OnInit {
   }
 
   /** call your service with the locally-generated combos */
+  /** call your service with the locally-generated combos */
   private loadBackendFilteredSuggestions(): void {
     // flatten all local combinations
     const combos = this.filteredSuggestions
@@ -663,8 +666,22 @@ export class VirtualComponent implements OnInit {
           )
         }))
         .filter(g => g.suggestions.length > 0);
+
+      // ← default to the first sub-tab **after** the data has arrived
+      if (this.backendFilteredSuggestions.length > 0) {
+        this.suggestionSubTab = this.backendFilteredSuggestions[0].key;
+      }
     });
   }
 
+
+  get suggestionTabKeys(): string[] {       // for *ngFor tabs
+    return this.suggestionsToShow.map(g => g.key);
+  }
+
+  get activeGroupSuggestions() {            // for *ngFor content
+    const grp = this.suggestionsToShow.find(g => g.key === this.suggestionSubTab);
+    return grp ? grp.suggestions : [];
+  }
 
 }

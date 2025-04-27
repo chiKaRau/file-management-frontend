@@ -103,29 +103,29 @@
 
                             <!-- Suggest Ungrouped Section -->
                             <ng-container *ngIf="groupingSubTab === 'suggest'">
-                                <div class="suggest-section">
-                                    <h3>Suggest Ungrouped</h3>
-
-                                    <div class="suggestions-container"
-                                        *ngIf="suggestionsToShow.length > 0; else noSuggestions">
-                                        <div *ngFor="let group of suggestionsToShow">
-                                            <h4>{{ group.key }}</h4>
-                                            <div *ngFor="let suggestion of group.suggestions" class="suggestion-block">
-                                                <div class="suggestion-combination">
-                                                    Combination: [{{ suggestion.combination.join(', ') }}]
-                                                </div>
-                                                <app-virtual-file-list [items]="suggestion.models" [viewMode]="viewMode"
-                                                    (fileSelected)="selectedFile = $event">
-                                                </app-virtual-file-list>
-                                            </div>
-                                        </div>
+                                <div class="suggestion-tabs">
+                                    <div *ngFor="let key of suggestionTabKeys" class="tab"
+                                        [class.active]="suggestionSubTab === key" (click)="suggestionSubTab = key">
+                                        {{ key }}
                                     </div>
-
-                                    <ng-template #noSuggestions>
-                                        <p>No suggestions available for the selected digit.</p>
-                                    </ng-template>
                                 </div>
+
+                                <div class="suggestions-container"
+                                    *ngIf="activeGroupSuggestions.length > 0; else noSuggestions">
+                                    <div *ngFor="let suggestion of activeGroupSuggestions" class="suggestion-block">
+                                        <div class="suggestion-combination">
+                                            Combination: [{{ suggestion.combination.join(', ') }}]
+                                        </div>
+                                        <app-virtual-file-list [items]="suggestion.models" [viewMode]="viewMode"
+                                            (fileSelected)="selectedFile = $event">
+                                        </app-virtual-file-list>
+                                    </div>
+                                </div>
+                                <ng-template #noSuggestions>
+                                    <p>No suggestions available for the selected digit.</p>
+                                </ng-template>
                             </ng-container>
+
 
 
 
