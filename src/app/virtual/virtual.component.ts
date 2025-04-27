@@ -478,43 +478,63 @@ export class VirtualComponent implements OnInit {
   }
 
   async applyGrouping(): Promise<void> {
-    if (!this.selectedTokens || this.selectedTokens.length === 0) {
+    if (!this.selectedTokens?.length) {
       console.warn('No grouping tokens selected. Please add grouping tags.');
       return;
     }
-    if (!this.globalSelectedItems || this.globalSelectedItems.length === 0) {
+    if (!this.globalSelectedItems?.length) {
       console.warn('No files selected for grouping.');
       return;
     }
 
-    // Normalize the selected tokens by sorting them.
-    const normalizedTokens = [...this.selectedTokens].sort();
+    // 1) Split each selectedToken on non-alphanumeric to get individual words
+    const words = this.selectedTokens.flatMap(t =>
+      this.splitBySpecialChars(t)
+    );
+
+    // 2) Lowercase, dedupe, sort
+    const normalizedTokens = Array.from(new Set(
+      words.map(w => w.toLowerCase())
+    )).sort();
+
+    // 3) Join into one string:
+    const combined = normalizedTokens.join(', ');
+    // wrap that into a one-element array:
+    const tagArray = [combined];
+
+    console.log('→ Will send localTags:', tagArray);
 
     for (const file of this.globalSelectedItems) {
       try {
-        // Set the file's localTags to the normalized tokens.
+        // update local state so your UI shows the split words if you like
         file.scanData.localTags = normalizedTokens;
 
-        const modelId = file.scanData.modelNumber;
-        const versionId = file.scanData.versionNumber;
         const payload = {
-          modelId,
-          versionId,
-          fieldsToUpdate: ['localTags'],  // Make sure the API expects "localTags"
-          localTags: file.scanData.localTags
+          modelId: file.scanData.modelNumber,
+          versionId: file.scanData.versionNumber,
+          fieldsToUpdate: ['localTags'],
+          // send the single combined string
+          localTags: tagArray
         };
 
-        await this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload).toPromise();
-        console.log(`Applied grouping for ${file.name}`);
+        console.log('POST payload:', payload);
+
+        await this.http
+          .post('http://localhost:3000/api/update-record-by-model-and-version', payload)
+          .toPromise();
+
+        console.log(`Applied grouping for ${file.name}: [${combined}]`);
       } catch (err) {
         console.error(`Error applying grouping for ${file.name}:`, err);
       }
     }
-    // Force change detection so the UI updates; for example, by reassigning virtualItems:
+
+    // Refresh the view
     this.virtualItems = [...this.virtualItems];
-    // Optionally, re-run combineItems() if it recalculates filtered lists.
     this.combineItems();
   }
+
+
 
   async removeGroup(file: any): Promise<void> {
     try {
@@ -715,5 +735,14 @@ export class VirtualComponent implements OnInit {
       });
   }
 
+  /**
+ * Return only those items whose localTags is null/empty.
+ */
+  filterUngrouped(models: any[]): any[] {
+    return models.filter(m =>
+      !m.scanData?.localTags ||
+      m.scanData.localTags.length === 0
+    );
+  }
 
 }
