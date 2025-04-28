@@ -151,6 +151,11 @@ export class VirtualComponent implements OnInit {
   }
 
   onPathChange(newPath: string): void {
+
+    // exit grouping whenever you navigate
+    this.groupingMode = false;
+    this.groupingSidebarOpen = false;
+
     if (!newPath.endsWith('\\')) {
       newPath += '\\';
     }
@@ -173,6 +178,11 @@ export class VirtualComponent implements OnInit {
   }
 
   onBack(): void {
+
+    // exit grouping whenever you navigate
+    this.groupingMode = false;
+    this.groupingSidebarOpen = false;
+
     if (this.canGoBack) {
       this.historyIndex--;
       const newPath = this.history[this.historyIndex];
@@ -183,6 +193,11 @@ export class VirtualComponent implements OnInit {
   }
 
   onForward(): void {
+
+    // exit grouping whenever you navigate
+    this.groupingMode = false;
+    this.groupingSidebarOpen = false;
+
     if (this.canGoForward) {
       this.historyIndex++;
       const newPath = this.history[this.historyIndex];
@@ -197,6 +212,11 @@ export class VirtualComponent implements OnInit {
   }
 
   onSearch(query: string): void {
+
+    // exit grouping whenever you navigate
+    this.groupingMode = false;
+    this.groupingSidebarOpen = false;
+
     if (!query) {
       this.combineItems();
     } else {
@@ -217,6 +237,11 @@ export class VirtualComponent implements OnInit {
   }
 
   onDriveChange(drive: string): void {
+
+    // exit grouping whenever you navigate
+    this.groupingMode = false;
+    this.groupingSidebarOpen = false;
+
     console.log('Drive changed to:', drive);
     this.selectedDrive = drive;
     this.combineItems();
