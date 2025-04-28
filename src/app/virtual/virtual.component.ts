@@ -51,6 +51,8 @@ export class VirtualComponent implements OnInit {
   // inside VirtualComponent
   suggestionSubTab = '';
 
+  isFetchingSuggestions = false;
+
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
   ngOnInit(): void {
@@ -647,7 +649,14 @@ export class VirtualComponent implements OnInit {
   // When the suggest digit input changes, update the property.
   onSuggestDigitChange(newVal: number): void {
     this.suggestDigit = newVal;
+
+    if (this.groupingSubTab === 'suggest') {
+      // re-run your backend-filtered suggestions with the new digit
+      this.backendFilteredSuggestions = [];
+      this.loadBackendFilteredSuggestions();
+    }
   }
+
 
   // Returns an array of { key, suggestions } where each suggestion has models.length>0
   get filteredSuggestions(): {
@@ -687,53 +696,48 @@ export class VirtualComponent implements OnInit {
       : this.filteredSuggestions;
   }
 
-  /** call your service with the locally-generated combos */
-  /** call your service with the locally-generated combos */
   private loadBackendFilteredSuggestions(): void {
-    // keep track of which sub-tab is active now
+    this.isFetchingSuggestions = true;            // start loading
     const prevKey = this.suggestionSubTab;
 
-    // flatten all local combinations
     const combos = this.filteredSuggestions
       .reduce((all, grp) => all.concat(grp.suggestions.map(s => s.combination)), [] as string[][]);
 
-    if (combos.length === 0) {
+    if (!combos.length) {
       this.backendFilteredSuggestions = [];
       this.suggestionSubTab = '';
+      this.isFetchingSuggestions = false;          // no work to do
       return;
     }
 
-    this.virtualService.compareCombinations(combos).subscribe(matchedCombos => {
-      // rebuild the groups
-      this.backendFilteredSuggestions = this.filteredSuggestions
-        .map(group => ({
-          key: group.key,
-          suggestions: group.suggestions.filter(s =>
-            matchedCombos.some(mc =>
-              mc.length === s.combination.length &&
-              mc.every((tok, i) => tok === s.combination[i])
+    this.virtualService.compareCombinations(combos).subscribe({
+      next: matchedCombos => {
+        // rebuild groups…
+        this.backendFilteredSuggestions = this.filteredSuggestions
+          .map(group => ({
+            key: group.key, suggestions: group.suggestions.filter(s =>
+              matchedCombos.some(mc =>
+                mc.length === s.combination.length &&
+                mc.every((tok, i) => tok === s.combination[i])
+              )
             )
-          )
-        }))
-        .filter(g => g.suggestions.length > 0);
+          }))
+          .filter(g => g.suggestions.length > 0);
 
-      // get the new list of keys
-      const keys = this.backendFilteredSuggestions.map(g => g.key);
+        // restore tab or default
+        const keys = this.backendFilteredSuggestions.map(g => g.key);
+        if (prevKey && keys.includes(prevKey)) this.suggestionSubTab = prevKey;
+        else if (keys.length) this.suggestionSubTab = keys[0];
+        else this.suggestionSubTab = '';
 
-      // if the previous tab is still there, stick with it
-      if (prevKey && keys.includes(prevKey)) {
-        this.suggestionSubTab = prevKey;
-      }
-      // otherwise, default to the first, or clear if none
-      else if (keys.length) {
-        this.suggestionSubTab = keys[0];
-      } else {
-        this.suggestionSubTab = '';
+        this.isFetchingSuggestions = false;       // done
+      },
+      error: err => {
+        console.error('Error fetching suggestions', err);
+        this.isFetchingSuggestions = false;       // on error also stop loading
       }
     });
   }
-
-
 
   get suggestionTabKeys(): string[] {       // for *ngFor tabs
     return this.suggestionsToShow.map(g => g.key);

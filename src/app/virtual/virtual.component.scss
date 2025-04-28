@@ -232,3 +232,27 @@ app-virtual-grouping-sidebar {
         }
     }
 }
+
+/* Add this at the bottom of virtual.component.scss */
+
+.digit-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* space between label and input */
+    margin-bottom: 1rem;
+    /* space below the whole row */
+    margin-top: 1rem;
+    /* optional: space above too */
+
+    label {
+        /* if you want a bit more space after the colon */
+        margin-right: 0.25rem;
+    }
+
+    input {
+        width: 4ch;
+        /* fixed width to keep it tidy */
+        padding: 0.25rem;
+    }
+}

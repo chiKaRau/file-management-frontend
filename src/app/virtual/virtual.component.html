@@ -103,6 +103,14 @@
 
                             <!-- Suggest Ungrouped Section -->
                             <ng-container *ngIf="groupingSubTab === 'suggest'">
+
+                                <div class="digit-input-container">
+                                    <label for="suggest-digit">Tokens per combo:</label>
+                                    <input id="suggest-digit" type="number" min="1" [value]="suggestDigit"
+                                        (input)="onSuggestDigitChange($any($event.target).valueAsNumber)" />
+                                </div>
+
+
                                 <div class="suggestion-tabs">
                                     <div *ngFor="let key of suggestionTabKeys" class="tab"
                                         [class.active]="suggestionSubTab === key" (click)="suggestionSubTab = key">
@@ -110,35 +118,46 @@
                                     </div>
                                 </div>
 
-                                <div class="suggestions-container"
-                                    *ngIf="activeGroupSuggestions.length > 0; else noSuggestions">
-                                    <div *ngFor="let suggestion of activeGroupSuggestions">
-                                        <!-- only render if there are ungrouped files -->
-                                        <ng-container *ngIf="filterUngrouped(suggestion.models).length > 0">
-                                            <div class="suggestion-block">
-                                                <div class="suggestion-combination">
-                                                    Combination:
-                                                    <ng-container
-                                                        *ngFor="let token of suggestion.combination; let i = index">
-                                                        <span class="token">
-                                                            {{ token }}
-                                                            <button class="remove-token" (click)="onRemoveToken(token)"
-                                                                title="Remove & refresh">
-                                                                ×
-                                                            </button>
-                                                        </span>
-                                                        <span *ngIf="i < suggestion.combination.length - 1">, </span>
-                                                    </ng-container>
-                                                </div>
+                                <ng-container *ngIf="isFetchingSuggestions">
+                                    <p>Fetching suggestions…</p>
+                                </ng-container>
 
-                                                <!-- show only the ungrouped files -->
-                                                <app-virtual-file-list [items]="filterUngrouped(suggestion.models)"
-                                                    [viewMode]="viewMode" (fileSelected)="selectedFile = $event">
-                                                </app-virtual-file-list>
-                                            </div>
-                                        </ng-container>
+                                <ng-container *ngIf="!isFetchingSuggestions">
+
+                                    <div class="suggestions-container"
+                                        *ngIf="activeGroupSuggestions.length > 0; else noSuggestions">
+                                        <div *ngFor="let suggestion of activeGroupSuggestions">
+                                            <!-- only render if there are ungrouped files -->
+                                            <ng-container *ngIf="filterUngrouped(suggestion.models).length > 0">
+                                                <div class="suggestion-block">
+                                                    <div class="suggestion-combination">
+                                                        Combination:
+                                                        <ng-container
+                                                            *ngFor="let token of suggestion.combination; let i = index">
+                                                            <span class="token">
+                                                                {{ token }}
+                                                                <button class="remove-token"
+                                                                    (click)="onRemoveToken(token)"
+                                                                    title="Remove & refresh">
+                                                                    ×
+                                                                </button>
+                                                            </span>
+                                                            <span *ngIf="i < suggestion.combination.length - 1">,
+                                                            </span>
+                                                        </ng-container>
+                                                    </div>
+
+                                                    <!-- show only the ungrouped files -->
+                                                    <app-virtual-file-list [items]="filterUngrouped(suggestion.models)"
+                                                        [viewMode]="viewMode" (fileSelected)="selectedFile = $event">
+                                                    </app-virtual-file-list>
+                                                </div>
+                                            </ng-container>
+                                        </div>
                                     </div>
-                                </div>
+
+                                </ng-container>
+
 
                                 <ng-template #noSuggestions>
                                     <p>No suggestions available for the selected digit.</p>
