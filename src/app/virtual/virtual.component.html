@@ -110,6 +110,13 @@
                                         (input)="onSuggestDigitChange($any($event.target).valueAsNumber)" />
                                 </div>
 
+                                <!-- min token length -->
+                                <div class="digit-input-container">
+                                    <label for="string-digit">Min token length:</label>
+                                    <input id="string-digit" type="number" min="1" [value]="stringDigit"
+                                        (input)="onStringDigitChange($any($event.target).valueAsNumber)" />
+                                </div>
+
 
                                 <div class="suggestion-tabs">
                                     <div *ngFor="let key of suggestionTabKeys" class="tab"
@@ -125,8 +132,8 @@
                                 <ng-container *ngIf="!isFetchingSuggestions">
 
                                     <div class="suggestions-container"
-                                        *ngIf="activeGroupSuggestions.length > 0; else noSuggestions">
-                                        <div *ngFor="let suggestion of activeGroupSuggestions">
+                                        *ngIf="filteredByStringDigit(activeGroupSuggestions).length > 0; else noSuggestions">
+                                        <div *ngFor="let suggestion of filteredByStringDigit(activeGroupSuggestions)">
                                             <!-- only render if there are ungrouped files -->
                                             <ng-container *ngIf="filterUngrouped(suggestion.models).length > 0">
                                                 <div class="suggestion-block">

@@ -53,6 +53,9 @@ export class VirtualComponent implements OnInit {
 
   isFetchingSuggestions = false;
 
+  /** minimum length for each token in a combination */
+  stringDigit = 3;
+
   constructor(private virtualService: VirtualService, private http: HttpClient) { }
 
   ngOnInit(): void {
@@ -773,5 +776,17 @@ export class VirtualComponent implements OnInit {
       m.scanData.localTags.length === 0
     );
   }
+
+  onStringDigitChange(newVal: number): void {
+    this.stringDigit = newVal;
+  }
+
+  /** filter only those suggestions whose every token is at least `stringDigit` long */
+  filteredByStringDigit(suggestions: { combination: string[]; models: any[] }[]) {
+    return suggestions.filter(s =>
+      s.combination.every(tok => tok.length >= this.stringDigit)
+    );
+  }
+
 
 }
