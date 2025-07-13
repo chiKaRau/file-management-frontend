@@ -158,6 +158,18 @@
                                                     <app-virtual-file-list [items]="filterUngrouped(suggestion.models)"
                                                         [viewMode]="viewMode" (fileSelected)="selectedFile = $event">
                                                     </app-virtual-file-list>
+
+                                                    <div class="suggestion-checkbox-list">
+                                                        <h4>Select files:</h4>
+                                                        <label *ngFor="let file of filterUngrouped(suggestion.models)"
+                                                            class="checkbox-item">
+                                                            <input type="checkbox"
+                                                                [checked]="isSuggestionFileChecked(suggestion, file)"
+                                                                (change)="onSuggestionFileToggle(suggestion, file, $any($event.target).checked)" />
+                                                            {{ file.name }}
+                                                        </label>
+                                                    </div>
+
                                                 </div>
                                             </ng-container>
                                         </div>

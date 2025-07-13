@@ -34,6 +34,9 @@
             <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
             Auto Update Local Path
         </label>
+        <button (click)="onManualUpdate()" [disabled]="isPreloadComplete || !explorerState.selectedDirectory">
+            Update Path
+        </button>
     </div>
 
     <!-- Toggle button for zip sidebar -->

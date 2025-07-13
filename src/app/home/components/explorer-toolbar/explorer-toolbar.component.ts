@@ -17,6 +17,7 @@ export class ExplorerToolbarComponent {
   @Output() searchQuery = new EventEmitter<string>();
   @Output() pathChanged = new EventEmitter<string>(); // user enters new path
   @Output() updateAllModels = new EventEmitter<void>();
+  @Output() manualUpdateLocalPath = new EventEmitter<void>();
 
   isEditingPath = false;
 
@@ -134,6 +135,10 @@ export class ExplorerToolbarComponent {
 
   onUpdateAllModels() {
     this.updateAllModels.emit();
+  }
+
+  onManualUpdate() {
+    this.manualUpdateLocalPath.emit();
   }
 
 }

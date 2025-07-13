@@ -789,4 +789,27 @@ export class VirtualComponent implements OnInit {
   }
 
 
+  // keep track of checked files per combo
+  selectedSuggestionFiles: { [comboKey: string]: any[] } = {};
+
+  getSuggestionKey(sugg: { combination: string[] }) {
+    return sugg.combination.join(',');
+  }
+
+  isSuggestionFileChecked(sugg: any, file: any) {
+    const key = this.getSuggestionKey(sugg);
+    return !!this.selectedSuggestionFiles[key]?.find(f => f.path === file.path);
+  }
+
+  onSuggestionFileToggle(sugg: any, file: any, checked: boolean) {
+    const key = this.getSuggestionKey(sugg);
+    this.selectedSuggestionFiles[key] = this.selectedSuggestionFiles[key] || [];
+    if (checked) {
+      this.selectedSuggestionFiles[key].push(file);
+    } else {
+      this.selectedSuggestionFiles[key] = this.selectedSuggestionFiles[key]
+        .filter(f => f.path !== file.path);
+    }
+  }
+
 }

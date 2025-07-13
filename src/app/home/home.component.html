@@ -12,7 +12,8 @@
       [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
       [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
       (pathChanged)="navigateByPath($event)" (toggleZipSidebarEvent)="toggleZipSidebar()"
-      (toggleGroupingSidebarEvent)="toggleGroupingSidebar()" (updateAllModels)="updateAllModels()">
+      (toggleGroupingSidebarEvent)="toggleGroupingSidebar()" (updateAllModels)="updateAllModels()"
+      (manualUpdateLocalPath)="updateLocalPath()">
       >
     </app-explorer-toolbar>
   </div>
