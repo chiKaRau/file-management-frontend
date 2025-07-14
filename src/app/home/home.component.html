@@ -13,7 +13,7 @@
       [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
       (pathChanged)="navigateByPath($event)" (toggleZipSidebarEvent)="toggleZipSidebar()"
       (toggleGroupingSidebarEvent)="toggleGroupingSidebar()" (updateAllModels)="updateAllModels()"
-      (manualUpdateLocalPath)="updateLocalPath()">
+      (manualUpdateLocalPath)="updateLocalPath()" (subdirSelect)="openSubDirectoryWithoutHistory($event)">
       >
     </app-explorer-toolbar>
   </div>

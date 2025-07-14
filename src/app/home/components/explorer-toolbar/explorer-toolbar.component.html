@@ -6,7 +6,7 @@
         <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
         <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
 
-        <!-- If user is in breadcrumb mode, display the breadcrumb chips -->
+        <!-- Breadcrumbs -->
         <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
             <ng-container *ngFor="let part of truncatedBreadcrumbs; let i = index">
                 <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">
@@ -16,19 +16,20 @@
             </ng-container>
         </div>
 
-        <!-- If user is in edit mode, display a text box for the path -->
+        <!-- Path edit -->
         <div *ngIf="isEditingPath" class="edit-view">
             <input type="text" class="path-input" [value]="currentPath" [disabled]="isPreloadComplete"
                 (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
                 autofocus />
         </div>
     </div>
-    <!-- The Search Container on the right side -->
+
+    <!-- Search -->
     <div class="search-container">
         <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
     </div>
 
-    <!-- Add the checkbox for auto-updating the local path -->
+    <!-- Auto-update + manual update -->
     <div class="update-checkbox">
         <label>
             <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
@@ -39,19 +40,44 @@
         </button>
     </div>
 
-    <!-- Toggle button for zip sidebar -->
+    <!-- Zip toggle -->
     <div class="sidebar-toggle-container">
         <button (click)="toggleZipSidebar()">Zip</button>
     </div>
 
-    <!-- New Update All Models Button -->
+    <!-- Update all models -->
     <div class="update-models-button">
         <button (click)="onUpdateAllModels()">Update All Models</button>
     </div>
 
-    <!-- <div class="sidebar-toggle-container">
-        <button (click)="toggleGroupingSidebar()">Grouping Mode</button>
-    </div> -->
+    <!-- Sub-directory navigator (own row) -->
+    <div class="subdir-nav" *ngIf="displayedSubDirectories.length > 0">
+        <select [(ngModel)]="selectedSubdirIndex" (ngModelChange)="onSubdirChange($event)"
+            [disabled]="isPreloadComplete">
+            <option *ngFor="let dir of displayedSubDirectories; let i = index" [value]="i">
+                {{ dir.name }}
+            </option>
+        </select>
 
+        <button (click)="prevSubdir()" [disabled]="isPreloadComplete || selectedSubdirIndex <= 0">
+            ←
+        </button>
+        <button (click)="nextSubdir()" [disabled]="
+        isPreloadComplete ||
+        selectedSubdirIndex >= displayedSubDirectories.length - 1
+      ">
+            →
+        </button>
 
+        <!-- Lock checkbox -->
+        <label class="lock-checkbox">
+            <input type="checkbox" [(ngModel)]="lockEnabled" (ngModelChange)="onLockChange($event)" />
+            Lock
+        </label>
+
+        <!-- Display locked directory name -->
+        <span class="locked-label" *ngIf="lockEnabled">
+            Locked: {{ lockedDirName }}
+        </span>
+    </div>
 </div>

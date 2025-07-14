@@ -1,20 +1,18 @@
+/* explorer-toolbar.component.scss */
 .toolbar-container {
     display: flex;
+    flex-wrap: wrap;
+    /* allow wrapping */
     align-items: center;
     padding: 6px 10px;
-    /* vertical/horizontal padding for a compact look */
     background-color: #e9ecef;
-    /* a light gray reminiscent of Windows Explorer */
     border-bottom: 1px solid #ccc;
     gap: 10px;
-    /* space between items */
-    color: #333;
-    /* text color for icons/buttons */
     font-family: "Segoe UI", sans-serif;
     font-size: 14px;
+    padding-top: 5%;
 }
 
-/* Navigation buttons (Back/Forward/Refresh) */
 .toolbar-container button {
     background-color: #f8f9fa;
     border: 1px solid #ccc;
@@ -33,50 +31,38 @@
 
     &:not(:disabled):hover {
         background-color: #e2e6ea;
-        /* subtle hover */
     }
-}
-
-/* The breadcrumb or path area */
-.breadcrumb-view,
-.edit-view {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    /* take remaining space */
-    overflow: hidden;
-    /* clip if super long */
-    cursor: pointer;
-    gap: 4px;
-    /* space between parts or path segments */
-    position: relative;
-    min-width: 0;
-    /* allow overflow hidden to clip text */
-}
-
-/* Each part of the breadcrumb */
-.breadcrumb-part {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    max-width: 150px;
-    /* so each segment doesn’t get too wide */
 }
 
 .breadcrumb-section {
     display: flex;
     gap: 4px;
     align-items: center;
-    /* ... */
+    flex: 1;
+    min-width: 0;
 }
 
-/* The separator “>” between parts */
+.breadcrumb-view,
+.edit-view {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
+    gap: 4px;
+}
+
+.breadcrumb-part {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 150px;
+}
+
 .separator {
     margin: 0 2px;
     color: #666;
 }
 
-/* The path input in edit mode */
 .path-input {
     width: 100%;
     padding: 4px 6px;
@@ -86,7 +72,6 @@
     outline: none;
 }
 
-/* The search box area on the right side */
 .search-container {
     margin-left: auto;
     display: flex;
@@ -94,8 +79,7 @@
     gap: 6px;
 }
 
-/* The search input box */
-.search-container input[type='text'] {
+.search-container input[type="text"] {
     width: 180px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -106,4 +90,38 @@
     &:focus {
         border-color: #888;
     }
+}
+
+.update-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subdir-nav {
+    flex: 0 0 100%;
+    /* full width on its own line */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    /* spacing from above */
+}
+
+.subdir-nav select {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.sidebar-toggle-container,
+.update-models-button {
+    display: flex;
+    align-items: center;
+}
+
+.locked-label {
+    margin-left: 8px;
+    font-style: italic;
+    color: #555;
 }

@@ -1112,4 +1112,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.currentUpdateModel = '';
   }
 
+  /** in home.component.ts */
+  async openSubDirectoryWithoutHistory(path: string) {
+    // exactly as in your prev implementation—
+    // loadDirectoryContents(path) but do NOT push into back/forward history
+    this.isLoading = true;
+    await this.loadDirectoryContents(path);
+    this.isLoading = false;
+  }
+
+
 }

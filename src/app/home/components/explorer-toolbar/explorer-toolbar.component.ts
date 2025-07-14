@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
 import { ExplorerStateService } from '../../services/explorer-state.service';
+import { DirectoryItem } from '../file-list/model/directory-item.model';
 
 @Component({
   selector: 'app-explorer-toolbar',
@@ -18,13 +19,27 @@ export class ExplorerToolbarComponent {
   @Output() pathChanged = new EventEmitter<string>(); // user enters new path
   @Output() updateAllModels = new EventEmitter<void>();
   @Output() manualUpdateLocalPath = new EventEmitter<void>();
+  @Output() subdirSelect = new EventEmitter<string>();
 
   isEditingPath = false;
+
+  selectedSubdirIndex = 0;
+  lockEnabled = false;
+  lockedDirName: string | null = null;
+  private lockedSubDirs: DirectoryItem[] = [];
+
+
 
   constructor(public explorerState: ExplorerStateService) { } // Injected as public to bind in the template
 
   // In the future, you can also emit an event for "enter new path"
   // @Output() pathEntered = new EventEmitter<string>();
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['currentPath'] && !this.lockEnabled) {
+      this.selectedSubdirIndex = 0;
+    }
+  }
 
   onBack() {
     this.back.emit();
@@ -141,4 +156,49 @@ export class ExplorerToolbarComponent {
     this.manualUpdateLocalPath.emit();
   }
 
+  get subDirectories(): DirectoryItem[] {
+    return this.explorerState.directoryContents.filter(i => i.isDirectory);
+  }
+
+  get displayedSubDirectories(): DirectoryItem[] {
+    return this.lockEnabled ? this.lockedSubDirs : this.subDirectories;
+  }
+
+  onSubdirChange(idx: number) {
+    this.selectedSubdirIndex = idx;
+    const dir = this.displayedSubDirectories[idx];
+    if (dir) {
+      this.subdirSelect.emit(dir.path);
+    }
+  }
+
+  prevSubdir() {
+    if (this.selectedSubdirIndex > 0) {
+      this.onSubdirChange(this.selectedSubdirIndex - 1);
+    }
+  }
+
+  nextSubdir() {
+    if (this.selectedSubdirIndex < this.displayedSubDirectories.length - 1) {
+      this.onSubdirChange(this.selectedSubdirIndex + 1);
+    }
+  }
+
+  onLockChange(locked: boolean) {
+    this.lockEnabled = locked;
+
+    if (locked) {
+      // snapshot subdirs
+      this.lockedSubDirs = [...this.subDirectories];
+      this.selectedSubdirIndex = 0;
+      // extract the folder name from currentPath
+      const parts = this.currentPath?.split(/[\\/]/).filter(Boolean) || [];
+      this.lockedDirName = parts.length > 0 ? parts[parts.length - 1] : this.currentPath;
+    } else {
+      // clear lock
+      this.lockedSubDirs = [];
+      this.selectedSubdirIndex = 0;
+      this.lockedDirName = null;
+    }
+  }
 }
