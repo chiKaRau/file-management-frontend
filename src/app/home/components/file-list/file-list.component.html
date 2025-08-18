@@ -42,6 +42,13 @@
                             {{ getParsedStats(item).thumbsUpCount ?? 'N/A' }}
                         </span>
                     </div>
+
+                    <div>
+                        <div class="size-line" *ngIf="item.size != null">
+                            <span class="material-icons">sd_storage</span>
+                            {{ formatBytes(item.size) }}
+                        </div>
+                    </div>
                 </div>
             </ng-container>
 

@@ -245,7 +245,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
                 path: fullPath,
                 isFile: stats.isFile(),
                 isDirectory: stats.isDirectory(),
-                isDeleted: isFileDeleted(fullPath)
+                isDeleted: isFileDeleted(fullPath),
+                size: stats.isFile() ? stats.size : undefined   // <--
               } as DirectoryItem;
             } catch (statErr) {
               console.error(`Error stating file ${fullPath}:`, statErr);
@@ -261,7 +262,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       } else {
         // Civitai Mode: Group files based on naming patterns.
         const directories: DirectoryItem[] = [];
-        const groupMap = new Map<string, { allFiles: string[]; previewPath?: string }>();
+        const groupMap = new Map<string, { allFiles: string[]; previewPath?: string; totalSize: number }>();
 
         // Process each file asynchronously.
         await Promise.all(
@@ -275,16 +276,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
                   path: fullPath,
                   isFile: false,
                   isDirectory: true,
-                  isDeleted: isFileDeleted(fullPath)
+                  isDeleted: isFileDeleted(fullPath),
+                  size: undefined
                 });
               } else {
                 // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")
                 const prefix = this.getCivitaiPrefix(file);
                 if (!prefix) return;
                 if (!groupMap.has(prefix)) {
-                  groupMap.set(prefix, { allFiles: [] });
+                  groupMap.set(prefix, { allFiles: [] as string[], totalSize: 0 });
                 }
-                groupMap.get(prefix)!.allFiles.push(fullPath);
+                const group = groupMap.get(prefix)!;
+                group.allFiles.push(fullPath);
+                group.totalSize += stats.size;
 
                 // If this file is a preview image, record its path.
                 if (file.endsWith('.preview.png')) {
@@ -307,7 +311,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
               isFile: true,
               isDirectory: false,
               isDeleted: isFileDeleted(group.previewPath),
-              civitaiGroup: group.allFiles
+              civitaiGroup: group.allFiles,
+              size: group.totalSize
             });
           }
         });
