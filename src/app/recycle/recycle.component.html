@@ -5,14 +5,9 @@
 
     <div class="section">
         <h3>Sets</h3>
-        <ul>
-            <li *ngFor="let record of setRecords" (contextmenu)="onRecordRightClick($event, record)">
-                <div *ngFor="let file of record.files">
-                    <span>{{ getFileName(file) }}</span>
-                    <small>Deleted: {{ record.deletedDate | date:'short' }}</small>
-                </div>
-            </li>
-        </ul>
+        <app-file-list [items]="items" viewMode="extraLarge" [showDeletedInfo]="true"
+            (fileRightClick)="onFileCardRightClick($event)">
+        </app-file-list>
     </div>
 
     <div class="section">

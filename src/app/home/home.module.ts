@@ -17,6 +17,7 @@ import { GroupingSidebarComponent } from './components/grouping-sidebar/grouping
   declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent,
     FileInfoSidebarComponent, UpdateSidebarComponent, ModelModalComponent, ZipSidebarComponent,
     GroupingSidebarComponent],
-  imports: [CommonModule, SharedModule, HomeRoutingModule]
+  imports: [CommonModule, SharedModule, HomeRoutingModule],
+  exports: [FileListComponent]
 })
 export class HomeModule { }

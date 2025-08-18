@@ -21,7 +21,7 @@ import { RecycleComponent } from './recycle/recycle.component';
 const httpLoaderFactory = (http: HttpClient): TranslateHttpLoader => new TranslateHttpLoader(http, './assets/i18n/', '.json');
 
 @NgModule({
-  declarations: [AppComponent, RecycleComponent],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     FormsModule,

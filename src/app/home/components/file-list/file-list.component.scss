@@ -210,7 +210,7 @@
     flex-wrap: wrap;
     gap: 20px;
     padding: 8px;
-    padding-top:50px;
+    padding-top: 50px;
 }
 
 .file-card {
@@ -316,4 +316,13 @@
 /* Optional styles for selected cards */
 .file-card.selected {
     border: 2px solid #0078d7;
+}
+
+.file-card .card-footer .deleted-info {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.85;
+    font-size: 0.95rem;
 }

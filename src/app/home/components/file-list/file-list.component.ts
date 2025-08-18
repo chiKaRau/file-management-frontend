@@ -39,6 +39,8 @@ export class FileListComponent {
   @Input() items: DirectoryItem[] = [];
   @Input() viewMode: string = 'large'; // default to "large"
 
+  @Input() showDeletedInfo = false;
+
   /** Emitted when user wants to open a folder (double-click). */
   @Output() openFolder = new EventEmitter<string>();
 

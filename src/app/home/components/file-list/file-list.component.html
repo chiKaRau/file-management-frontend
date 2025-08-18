@@ -50,6 +50,11 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="deleted-info" *ngIf="showDeletedInfo && item.deletedDate">
+                    <span class="material-icons">delete</span>
+                    Deleted: {{ item.deletedDate | date:'medium' }}
+                </div>
             </ng-container>
 
             <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
