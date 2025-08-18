@@ -9,5 +9,6 @@ export interface DirectoryItem {
     scanData?: any;  // Holds extra API data
 
     deletedDate?: string | Date;
+    deletedFromPath?: string;
     recycleRecordId?: string;
 }

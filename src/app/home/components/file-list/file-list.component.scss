@@ -292,24 +292,29 @@
     }
 }
 
-/* Optional styles for deleted cards */
 .file-card.deleted {
     filter: grayscale(50%) brightness(90%);
     border: 2px dashed #ff4d4d;
     box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
 
-    &:after {
+    &::after {
         content: 'Recycled';
         position: absolute;
-        top: 4px;
-        right: 4px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        /* center it */
         background: rgba(255, 77, 77, 0.85);
         color: #fff;
-        padding: 2px 6px;
+        padding: 6px 10px;
         font-size: 12px;
         font-weight: bold;
-        border-radius: 2px;
+        border-radius: 4px;
         text-transform: uppercase;
+        z-index: 2;
+        /* above badges/image */
+        pointer-events: none;
+        /* don't block clicks */
     }
 }
 
@@ -325,4 +330,27 @@
     gap: 6px;
     opacity: 0.85;
     font-size: 0.95rem;
+}
+
+.deleted-info-below {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.9;
+}
+
+.deleted-path-below {
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.deleted-path-below .path-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
