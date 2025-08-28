@@ -4,6 +4,10 @@ import { RecycleService } from './recycle.service';
 import { DirectoryItem } from '../home/components/file-list/model/directory-item.model';
 import * as fs from 'fs';
 import * as path from 'path';
+import { shell } from 'electron';
+import { Router } from '@angular/router';
+import { ExplorerStateService } from '../home/services/explorer-state.service';
+import { NavigationService } from '../home/services/navigation.service';
 
 @Component({
   selector: 'app-recycle',
@@ -19,7 +23,9 @@ export class RecycleComponent implements OnInit {
   menuY = 0;
   selectedRecord!: RecycleRecord;
 
-  constructor(private recycleService: RecycleService) { }
+  constructor(private recycleService: RecycleService, private router: Router,
+    private explorerState: ExplorerStateService,
+    private navigationService: NavigationService) { }
 
   ngOnInit(): void {
     this.loadRecords();
@@ -153,6 +159,20 @@ export class RecycleComponent implements OnInit {
     this.menuX = event.clientX;
     this.menuY = event.clientY;
     this.showContextMenu = true;
+  }
+
+  openContainingFolder(): void {
+    if (!this.selectedRecord) return;
+    const folder = path.dirname(this.selectedRecord.originalPath);
+
+    // set the target folder into shared state + history
+    this.explorerState.selectedDirectory = folder;
+    this.navigationService.navigateTo(folder);
+
+    // navigate to Home; AppComponent's (activate) will call Home.onRefresh()
+    this.router.navigate(['/home']);
+
+    this.showContextMenu = false;
   }
 
 }
