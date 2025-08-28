@@ -8,6 +8,8 @@ import { shell } from 'electron';
 import { Router } from '@angular/router';
 import { ExplorerStateService } from '../home/services/explorer-state.service';
 import { NavigationService } from '../home/services/navigation.service';
+import { HttpClient } from '@angular/common/http';
+import { lastValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-recycle',
@@ -22,10 +24,12 @@ export class RecycleComponent implements OnInit {
   menuX = 0;
   menuY = 0;
   selectedRecord!: RecycleRecord;
+  isBulkDeleting = false;
 
   constructor(private recycleService: RecycleService, private router: Router,
     private explorerState: ExplorerStateService,
-    private navigationService: NavigationService) { }
+    private navigationService: NavigationService,
+    private http: HttpClient) { }
 
   ngOnInit(): void {
     this.loadRecords();
@@ -133,9 +137,95 @@ export class RecycleComponent implements OnInit {
   }
 
   deleteRecordPermanently(): void {
-    this.recycleService.deletePermanently(this.selectedRecord.id);
-    this.loadRecords();
-    this.showContextMenu = false;
+    const rec = this.selectedRecord;
+    if (!rec) return;
+
+    const finalize = () => {
+      this.recycleService.deletePermanently(rec.id);
+      this.loadRecords();
+      this.showContextMenu = false;
+    };
+
+    // Only call the API for "set" records (files with model/version in the name)
+    if (rec.type === 'set') {
+      // Prefer the preview file to parse model/version; fallback to first file
+      const fileForParsing =
+        rec.files.find(f => f.toLowerCase().endsWith('.preview.png')) || rec.files[0];
+
+      const parsed = this.parseFromName(fileForParsing); // you already have this helper
+      if (parsed?.modelNumber && parsed?.versionNumber) {
+        const body = {
+          model_number: parsed.modelNumber,
+          version_number: parsed.versionNumber
+        };
+
+        this.http.post('http://localhost:3000/api/delete-record-by-model-version', body)
+          .subscribe({
+            next: () => {
+              console.log('Delete record API success:', body);
+              finalize();
+            },
+            error: (err) => {
+              console.error('Delete record API failed:', err);
+              // Still remove the local recycle record so the UI stays consistent
+              finalize();
+            }
+          });
+        return; // prevent falling through; finalize will be called in subscribe
+      } else {
+        console.warn('Could not parse model/version from filename; skipping API call.');
+      }
+    }
+
+    // For directories or unparsable sets, just delete locally
+    finalize();
+  }
+
+  async deleteAllPermanently(): Promise<void> {
+    if (this.isBulkDeleting) return;
+    if (!this.setRecords.length && !this.directoryRecords.length) return;
+
+    const ok = confirm('Delete ALL recycled items permanently? This cannot be undone.');
+    if (!ok) return;
+
+    this.isBulkDeleting = true;
+    try {
+      // Call API for each "set" that has parsable model/version
+      const apiCalls: Promise<any>[] = [];
+      for (const rec of this.setRecords) {
+        const fileForParsing =
+          rec.files.find(f => f.toLowerCase().endsWith('.preview.png')) || rec.files[0];
+        const parsed = this.parseFromName(fileForParsing); // your helper
+
+        if (parsed?.modelNumber && parsed?.versionNumber) {
+          const body = {
+            model_number: parsed.modelNumber,
+            version_number: parsed.versionNumber
+          };
+          apiCalls.push(
+            lastValueFrom(this.http.post('http://localhost:3000/api/delete-record-by-model-version', body))
+              .catch(err => {
+                console.error('Delete API failed for', body, err);
+                // swallow; continue with others
+              })
+          );
+        } else {
+          console.warn('Skipping API call; cannot parse model/version from', fileForParsing);
+        }
+      }
+
+      await Promise.allSettled(apiCalls);
+
+      // Clear ALL recycle records locally (sets + directories)
+      const all = [...this.setRecords, ...this.directoryRecords];
+      for (const rec of all) {
+        this.recycleService.deletePermanently(rec.id);
+      }
+
+      this.loadRecords();
+    } finally {
+      this.isBulkDeleting = false;
+    }
   }
 
   getFileName(path: string): string {

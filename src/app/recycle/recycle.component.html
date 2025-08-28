@@ -2,6 +2,10 @@
     <h2>Recycle Bin</h2>
 
     <button (click)="loadRecords()">Refresh Records</button>
+    <button class="danger" (click)="deleteAllPermanently()"
+        [disabled]="isBulkDeleting || (!setRecords.length && !directoryRecords.length)">
+        Delete all permanently
+    </button>
 
     <div class="section">
         <h3>Sets</h3>
