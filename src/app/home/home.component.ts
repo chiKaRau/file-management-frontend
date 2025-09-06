@@ -42,10 +42,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
   menuX = 0;
   menuY = 0;
 
-  // For submenus in the empty area menu
+  @ViewChild('sortSubmenu') sortSubmenuRef!: ElementRef<HTMLDivElement>;
   viewSubmenuOpen = false;
   sortSubmenuOpen = false;
+
   viewSubmenuShouldFlip = false;
+  sortSubmenuShouldFlip = false;
+
 
   // The file the user right-clicked on (if any)
   selectedFile: DirectoryItem | null = null;
@@ -90,6 +93,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // New properties for update-all overlay.
   isUpdatingAllModels: boolean = false;
   currentUpdateModel: string = '';
+
+  sortKey: 'name' | 'size' | 'modified' | 'created' = 'name';
+  sortDir: 'asc' | 'desc' = 'asc';
+
 
   constructor(
     private electronService: ElectronService,
@@ -173,14 +180,24 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   // Filtered contents for search
   get filteredDirectoryContents(): DirectoryItem[] {
-
     const contents = this.explorerState.directoryContents;
-    if (!this.searchTerm) return contents;
+    if (!this.searchTerm) {
+      const dir = contents.filter(i => i.isDirectory).sort(this.compareItems);
+      const fil = contents.filter(i => i.isFile).sort(this.compareItems);
+      return [...dir, ...fil];
+    }
+
     const term = this.searchTerm.toLowerCase();
-    return contents.filter(item =>
-      item.name.toLowerCase().includes(term)
-    );
+    const filtered = contents.filter(item => item.name.toLowerCase().includes(term));
+    const dir = filtered.filter(i => i.isDirectory).sort(this.compareItems);
+    const fil = filtered.filter(i => i.isFile).sort(this.compareItems);
+    return [...dir, ...fil];
   }
+
+  private getCreatedTime(stats: fs.Stats): Date {
+    return stats.birthtime && stats.birthtime.getTime() > 0 ? stats.birthtime : stats.ctime;
+  }
+
 
   applySearch(newTerm: string) {
     this.searchTerm = newTerm;
@@ -246,7 +263,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
                 isFile: stats.isFile(),
                 isDirectory: stats.isDirectory(),
                 isDeleted: isFileDeleted(fullPath),
-                size: stats.isFile() ? stats.size : undefined   // <--
+                size: stats.isFile() ? stats.size : undefined,
+                createdAt: this.getCreatedTime(stats),
+                modifiedAt: stats.mtime
               } as DirectoryItem;
             } catch (statErr) {
               console.error(`Error stating file ${fullPath}:`, statErr);
@@ -262,7 +281,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       } else {
         // Civitai Mode: Group files based on naming patterns.
         const directories: DirectoryItem[] = [];
-        const groupMap = new Map<string, { allFiles: string[]; previewPath?: string; totalSize: number }>();
+        const groupMap = new Map<string, { allFiles: string[]; previewPath?: string; totalSize: number, createdAt?: Date; modifiedAt?: Date }>();
 
         // Process each file asynchronously.
         await Promise.all(
@@ -277,7 +296,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
                   isFile: false,
                   isDirectory: true,
                   isDeleted: isFileDeleted(fullPath),
-                  size: undefined
+                  size: undefined,
+                  createdAt: this.getCreatedTime(stats),
+                  modifiedAt: stats.mtime
                 });
               } else {
                 // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")
@@ -289,6 +310,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
                 const group = groupMap.get(prefix)!;
                 group.allFiles.push(fullPath);
                 group.totalSize += stats.size;
+
+                const created = this.getCreatedTime(stats);
+                const modified = stats.mtime;
+
+                group.createdAt = group.createdAt ? (created < group.createdAt ? created : group.createdAt) : created;
+                group.modifiedAt = group.modifiedAt ? (modified > group.modifiedAt ? modified : group.modifiedAt) : modified;
+
 
                 // If this file is a preview image, record its path.
                 if (file.endsWith('.preview.png')) {
@@ -312,7 +340,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
               isDirectory: false,
               isDeleted: isFileDeleted(group.previewPath),
               civitaiGroup: group.allFiles,
-              size: group.totalSize
+              size: group.totalSize,
+              createdAt: group.createdAt,
+              modifiedAt: group.modifiedAt
             });
           }
         });
@@ -507,6 +537,33 @@ export class HomeComponent implements OnInit, AfterViewInit {
       }
     }
   }
+
+  setSort(key: 'name' | 'size' | 'modified' | 'created') {
+    if (this.sortKey === key) {
+      // toggle direction when choosing the same key
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortKey = key;
+      // sensible defaults
+      this.sortDir = key === 'name' ? 'asc' : 'desc';
+    }
+    this.sortSubmenuOpen = false;
+    this.showEmptyAreaContextMenu = false;
+  }
+
+  toggleSortDirection() {
+    this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+  }
+
+  onMouseEnterSortSubmenu(_: MouseEvent) {
+    this.sortSubmenuOpen = true;
+    setTimeout(() => {
+      if (!this.sortSubmenuRef) return;
+      const rect = this.sortSubmenuRef.nativeElement.getBoundingClientRect();
+      this.sortSubmenuShouldFlip = rect.right > window.innerWidth;
+    });
+  }
+
 
 
   openSubDirectory(subDirPath: string) {
@@ -1125,6 +1182,42 @@ export class HomeComponent implements OnInit, AfterViewInit {
     await this.loadDirectoryContents(path);
     this.isLoading = false;
   }
+
+  private naturalNameCompare(a: string, b: string): number {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  private compareItems = (a: DirectoryItem, b: DirectoryItem): number => {
+    let cmp = 0;
+
+    switch (this.sortKey) {
+      case 'name':
+        cmp = this.naturalNameCompare(a.name, b.name);
+        break;
+      case 'size': {
+        const asize = a.size ?? -1;  // treat unknown as smaller
+        const bsize = b.size ?? -1;
+        cmp = asize - bsize;
+        break;
+      }
+      case 'modified': {
+        const at = a.modifiedAt ? new Date(a.modifiedAt).getTime() : 0;
+        const bt = b.modifiedAt ? new Date(b.modifiedAt).getTime() : 0;
+        cmp = at - bt;
+        break;
+      }
+      case 'created': {
+        const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        cmp = at - bt;
+        break;
+      }
+    }
+
+    return this.sortDir === 'asc' ? cmp : -cmp;
+  };
+
+
 
 
 }

@@ -87,7 +87,33 @@
         <div class="submenu-item" (click)="switchView('details')">Details</div>
       </div>
     </div>
-    <div class="menu-item" (click)="sortBy('name')">Sort by Name</div>
+    <div class="menu-item" (mouseenter)="onMouseEnterSortSubmenu($event)"
+      (mouseleave)="sortSubmenuOpen = false; sortSubmenuShouldFlip = false;">
+      Sort by >
+      <div class="submenu" #sortSubmenu *ngIf="sortSubmenuOpen" [ngClass]="{ 'flip-submenu': sortSubmenuShouldFlip }">
+        <div class="submenu-item" (click)="setSort('name')">
+          <span *ngIf="sortKey==='name'">✓</span> Name
+          <span *ngIf="sortKey==='name'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
+        </div>
+        <div class="submenu-item" (click)="setSort('size')">
+          <span *ngIf="sortKey==='size'">✓</span> File size
+          <span *ngIf="sortKey==='size'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
+        </div>
+        <div class="submenu-item" (click)="setSort('modified')">
+          <span *ngIf="sortKey==='modified'">✓</span> Date modified
+          <span *ngIf="sortKey==='modified'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
+        </div>
+        <div class="submenu-item" (click)="setSort('created')">
+          <span *ngIf="sortKey==='created'">✓</span> Date created
+          <span *ngIf="sortKey==='created'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
+        </div>
+
+        <div class="submenu-item" style="border-top:1px solid rgba(255,255,255,.15); margin-top:4px; padding-top:4px"
+          (click)="toggleSortDirection()">
+          Reverse order
+        </div>
+      </div>
+    </div>
     <div class="menu-item" *ngIf="clipboard" (click)="pasteFiles()">Paste</div>
     <div class="menu-item" (click)="openNativeFileExplorer()">Open in File Explorer</div>
     <div class="menu-item" (click)="refresh()">Refresh</div>

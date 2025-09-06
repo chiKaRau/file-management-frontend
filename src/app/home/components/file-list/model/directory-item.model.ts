@@ -11,4 +11,7 @@ export interface DirectoryItem {
     deletedDate?: string | Date;
     deletedFromPath?: string;
     recycleRecordId?: string;
+
+    createdAt?: Date | string;
+    modifiedAt?: Date | string;
 }
