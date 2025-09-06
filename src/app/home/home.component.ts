@@ -425,7 +425,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
  */
   scanLocalFiles() {
     // Disable explorer interactions until scan completes
-    this.isPreloadComplete = true;
+    // this.isPreloadComplete = true;
 
     // Use a Map to deduplicate file sets
     const fileSetMap = new Map<string, { modelID: string; versionID: string }>();
