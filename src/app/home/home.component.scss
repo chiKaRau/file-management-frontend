@@ -110,7 +110,7 @@
 /* 3 columns: left dock (300) • list (flex) • right dock (500) */
 .main-container {
     display: grid;
-    grid-template-columns: 300px 1fr 300px;
+    grid-template-columns: 500px 1fr 300px;
     column-gap: 16px;
     align-items: stretch;
     height: calc(100vh - 90px);
@@ -123,15 +123,22 @@
     position: sticky;
     top: 90px;
     height: calc(100vh - 90px);
-    overflow: hidden;
     background: #fff;
 }
 
 .left-dock {
+    overflow: visible;
+    /* was hidden earlier; must be visible */
+    z-index: 3;
+    /* ↑ ensure its children (the sheet) paint above siblings */
     border-right: 1px solid #eee;
 }
 
 .right-dock {
+    overflow: visible;
+    /* symmetrical; not required but fine */
+    z-index: 1;
+    /* keep below left-dock’s stacking context */
     border-left: 1px solid #eee;
 }
 
@@ -139,6 +146,7 @@
 /* Only the file list scrolls */
 .file-list-container {
     height: 100%;
+    z-index: 1;
     overflow-y: auto;
     scroll-behavior: smooth;
 }

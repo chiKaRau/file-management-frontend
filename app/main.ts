@@ -10,51 +10,46 @@ const args = process.argv.slice(1),
   serve = args.some(val => val === '--serve');
 
 function createWindow(): BrowserWindow {
-
-  const size = screen.getPrimaryDisplay().workAreaSize;
-
-  // Create the browser window.
-  win = new BrowserWindow({
-    x: 0,
-    y: 0,
-    width: 1200,
-    height: 800,
+  const mainWindow = new BrowserWindow({
+    width: 2100,
+    height: 900,
+    show: false,
     webPreferences: {
       nodeIntegration: true,
-      allowRunningInsecureContent: (serve),
+      allowRunningInsecureContent: serve,
       contextIsolation: false,
     },
   });
 
+  // keep your global ref if you want it elsewhere
+  win = mainWindow;
+
+  // load your URL
   if (serve) {
     const debug = require('electron-debug');
     debug();
-
     require('electron-reloader')(module);
-    win.loadURL('http://localhost:4200');
+    mainWindow.loadURL('http://localhost:4200');
   } else {
-    // Path when running electron executable
     let pathIndex = './index.html';
-
     if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
-      // Path when running electron in local folder
       pathIndex = '../dist/index.html';
     }
-
     const url = new URL(path.join('file:', __dirname, pathIndex));
-    win.loadURL(url.href);
+    mainWindow.loadURL(url.href);
   }
 
-  // Emitted when the window is closed.
-  win.on('closed', () => {
-    // Dereference the window object, usually you would store window
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null;
+  // center + show safely (no “possibly null”)
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.center();
+    mainWindow.show();
   });
 
-  return win;
+  mainWindow.on('closed', () => { win = null; });
+
+  return mainWindow;
 }
+
 
 ipcMain.on('zip-files', (event, files: string[], outputZipPath: string) => {
   console.log('Received zip-files request');
