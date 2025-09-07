@@ -1,4 +1,3 @@
-<!-- file-info-sidebar.component.html -->
 <div class="sidebar">
     <div class="header">
         <h3>Details</h3>
@@ -6,9 +5,10 @@
     </div>
 
     <div *ngIf="item" class="content">
-        <!-- Image Carousel (Civitai live data) -->
+        <!-- LIVE (Civitai) mini carousel -->
         <div class="carousel">
             <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
+            <!-- NOTE: keep openModal() in template; we'll repurpose it in TS to open full-screen overlay -->
             <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
             <button class="carousel-btn" (click)="nextImage()">&#10095;</button>
         </div>
@@ -17,30 +17,31 @@
         <p><strong>Path:</strong> {{ item.path }}</p>
         <p><strong>Type:</strong> {{ item.isDirectory ? 'Folder' : 'File' }}</p>
 
-        <!-- Spinner when loading -->
+        <!-- Spinner when loading LIVE -->
         <div *ngIf="isLoading">
             <p>Loading model details...</p>
         </div>
 
-        <!-- Error message if loading failed -->
+        <!-- Error message if LIVE loading failed -->
         <div *ngIf="error" class="error">
             <p class="error">{{ error }}</p>
         </div>
 
-        <!-- Display extra details if loaded and no error -->
+        <!-- LIVE details -->
         <div *ngIf="!isLoading && !error && modelVersion">
             <p><strong>Base Model:</strong> {{ modelVersion.baseModel }}</p>
             <p><strong>Model Name:</strong> {{ modelVersion.model?.name }}</p>
             <p>
                 <strong>Trained Words:</strong>
-                <span *ngIf="modelVersion.trainedWords && modelVersion.trainedWords.length">
+                <span *ngIf="modelVersion.trainedWords && modelVersion.trainedWords.length; else noTW">
                     {{ modelVersion.trainedWords.join(', ') }}
                 </span>
+                <ng-template #noTW>—</ng-template>
             </p>
             <p>
                 <strong>Stats:</strong>
-                Downloads: {{ modelVersion.stats.downloadCount }},
-                Thumbs Up: {{ modelVersion.stats.thumbsUpCount }}
+                Downloads: {{ modelVersion.stats?.downloadCount ?? '—' }},
+                Thumbs Up: {{ modelVersion.stats?.thumbsUpCount ?? '—' }}
             </p>
         </div>
 
@@ -51,16 +52,15 @@
 
         <hr />
 
-        <!-- Button to open local DB overlay -->
+        <!-- Button to open the IN-SIDEBAR local overlay (unchanged) -->
         <div class="db-actions">
             <button class="db-button" (click)="openDbOverlay()">View Local Record</button>
         </div>
     </div>
 
-    <!-- In-sidebar backdrop (dims only the sidebar area) -->
+    <!-- ===== IN-SIDEBAR bottom sheet overlay (unchanged) ===== -->
     <div class="db-panel-backdrop" *ngIf="dbOverlayOpen" (click)="closeDbOverlay()"></div>
 
-    <!-- Bottom sheet overlay INSIDE the sidebar -->
     <div class="db-panel" *ngIf="dbOverlayOpen" (click)="$event.stopPropagation()">
         <div class="db-panel-header">
             <h3>Local Record</h3>
@@ -72,10 +72,12 @@
             <div *ngIf="dbError" class="overlay-error">{{ dbError }}</div>
 
             <ng-container *ngIf="!dbLoading && !dbError && dbData">
-                <!-- Overlay carousel (from local DB images) -->
+                <!-- LOCAL carousel INSIDE sidebar overlay -->
                 <div class="overlay-carousel" *ngIf="dbImages.length">
                     <button class="carousel-btn" (click)="prevDbImage()">&#10094;</button>
-                    <img class="overlay-image" [src]="dbImages[dbImageIndex].url" alt="Local record image" />
+                    <!-- CLICK HERE opens the FULL-SCREEN overlay with LOCAL data -->
+                    <img class="overlay-image" [src]="dbImages[dbImageIndex].url" alt="Local record image"
+                        (click)="openFullOverlay('local', dbImageIndex)" />
                     <button class="carousel-btn" (click)="nextDbImage()">&#10095;</button>
                 </div>
 
@@ -126,21 +128,22 @@
                     <div class="row">
                         <label>Stats</label>
                         <div class="mono">
-                            <ng-container *ngIf="dbStats">
-                                Downloads: {{ dbStats.downloadCount }} |
-                                Rating: {{ dbStats.rating }} ({{ dbStats.ratingCount }}) |
-                                👍 {{ dbStats.thumbsUpCount }}
+                            <ng-container *ngIf="dbStats; else noStats">
+                                Downloads: {{ dbStats.downloadCount ?? '—' }} |
+                                Rating: {{ dbStats.rating ?? '—' }} ({{ dbStats.ratingCount ?? '—' }}) |
+                                👍 {{ dbStats.thumbsUpCount ?? '—' }}
                             </ng-container>
-                            <ng-container *ngIf="!dbStats">—</ng-container>
+                            <ng-template #noStats>—</ng-template>
                         </div>
                     </div>
 
-                    <!-- NEW: creator / url / created / updated -->
+                    <!-- creator / urlAccessible / created / updated -->
                     <div class="row"><label>Creator</label>
                         <div>{{ dbCreator || '—' }}</div>
                     </div>
 
-                    <div class="row"><label>URL Accessible</label>
+                    <div class="row">
+                        <label>URL Accessible</label>
                         <div>
                             <span class="bool-pill" [class.true]="dbUrlAccessible === true"
                                 [class.false]="dbUrlAccessible === false">
@@ -152,14 +155,154 @@
                     <div class="row"><label>Created</label>
                         <div>{{ dbCreatedAt | date:'medium' }}</div>
                     </div>
-
                     <div class="row"><label>Updated</label>
                         <div>{{ dbUpdatedAt | date:'medium' }}</div>
                     </div>
-
-
                 </div>
             </ng-container>
         </div>
+    </div>
+</div>
+
+<!-- ===== FULL-SCREEN bottom-sheet overlay (new) ===== -->
+<div class="full-overlay-backdrop" *ngIf="fullOverlayOpen" (click)="closeFullOverlay()"></div>
+
+<div class="full-bottom-sheet" *ngIf="fullOverlayOpen" (click)="$event.stopPropagation()">
+    <div class="sheet-header">
+        <h3>{{ fullSource === 'local' ? 'Local Record' : 'Live Details' }}</h3>
+        <button class="sheet-close" (click)="closeFullOverlay()">✕</button>
+    </div>
+
+    <div class="sheet-body">
+        <div *ngIf="fullLoading" class="overlay-loading">Loading…</div>
+        <div *ngIf="fullError" class="overlay-error">{{ fullError }}</div>
+
+        <ng-container *ngIf="!fullLoading && !fullError">
+            <!-- source-aware carousel -->
+            <div class="overlay-carousel" *ngIf="fullImages.length">
+                <button class="carousel-btn" (click)="prevFullImage()">&#10094;</button>
+                <img class="overlay-image" [src]="fullImages[fullImageIndex]?.url" alt="image" />
+                <button class="carousel-btn" (click)="nextFullImage()">&#10095;</button>
+            </div>
+
+            <!-- LOCAL details in full-screen overlay -->
+            <div class="overlay-grid" *ngIf="fullSource === 'local'">
+                <div class="row"><label>Category</label>
+                    <div>{{ dbData?.model?.category || '—' }}</div>
+                </div>
+                <div class="row"><label>Type</label>
+                    <div>{{ dbData?.details?.type || '—' }}</div>
+                </div>
+                <div class="row"><label>Version #</label>
+                    <div>{{ dbData?.model?.versionNumber || '—' }}</div>
+                </div>
+                <div class="row"><label>Model #</label>
+                    <div>{{ dbData?.model?.modelNumber || '—' }}</div>
+                </div>
+                <div class="row"><label>Local Path</label>
+                    <div class="mono">{{ dbData?.model?.localPath || '—' }}</div>
+                </div>
+                <div class="row"><label>Name</label>
+                    <div>{{ dbData?.model?.name || '—' }}</div>
+                </div>
+                <div class="row"><label>Main Model Name</label>
+                    <div>{{ dbData?.model?.mainModelName || '—' }}</div>
+                </div>
+                <div class="row"><label>Creator</label>
+                    <div>{{ dbCreator || '—' }}</div>
+                </div>
+                <div class="row">
+                    <label>URL</label>
+                    <div>
+                        <a *ngIf="dbData?.url?.url" [href]="dbData?.url?.url" target="_blank" rel="noopener noreferrer">
+                            {{ dbData?.url?.url }}
+                        </a>
+                        <span *ngIf="!dbData?.url?.url">—</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <label>URL Accessible</label>
+                    <div>
+                        <span class="bool-pill" [class.true]="dbUrlAccessible === true"
+                            [class.false]="dbUrlAccessible === false">
+                            {{ dbUrlAccessible === true ? 'Yes' : (dbUrlAccessible === false ? 'No' : '—') }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row"><label>Created</label>
+                    <div>{{ dbCreatedAt | date:'medium' }}</div>
+                </div>
+                <div class="row"><label>Updated</label>
+                    <div>{{ dbUpdatedAt | date:'medium' }}</div>
+                </div>
+
+                <div class="row">
+                    <label>Tags</label>
+                    <div>
+                        <ng-container *ngIf="dbTags?.length; else noTagsFS">
+                            <span class="chip" *ngFor="let t of dbTags">{{ t }}</span>
+                        </ng-container>
+                        <ng-template #noTagsFS>—</ng-template>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label>Trigger Words</label>
+                    <div>
+                        <ng-container *ngIf="dbTriggerWords?.length; else noTrigFS">
+                            <span class="chip" *ngFor="let w of dbTriggerWords">{{ w }}</span>
+                        </ng-container>
+                        <ng-template #noTrigFS>—</ng-template>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label>Stats</label>
+                    <div class="mono">
+                        <ng-container *ngIf="dbStats; else noStatsFS">
+                            Downloads: {{ dbStats.downloadCount ?? '—' }} |
+                            Rating: {{ dbStats.rating ?? '—' }} ({{ dbStats.ratingCount ?? '—' }}) |
+                            👍 {{ dbStats.thumbsUpCount ?? '—' }}
+                        </ng-container>
+                        <ng-template #noStatsFS>—</ng-template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIVE details in full-screen overlay -->
+            <div class="overlay-grid" *ngIf="fullSource === 'live'">
+                <div class="row"><label>Model</label>
+                    <div>{{ modelVersion?.model?.name || '—' }}</div>
+                </div>
+                <div class="row"><label>Base Model</label>
+                    <div>{{ modelVersion?.baseModel || '—' }}</div>
+                </div>
+                <div class="row">
+                    <label>Trained Words</label>
+                    <div>
+                        <ng-container *ngIf="modelVersion?.trainedWords?.length; else noTWov">
+                            <span class="chip" *ngFor="let w of modelVersion?.trainedWords">{{ w }}</span>
+                        </ng-container>
+                        <ng-template #noTWov>—</ng-template>
+                    </div>
+                </div>
+                <div class="row">
+                    <label>Stats</label>
+                    <div class="mono">
+                        Downloads: {{ modelVersion?.stats?.downloadCount ?? '—' }} |
+                        👍 {{ modelVersion?.stats?.thumbsUpCount ?? '—' }}
+                    </div>
+                </div>
+                <div class="row">
+                    <label>Link</label>
+                    <div>
+                        <a *ngIf="modelVersion?.modelId"
+                            [href]="'https://civitai.com/models/' + modelVersion.modelId + '?modelVersionId=' + modelVersion?.id"
+                            target="_blank" rel="noopener noreferrer">Open on Civitai</a>
+                        <span *ngIf="!modelVersion?.modelId">—</span>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
     </div>
 </div>
