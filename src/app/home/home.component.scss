@@ -4,19 +4,23 @@
 }
 
 .home-toolbar {
-    position: fixed;
+    position: sticky;
+    /* sticky, not fixed */
     top: 40px;
-    /* pinned below your top-level tab bar if you have one */
-    left: 0;
-    width: 100%;
-    height: 50px;
+    /* sticks right below the fixed tab bar */
+    z-index: 9998;
     background-color: #fafafa;
     border-bottom: 1px solid #ccc;
-    z-index: 9998;
+
     display: flex;
     align-items: center;
-    padding: 0 10px;
     gap: 8px;
+
+    /* let it be as tall as its (wrapping) content */
+    height: auto;
+    min-height: 50px;
+    /* visual baseline */
+    padding: 0 10px;
 }
 
 .browse-icon {
@@ -103,17 +107,22 @@
     cursor: not-allowed;
 }
 
-/* Flex container for sidebar and file list */
+/* no extra offset needed now – toolbar is in flow */
+.actual-content {
+    margin-top: 0;
+}
+
 .main-container {
     display: flex;
     flex-direction: row;
+    align-items: stretch;
+    /* important: make columns fill height */
 
     .file-list-container {
         flex: 1;
         margin-left: 16px;
-        /* space from sidebar */
         overflow-y: auto;
-        scroll-behavior: smooth; // Smooth scrolling
+        scroll-behavior: smooth;
     }
 }
 

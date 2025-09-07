@@ -4,9 +4,9 @@
         <h3>Details</h3>
         <button (click)="close()">X</button>
     </div>
-    <div *ngIf="item" class="content">
 
-        <!-- Image Carousel -->
+    <div *ngIf="item" class="content">
+        <!-- Image Carousel (Civitai live data) -->
         <div class="carousel">
             <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
             <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
@@ -20,11 +20,10 @@
         <!-- Spinner when loading -->
         <div *ngIf="isLoading">
             <p>Loading model details...</p>
-            <!-- You can replace this text with a spinner icon if desired -->
         </div>
 
         <!-- Error message if loading failed -->
-        <div *ngIf="error">
+        <div *ngIf="error" class="error">
             <p class="error">{{ error }}</p>
         </div>
 
@@ -45,10 +44,98 @@
             </p>
         </div>
 
-        <a [href]="'https://civitai.com/models/' + ( modelVersion.modelId) + '?modelVersionId=' + modelVersion.id"
+        <a [href]="'https://civitai.com/models/' + (modelVersion?.modelId) + '?modelVersionId=' + modelVersion?.id"
             target="_blank" rel="noopener noreferrer">
             Go to Model
         </a>
 
+        <hr />
+
+        <!-- Button to open local DB overlay -->
+        <div class="db-actions">
+            <button class="db-button" (click)="openDbOverlay()">View Local Record</button>
+        </div>
+    </div>
+
+    <!-- In-sidebar backdrop (dims only the sidebar area) -->
+    <div class="db-panel-backdrop" *ngIf="dbOverlayOpen" (click)="closeDbOverlay()"></div>
+
+    <!-- Bottom sheet overlay INSIDE the sidebar -->
+    <div class="db-panel" *ngIf="dbOverlayOpen" (click)="$event.stopPropagation()">
+        <div class="db-panel-header">
+            <h3>Local Record</h3>
+            <button class="db-close" (click)="closeDbOverlay()">✕</button>
+        </div>
+
+        <div class="db-panel-body">
+            <div *ngIf="dbLoading" class="overlay-loading">Loading local record…</div>
+            <div *ngIf="dbError" class="overlay-error">{{ dbError }}</div>
+
+            <ng-container *ngIf="!dbLoading && !dbError && dbData">
+                <!-- Overlay carousel (from local DB images) -->
+                <div class="overlay-carousel" *ngIf="dbImages.length">
+                    <button class="carousel-btn" (click)="prevDbImage()">&#10094;</button>
+                    <img class="overlay-image" [src]="dbImages[dbImageIndex].url" alt="Local record image" />
+                    <button class="carousel-btn" (click)="nextDbImage()">&#10095;</button>
+                </div>
+
+                <!-- Details grid -->
+                <div class="overlay-grid">
+                    <div class="row"><label>Category</label>
+                        <div>{{ dbData?.model?.category }}</div>
+                    </div>
+                    <div class="row"><label>Type</label>
+                        <div>{{ dbData?.details?.type }}</div>
+                    </div>
+                    <div class="row"><label>Version #</label>
+                        <div>{{ dbData?.model?.versionNumber }}</div>
+                    </div>
+                    <div class="row"><label>Model #</label>
+                        <div>{{ dbData?.model?.modelNumber }}</div>
+                    </div>
+                    <div class="row"><label>Local Path</label>
+                        <div class="mono">{{ dbData?.model?.localPath }}</div>
+                    </div>
+                    <div class="row"><label>Name</label>
+                        <div>{{ dbData?.model?.name }}</div>
+                    </div>
+                    <div class="row"><label>Main Model Name</label>
+                        <div>{{ dbData?.model?.mainModelName }}</div>
+                    </div>
+
+                    <div class="row">
+                        <label>Tags</label>
+                        <div>
+                            <ng-container *ngIf="dbTags?.length; else noTags">
+                                <span class="chip" *ngFor="let t of dbTags">{{ t }}</span>
+                            </ng-container>
+                            <ng-template #noTags>—</ng-template>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <label>Trigger Words</label>
+                        <div>
+                            <ng-container *ngIf="dbTriggerWords?.length; else noTrig">
+                                <span class="chip" *ngFor="let w of dbTriggerWords">{{ w }}</span>
+                            </ng-container>
+                            <ng-template #noTrig>—</ng-template>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <label>Stats</label>
+                        <div class="mono">
+                            <ng-container *ngIf="dbStats">
+                                Downloads: {{ dbStats.downloadCount }} |
+                                Rating: {{ dbStats.rating }} ({{ dbStats.ratingCount }}) |
+                                👍 {{ dbStats.thumbsUpCount }}
+                            </ng-container>
+                            <ng-container *ngIf="!dbStats">—</ng-container>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
     </div>
 </div>

@@ -2,15 +2,15 @@
 .toolbar-container {
     display: flex;
     flex-wrap: wrap;
-    /* allow wrapping */
+    /* allow wrapping to multiple rows */
     align-items: center;
     padding: 6px 10px;
+    /* <-- NORMAL padding (no %!) */
     background-color: #e9ecef;
     border-bottom: 1px solid #ccc;
     gap: 10px;
     font-family: "Segoe UI", sans-serif;
     font-size: 14px;
-    padding-top: 5%;
 }
 
 .toolbar-container button {
@@ -100,12 +100,10 @@
 
 .subdir-nav {
     flex: 0 0 100%;
-    /* full width on its own line */
     display: flex;
     align-items: center;
     gap: 8px;
     margin-top: 6px;
-    /* spacing from above */
 }
 
 .subdir-nav select {
