@@ -223,6 +223,32 @@ export class FileInfoSidebarComponent implements OnChanges {
     return this.parseJsonField<any>(this.dbData?.details?.stats, null);
   }
 
+  // Prefer from details, fallback to model
+  get dbCreator(): string {
+    return this.dbData?.details?.creatorName ?? this.dbData?.model?.creatorName ?? '';
+  }
+
+  // "urlAccessable" may be boolean or string; normalize to true/false/null
+  get dbUrlAccessible(): boolean | null {
+    const v = this.dbData?.model?.urlAccessable;
+    if (v === true || v === false) return v;
+    if (typeof v === 'string') {
+      const s = v.toLowerCase().trim();
+      if (s === 'true') return true;
+      if (s === 'false') return false;
+    }
+    return null;
+  }
+
+  // pass through to date pipe (can be string or Date)
+  get dbCreatedAt(): string | Date | null {
+    return this.dbData?.model?.createdAt ?? null;
+  }
+  get dbUpdatedAt(): string | Date | null {
+    return this.dbData?.model?.updatedAt ?? null;
+  }
+
+
   // Overlay carousel controls
   prevDbImage() {
     if (this.dbImages.length) {

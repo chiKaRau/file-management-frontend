@@ -243,4 +243,27 @@
         border-radius: 12px;
         font-size: 12px;
     }
+
+    .bool-pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.4;
+        background: rgba(255, 255, 255, .08);
+        border: 1px solid rgba(255, 255, 255, .15);
+    }
+
+    .bool-pill.true {
+        background: rgba(46, 160, 67, .15);
+        border-color: rgba(46, 160, 67, .35);
+        color: #b9ffd0;
+    }
+
+    .bool-pill.false {
+        background: rgba(207, 55, 55, .15);
+        border-color: rgba(207, 55, 55, .35);
+        color: #ffb3b3;
+    }
+
 }

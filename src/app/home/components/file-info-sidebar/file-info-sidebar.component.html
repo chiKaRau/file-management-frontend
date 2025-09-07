@@ -134,6 +134,30 @@
                             <ng-container *ngIf="!dbStats">—</ng-container>
                         </div>
                     </div>
+
+                    <!-- NEW: creator / url / created / updated -->
+                    <div class="row"><label>Creator</label>
+                        <div>{{ dbCreator || '—' }}</div>
+                    </div>
+
+                    <div class="row"><label>URL Accessible</label>
+                        <div>
+                            <span class="bool-pill" [class.true]="dbUrlAccessible === true"
+                                [class.false]="dbUrlAccessible === false">
+                                {{ dbUrlAccessible === true ? 'Yes' : (dbUrlAccessible === false ? 'No' : '—') }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row"><label>Created</label>
+                        <div>{{ dbCreatedAt | date:'medium' }}</div>
+                    </div>
+
+                    <div class="row"><label>Updated</label>
+                        <div>{{ dbUpdatedAt | date:'medium' }}</div>
+                    </div>
+
+
                 </div>
             </ng-container>
         </div>
