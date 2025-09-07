@@ -22,10 +22,23 @@
   <div class="actual-content">
     <!-- Flex container for sidebar + file list -->
     <div class="main-container" [ngClass]="{'with-sidebar': selectedFile}">
-      <!-- Sidebar: only shows when a file (not a folder) is selected -->
-      <app-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory" [item]="selectedFile"
-        (openModalEvent)="openModalFromSidebar($event)" (closed)="selectedFile = null">
-      </app-file-info-sidebar>
+      <!-- Permanent left dock (fixed width, no layout shift) -->
+      <div class="left-dock">
+        <ng-container *ngIf="selectedFile && !selectedFile.isDirectory; else dockEmpty">
+          <app-file-info-sidebar [item]="selectedFile" (openModalEvent)="openModalFromSidebar($event)"
+            (closed)="selectedFile = null">
+          </app-file-info-sidebar>
+        </ng-container>
+
+        <ng-template #dockEmpty>
+          <div class="dock-placeholder">
+            <div class="placeholder-inner">
+              <div class="placeholder-icon" aria-hidden="true">🛈</div>
+              <div>Select a file to see details</div>
+            </div>
+          </div>
+        </ng-template>
+      </div>
 
       <!-- File list panel -->
       <!-- Note: Added (contextmenu)="onEmptyAreaRightClick($event)" here -->

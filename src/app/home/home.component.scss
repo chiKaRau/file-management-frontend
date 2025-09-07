@@ -113,29 +113,61 @@
 }
 
 .main-container {
-    display: flex;
-    flex-direction: row;
+    /* Two columns: fixed 300px dock + flexible content */
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    column-gap: 16px;
     align-items: stretch;
-    /* important: make columns fill height */
 
     .file-list-container {
-        flex: 1;
-        margin-left: 16px;
+        /* no artificial left margin; grid gap handles spacing */
+        margin-left: 0;
         overflow-y: auto;
         scroll-behavior: smooth;
     }
 }
 
-.main-container:not(.with-sidebar) .file-list-container {
-    margin-left: 0;
-}
-
-
-/* When the update sidebar is open, add right margin to push file list */
+/* If your right update sidebar needs room, keep this class-driven rule */
 .main-container.with-update-sidebar .file-list-container {
     margin-right: 300px;
-    /* update sidebar width */
+    /* match your update sidebar width */
 }
+
+/* Permanent left dock */
+.left-dock {
+    /* You can make this sticky if you want the dock to stay under the tab bar */
+    position: sticky;
+    top: 40px;
+    /* same as your fixed tab bar height */
+    height: calc(100vh - 40px);
+    overflow: hidden;
+    /* sidebar will scroll internally */
+    /* Optional divider */
+    border-right: 1px solid #eee;
+    background: #fff;
+}
+
+/* Nice, calm placeholder when nothing is selected */
+.dock-placeholder {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .placeholder-inner {
+        text-align: center;
+        color: #999;
+        font-size: 14px;
+        line-height: 1.4;
+        padding: 12px;
+    }
+
+    .placeholder-icon {
+        font-size: 22px;
+        margin-bottom: 6px;
+    }
+}
+
 
 .update-overlay {
     position: fixed;

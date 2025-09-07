@@ -1,14 +1,14 @@
 .sidebar {
-    width: 300px;
+    width: 100%;
     background: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, .3);
     display: flex;
     flex-direction: column;
 
-    position: sticky;
+    position: static;
     top: 40px;
     /* under the tab bar */
-    height: calc(100vh - 40px);
+    height: 100%;
     align-self: stretch;
     overflow: hidden;
 
