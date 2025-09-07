@@ -1,19 +1,17 @@
 .update-sidebar {
+    /* Fill the right dock completely */
+    width: 100%;
+    height: 100%;
+
+    /* Let the dock do the sticking; avoid double-sticky quirks */
+    position: static;
     box-sizing: border-box;
-    width: 500px;
-    flex-shrink: 0; // Prevent it from stretching or shrinking in a flex container
+
     background: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    overflow-y: auto;
-    overflow-x: hidden; // Hide horizontal overflow if any
-    transition: transform 0.3s ease;
 
-    /* Use sticky positioning so it stays visible while scrolling */
-    position: sticky;
-    top: 90px; // Aligns with your .actual-content margin-top
-
-    height: calc(100vh - 90px);
-    padding-bottom: 20px;
+    /* Make just the content scroll inside the sidebar */
+    overflow: hidden;
 
     .header {
         display: flex;
@@ -31,10 +29,13 @@
     }
 
     .content {
+        height: calc(100% - 48px);
+        /* header ~48px */
+        overflow-y: auto;
+        overflow-x: hidden;
         padding: 10px;
     }
 
-    /* Example spinner styling */
     .spinner {
         display: inline-block;
         width: 16px;

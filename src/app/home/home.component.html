@@ -70,16 +70,32 @@
         </div>
       </div>
 
-      <!-- Right Update Sidebar placed inside the flex container -->
-      <app-update-sidebar *ngIf="showUpdateSidebar" [item]="updateFile" (closed)="closeUpdateSidebar()">
-      </app-update-sidebar>
+      <!-- Permanent right dock (no layout shift) -->
+      <!-- Permanent right dock (no layout shift) -->
+      <div class="right-dock">
+        <!-- Show Update if open, otherwise Zip, otherwise placeholder -->
+        <ng-container *ngIf="showUpdateSidebar; else checkZip">
+          <app-update-sidebar [item]="updateFile" (closed)="closeUpdateSidebar()">
+          </app-update-sidebar>
+        </ng-container>
 
-      <app-zip-sidebar *ngIf="showZipSidebar" [directoryContents]="directoryContents" (closed)="closeZipSidebar()"
-        (selectSetsEvent)="handleSelectUnzippedSets($event)">
-      </app-zip-sidebar>
+        <ng-template #checkZip>
+          <ng-container *ngIf="showZipSidebar; else rightDockEmpty">
+            <app-zip-sidebar [directoryContents]="directoryContents" (closed)="closeZipSidebar()"
+              (selectSetsEvent)="handleSelectUnzippedSets($event)">
+            </app-zip-sidebar>
+          </ng-container>
+        </ng-template>
 
-      <app-grouping-sidebar *ngIf="showGroupingSidebar" (closed)="closeGroupingSidebar()"></app-grouping-sidebar>
-
+        <ng-template #rightDockEmpty>
+          <div class="right-dock-placeholder">
+            <div class="placeholder-inner">
+              <div class="placeholder-icon" aria-hidden="true">🛠️</div>
+              <div>Open “Update” or “Zip” to manage sets</div>
+            </div>
+          </div>
+        </ng-template>
+      </div>
 
     </div>
   </div>
