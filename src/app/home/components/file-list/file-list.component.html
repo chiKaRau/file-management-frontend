@@ -12,7 +12,11 @@
                'selected': isSelected(item),
                'directory': item.isDirectory,
                'file': item.isFile
-             }" [style.background-image]="item.isFile && isImage(item) ? getBackgroundImage(item.path) : ''">
+             }" [style.background-image]="item.isFile
+             ? (isReadOnly
+                 ? getVirtualBg(item)                     
+                 : (isImage(item) ? getBackgroundImage(item.path) : ''))
+             : ''">
 
                 <!-- Directory Icon -->
                 <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
@@ -89,15 +93,19 @@
         </svg>
 
         <div class="icon">
-            <!-- Image preview -->
-            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
-                style="object-fit: cover" />
-            <!-- Generic file icon -->
-            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-            </svg>
+            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
+                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+            </ng-container>
+
+            <ng-template #fallbackIcon>
+                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                </svg>
+            </ng-template>
         </div>
+
+
         <div class="filename">
             {{ item.name }}
         </div>
@@ -119,15 +127,19 @@
 
 
         <div class="icon">
-            <!-- Image preview -->
-            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
-                style="object-fit: cover" />
-            <!-- Generic file icon -->
-            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-            </svg>
+            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
+                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+            </ng-container>
+
+            <ng-template #fallbackIcon>
+                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                </svg>
+            </ng-template>
         </div>
+
+
         <div class="filename">
             {{ item.name }}
         </div>
@@ -149,15 +161,19 @@
 
 
         <div class="icon">
-            <!-- Image preview -->
-            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
-                style="object-fit: cover" />
-            <!-- Generic file icon -->
-            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-            </svg>
+            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
+                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+            </ng-container>
+
+            <ng-template #fallbackIcon>
+                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                </svg>
+            </ng-template>
         </div>
+
+
         <div class="filename">
             {{ item.name }}
         </div>
@@ -179,15 +195,19 @@
 
 
         <div class="icon">
-            <!-- Image preview -->
-            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
-                style="object-fit: cover" />
-            <!-- Generic file icon -->
-            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-            </svg>
+            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
+                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+            </ng-container>
+
+            <ng-template #fallbackIcon>
+                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                </svg>
+            </ng-template>
         </div>
+
+
         <div class="filename">
             {{ item.name }}
         </div>
@@ -209,15 +229,19 @@
 
 
         <div class="icon">
-            <!-- Image preview -->
-            <img *ngIf="item.isFile && isImage(item)" [src]="item.path" alt="{{ item.name }}" width="40" height="40"
-                style="object-fit: cover" />
-            <!-- Generic file icon -->
-            <svg *ngIf="item.isFile && !isImage(item)" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-            </svg>
+            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
+                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+            </ng-container>
+
+            <ng-template #fallbackIcon>
+                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
+                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                </svg>
+            </ng-template>
         </div>
+
+
         <div class="filename">
             {{ item.name }}
         </div>

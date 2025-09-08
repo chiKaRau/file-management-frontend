@@ -41,6 +41,8 @@ export class FileListComponent {
 
   @Input() showDeletedInfo = false;
 
+  @Input() isReadOnly = false;
+
   /** Emitted when user wants to open a folder (double-click). */
   @Output() openFolder = new EventEmitter<string>();
 
@@ -230,6 +232,43 @@ export class FileListComponent {
     if (bytes >= GB) return (bytes / GB).toFixed(2) + ' GB';
     if (bytes >= MB) return (bytes / MB).toFixed(2) + ' MB';
     return Math.max(1, Math.round(bytes / KB)) + ' KB'; // keep it simple < 1MB
+  }
+
+  private firstImageUrl(item: DirectoryItem): string | null {
+    const sd: any = (item as any).scanData;
+    if (!sd) return null;
+
+    // typical shapes: imageUrls OR images.imageUrls
+    let urls: any = sd.imageUrls ?? sd.images?.imageUrls;
+    if (!urls) return null;
+
+    // if stringified JSON, parse
+    if (typeof urls === 'string') {
+      try { urls = JSON.parse(urls); } catch { return null; }
+    }
+
+    if (Array.isArray(urls) && urls.length) {
+      const first = urls[0];
+      // support ["url", ...] or [{url: "..."}]
+      return typeof first === 'string' ? first : first?.url ?? null;
+    }
+    return null;
+  }
+
+  // For the small <img> icon in non-extraLarge modes
+  getThumbnailSrc(item: DirectoryItem): string | null {
+    if (!item.isFile) return null;
+    return this.isReadOnly
+      ? this.firstImageUrl(item)                    // Virtual → remote URL
+      : (this.isImage(item) ? item.path : null);   // FS → local file
+  }
+
+  // For extraLarge card background in Virtual
+  getVirtualBg(item: DirectoryItem): SafeStyle | '' {
+    const url = this.firstImageUrl(item);
+    return url
+      ? this.sanitizer.bypassSecurityTrustStyle(`url("${url}")`)
+      : '';
   }
 
 }

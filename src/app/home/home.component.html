@@ -67,7 +67,8 @@
         <div *ngIf="!isLoading && selectedDirectory">
           <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
           <app-file-list #fileList [items]="filteredDirectoryContents" [viewMode]="explorerState.viewMode"
-            (openFolder)="openSubDirectory($event)" (fileRightClick)="onFileRightClick($event.file, $event.event)"
+            [isReadOnly]="isReadOnly" (openFolder)="openSubDirectory($event)"
+            (fileRightClick)="onFileRightClick($event.file, $event.event)"
             (selectionChanged)="onSelectionChanged($event)">
           </app-file-list>
         </div>
