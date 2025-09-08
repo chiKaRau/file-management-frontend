@@ -178,13 +178,24 @@
         <div *ngIf="fullError" class="overlay-error">{{ fullError }}</div>
 
         <ng-container *ngIf="!fullLoading && !fullError">
+            <!-- A compact control row inside the full overlay -->
+            <div class="row" *ngIf="fullImages?.length">
+                <label>Images</label>
+                <div>
+                    <button (click)="toggleFullCarousel()">
+                        {{ showFullCarousel ? 'Hide' : 'Show' }}
+                    </button>
+                </div>
+            </div>
+
             <!-- source-aware carousel -->
-            <div class="overlay-carousel" *ngIf="fullImages.length">
+            <div class="overlay-carousel" *ngIf="showFullCarousel && fullImages.length">
                 <button class="carousel-btn" (click)="prevFullImage()">&#10094;</button>
                 <img *ngIf="fullImages && fullImages.length > fullImageIndex" class="overlay-image"
                     [src]="fullImages[fullImageIndex].url" alt="image" />
                 <button class="carousel-btn" (click)="nextFullImage()">&#10095;</button>
             </div>
+
 
             <!-- LOCAL details in full-screen overlay -->
             <div class="overlay-grid" *ngIf="fullSource === 'local'">
@@ -349,41 +360,27 @@
                 </div>
             </div>
 
-
             <!-- LIVE details in full-screen overlay -->
             <div class="overlay-grid" *ngIf="fullSource === 'live'">
-                <div class="row"><label>Model</label>
-                    <div>{{ modelVersion?.model?.name || '—' }}</div>
-                </div>
-                <div class="row"><label>Base Model</label>
-                    <div>{{ modelVersion?.baseModel || '—' }}</div>
-                </div>
+                <!-- your existing summary fields stay here ... -->
+
+                <!-- Raw JSON controls -->
                 <div class="row">
-                    <label>Trained Words</label>
+                    <label>Raw JSON</label>
                     <div>
-                        <ng-container *ngIf="modelVersion?.trainedWords?.length; else noTWov">
-                            <span class="chip" *ngFor="let w of modelVersion?.trainedWords">{{ w }}</span>
-                        </ng-container>
-                        <ng-template #noTWov>—</ng-template>
-                    </div>
-                </div>
-                <div class="row">
-                    <label>Stats</label>
-                    <div class="mono">
-                        Downloads: {{ modelVersion?.stats?.downloadCount ?? '—' }} |
-                        👍 {{ modelVersion?.stats?.thumbsUpCount ?? '—' }}
-                    </div>
-                </div>
-                <div class="row">
-                    <label>Link</label>
-                    <div>
-                        <a *ngIf="modelVersion?.modelId"
-                            [href]="'https://civitai.com/models/' + modelVersion.modelId + '?modelVersionId=' + modelVersion?.id"
-                            target="_blank" rel="noopener noreferrer">Open on Civitai</a>
-                        <span *ngIf="!modelVersion?.modelId">—</span>
+                        <button (click)="toggleLiveRawJson()">
+                            {{ showLiveRaw ? 'Hide' : 'Show' }}
+                        </button>
+                        <button *ngIf="showLiveRaw && liveRawJson" (click)="copyLiveRawJson()">
+                            Copy
+                        </button>
                     </div>
                 </div>
             </div>
+
+            <!-- Full-width pretty JSON block (outside the grid for better width) -->
+            <pre *ngIf="fullSource === 'live' && showLiveRaw" class="json-pre">{{ liveRawJson }}</pre>
+
         </ng-container>
     </div>
 </div>

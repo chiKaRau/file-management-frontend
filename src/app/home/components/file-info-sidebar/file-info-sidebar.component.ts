@@ -38,6 +38,13 @@ export class FileInfoSidebarComponent implements OnChanges {
   fullError: string | null = null;
   fullImageIndex = 0;
 
+  // LIVE raw JSON state
+  showLiveRaw = false;
+  liveRawJson = '';
+
+  showSidebarCarousel = true;
+  showFullCarousel = true;
+
   constructor(private http: HttpClient, private explorerState: ExplorerStateService, private sanitizer: DomSanitizer) { }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -66,6 +73,9 @@ export class FileInfoSidebarComponent implements OnChanges {
         this.currentImageIndex = 0;
         this.isLoading = false;
 
+        // keep Raw JSON in sync if panel open
+        this.refreshLiveRawJson();
+
         // write stats back locally
         this.updateModel({ stats: this.modelVersion?.stats });
       },
@@ -76,6 +86,31 @@ export class FileInfoSidebarComponent implements OnChanges {
       }
     });
   }
+
+  private refreshLiveRawJson() {
+    if (this.showLiveRaw && this.modelVersion) {
+      // pretty print with 2-space indent
+      this.liveRawJson = JSON.stringify(this.modelVersion, null, 2);
+    }
+  }
+
+  toggleLiveRawJson() {
+    this.showLiveRaw = !this.showLiveRaw;
+    this.refreshLiveRawJson();
+  }
+
+  async copyLiveRawJson() {
+    try {
+      await navigator.clipboard.writeText(this.liveRawJson || '');
+      // optional: toast/log
+      console.log('Live JSON copied to clipboard');
+    } catch (e) {
+      console.warn('Clipboard copy failed', e);
+    }
+  }
+
+  toggleSidebarCarousel() { this.showSidebarCarousel = !this.showSidebarCarousel; }
+  toggleFullCarousel() { this.showFullCarousel = !this.showFullCarousel; }
 
   updateModel(updateFields: { [key: string]: any }): void {
     if (!this.item) return;

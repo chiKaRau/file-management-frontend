@@ -229,7 +229,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 80vh;
+    height: 85vh;
     background: #1f1f1f;
     color: #e8e8e8;
     border-top: 1px solid rgba(255, 255, 255, .15);
@@ -325,4 +325,19 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     white-space: pre-wrap;
     word-break: break-all;
+}
+
+/* file-info-sidebar.component.scss */
+.json-pre {
+    max-height: 60vh;
+    overflow: auto;
+    margin: 8px 0 0;
+    padding: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    background: #0f1115;
+    color: #e6edf3;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
 }
