@@ -1240,61 +1240,49 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   async updateAllModels(): Promise<void> {
-    // Set flag to show overlay.
     this.isUpdatingAllModels = true;
     this.currentUpdateModel = 'Starting update...';
 
-    // Filter for model files (assuming file names with '_' denote model files)
-    const filesToUpdate = this.directoryContents.filter(
-      file => file.isFile && file.name.includes('_')
-    );
+    // Pick items that we can extract IDs from (works for FS & Virtual)
+    const items = this.directoryContents.filter(it => !!this.extractIdsFromItem(it));
 
-    for (const file of filesToUpdate) {
-      // Update the overlay with the file being processed.
-      this.currentUpdateModel = file.name;
+    for (const item of items) {
+      const ids = this.extractIdsFromItem(item);
+      if (!ids) continue;
+
+      this.currentUpdateModel = item.name ?? `${ids.modelId}_${ids.versionId}`;
+
       try {
-        // Parse file name to get model and version IDs.
-        const parts = file.name.split('_');
-        if (parts.length < 2) {
-          console.error(`Invalid file name format for ${file.name}`);
-          continue;
-        }
-        const modelId = parts[0];
-        const versionId = parts[1];
-
-        // Fetch updated model version details from Civitai API.
-        const civitaiUrl = `https://civitai.com/api/v1/model-versions/${versionId}`;
+        // 1) Pull fresh stats from Civitai
+        const civitaiUrl = `https://civitai.com/api/v1/model-versions/${ids.versionId}`;
         const modelVersion = await lastValueFrom(this.http.get<any>(civitaiUrl));
-        console.log(`Fetched updated data for ${file.name}`);
 
-        // Update local file model info (e.g. scanData.stats)
-        file.scanData = file.scanData || {};
-        file.scanData.stats = JSON.stringify(modelVersion.stats);
-
-        // Build payload for local API update.
+        // 2) Update your local DB
         const payload = {
-          modelId,
-          versionId,
+          modelId: ids.modelId,
+          versionId: ids.versionId,
           fieldsToUpdate: ['stats'],
-          stats: modelVersion.stats
+          stats: modelVersion?.stats
         };
-
-        // Call your local update API.
         await lastValueFrom(
           this.http.post('http://localhost:3000/api/update-record-by-model-and-version', payload)
         );
-        console.log(`Updated model ${file.name} successfully`);
+
+        // 3) Update in-memory item (if you want the UI to reflect immediately)
+        (item as any).scanData = (item as any).scanData || {};
+        (item as any).scanData.stats = JSON.stringify(modelVersion?.stats ?? {});
       } catch (err) {
-        console.error(`Error updating model for file ${file.name}:`, err);
+        console.error(`Error updating ${this.currentUpdateModel}:`, err);
       }
 
-      // Wait for 2 seconds before processing the next file.
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Gentle pacing
+      await new Promise(res => setTimeout(res, 2000));
     }
-    // Clear overlay.
+
     this.isUpdatingAllModels = false;
     this.currentUpdateModel = '';
   }
+
 
   /** in home.component.ts */
   async openSubDirectoryWithoutHistory(path: string) {
@@ -1357,6 +1345,35 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.selectedDrive = drive || 'all';
     // Easiest: filter in your getter below (no need to refetch)
   }
+
+  // Add this helper inside HomeComponent
+  private extractIdsFromItem(item: DirectoryItem): { modelId: string; versionId: string } | null {
+    // FS mode: parse from filename like "123_456_..."
+    if (!this.isReadOnly) {
+      const parts = item.name?.split('_') || [];
+      if (parts.length >= 2) return { modelId: parts[0], versionId: parts[1] };
+      return null;
+    }
+
+    // Virtual mode: use data from scanData or model
+    const anyItem: any = item as any;
+    const sd = anyItem.scanData || {};
+    const modelId =
+      sd.modelNumber ??
+      anyItem.modelNumber ??
+      anyItem.model?.modelNumber ??
+      null;
+
+    const versionId =
+      sd.versionNumber ??
+      anyItem.versionNumber ??
+      anyItem.model?.versionNumber ??
+      null;
+
+    if (modelId && versionId) return { modelId: String(modelId), versionId: String(versionId) };
+    return null;
+  }
+
 
 
 

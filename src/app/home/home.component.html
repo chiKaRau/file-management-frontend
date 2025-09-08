@@ -21,7 +21,8 @@
       [canGoBack]="navigationService.canGoBack()" [canGoForward]="navigationService.canGoForward()"
       [isPreloadComplete]="isPreloadComplete" [availableDrives]="availableDrives" [groupingMode]="groupingMode"
       (back)="onBack()" (forward)="onForward()" (refresh)="onRefresh()" (searchQuery)="applyVirtualSearch($event)"
-      (pathChanged)="onVirtualPathChange($event)" (driveChanged)="onVirtualDriveChange($event)">
+      (pathChanged)="onVirtualPathChange($event)" (driveChanged)="onVirtualDriveChange($event)"
+      (updateStats)="updateAllModels()">
     </app-virtual-explorer-toolbar>
   </div>
 

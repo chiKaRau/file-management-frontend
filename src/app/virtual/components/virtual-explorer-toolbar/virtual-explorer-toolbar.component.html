@@ -29,6 +29,14 @@
         </select>
     </div>
 
+    <!-- Update all models (virtual) -->
+    <div class="update-models-button">
+        <button (click)="onUpdateStats()" [disabled]="isPreloadComplete">
+            Update All Models
+        </button>
+    </div>
+
+
     <!-- Search Box -->
     <div class="search-container">
         <input #searchInput type="text" placeholder="Search files..." (input)="onSearchChange(searchInput.value)"
