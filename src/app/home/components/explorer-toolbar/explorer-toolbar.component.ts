@@ -12,6 +12,10 @@ export class ExplorerToolbarComponent {
   @Input() canGoBack: boolean = false;
   @Input() canGoForward: boolean = false;
   @Input() isPreloadComplete: boolean = false;
+
+  // NEW: let parent tell us which context we’re in
+  @Input() isReadOnly: boolean = false;
+
   @Output() back = new EventEmitter<void>();
   @Output() forward = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
@@ -157,7 +161,10 @@ export class ExplorerToolbarComponent {
   }
 
   get subDirectories(): DirectoryItem[] {
-    return this.explorerState.directoryContents.filter(i => i.isDirectory);
+    const list = this.isReadOnly
+      ? this.explorerState.virtualDirectoryContents
+      : this.explorerState.fsDirectoryContents;
+    return (list || []).filter(i => i.isDirectory);
   }
 
   get displayedSubDirectories(): DirectoryItem[] {

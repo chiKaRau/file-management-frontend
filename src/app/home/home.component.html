@@ -9,9 +9,9 @@
       </svg>
     </button>
     <app-explorer-toolbar *ngIf="!isReadOnly" [currentPath]="selectedDirectory"
-      [canGoBack]="navigationService.canGoBack()" [canGoForward]="navigationService.canGoForward()" (back)="onBack()"
-      (forward)="onForward()" [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()"
-      (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)"
+      [canGoBack]="navigationService.canGoBack()" [canGoForward]="navigationService.canGoForward()"
+      [isReadOnly]="isReadOnly" (back)="onBack()" (forward)="onForward()" [isPreloadComplete]="isPreloadComplete"
+      (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)"
       (toggleZipSidebarEvent)="toggleZipSidebar()" (updateAllModels)="updateAllModels()"
       (manualUpdateLocalPath)="updateLocalPath()" (subdirSelect)="openSubDirectoryWithoutHistory($event)">
       >
