@@ -11,10 +11,11 @@ import { FileInfoSidebarComponent } from './components/file-info-sidebar/file-in
 import { UpdateSidebarComponent } from './components/update-sidebar/update-sidebar.component';
 import { ModelModalComponent } from './components/model-modal/model-modal.component';
 import { ZipSidebarComponent } from './components/zip-sidebar/zip-sidebar.component';
+import { VirtualExplorerToolbarComponent } from '../virtual/components/virtual-explorer-toolbar/virtual-explorer-toolbar.component';
 
 @NgModule({
   declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent,
-    FileInfoSidebarComponent, UpdateSidebarComponent, ModelModalComponent, ZipSidebarComponent],
+    FileInfoSidebarComponent, UpdateSidebarComponent, ModelModalComponent, ZipSidebarComponent, VirtualExplorerToolbarComponent],
   imports: [CommonModule, SharedModule, HomeRoutingModule],
   exports: [FileListComponent, HomeComponent]
 })

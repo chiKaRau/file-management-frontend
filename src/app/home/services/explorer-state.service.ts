@@ -15,6 +15,12 @@ export class ExplorerStateService {
 
     viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
 
+    fsSelectedDirectory: string | null = null;
+    fsDirectoryContents: DirectoryItem[] = [];
+
+    virtualSelectedDirectory: string | null = null;
+    virtualDirectoryContents: DirectoryItem[] = [];
+
     constructor() {
         const savedViewMode = localStorage.getItem('viewMode');
         if (savedViewMode) {

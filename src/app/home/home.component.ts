@@ -98,6 +98,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
   sortKey: 'name' | 'size' | 'modified' | 'created' = 'name';
   sortDir: 'asc' | 'desc' = 'asc';
 
+  // home.component.ts (top-level fields)
+  public get isReadOnly(): boolean { return !!this.dataSource?.readOnly; }
+
+  availableDrives: string[] = [];
+  selectedDrive: string = 'all';
+  groupingMode = false; // if you want the toggle wire-up
+
+
 
   constructor(
     private electronService: ElectronService,
@@ -114,29 +122,38 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngOnInit() {
-    // On re-entering Home, restore window scroll
-    setTimeout(() => {
-      window.scrollTo(0, this.scrollState.homeScrollPosition);
-      console.log('Restored window.scrollY to', this.scrollState.homeScrollPosition);
-    }, 0);
+    setTimeout(() => window.scrollTo(0, this.scrollState.homeScrollPosition), 0);
 
-    // Subscribe to refresh events
     this.homeRefreshSub = this.homeRefreshService.refresh$.subscribe(() => {
-      console.log('Refresh event received from HomeRefreshService.');
-      if (this.selectedDirectory) {
-        this.onRefresh();
-      }
+      if (this.selectedDirectory) this.onRefresh();
     });
 
-    // If a data source supplies initialPath, use it (virtual); otherwise null (fs).
-    this.selectedDirectory = this.dataSource.initialPath ?? null;
+    if (this.isReadOnly) {
+      // Virtual / DB mode
+      this.navigationService.setContext('virtual');
 
-    // If virtual, optionally immediately load
-    if (this.selectedDirectory) {
+      // If we already have a virtual folder loaded, just show it.
+      if (this.explorerState.virtualDirectoryContents.length > 0 &&
+        this.explorerState.virtualSelectedDirectory) {
+        return;
+      }
+
+      // First time in virtual: pick a start path and load it.
+      const start =
+        this.navigationService.getCurrentFor?.('virtual') ??
+        this.dataSource.initialPath ?? '\\';
+
+      this.selectedDirectory = start;
       this.isLoading = true;
-      this.loadDirectoryContents(this.selectedDirectory);
-    }
+      this.navigationService.navigateTo(start);
+      this.loadDirectoryContents(start);
+    } else {
+      // Filesystem mode
+      this.navigationService.setContext('fs');
 
+      // If we already have an FS folder loaded, do nothing (preserve it).
+      // Otherwise wait for user to choose a folder as before.
+    }
   }
 
   ngAfterViewInit() {
@@ -154,20 +171,32 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // ====== Getters/Setters referencing ExplorerStateService ======
   get selectedDirectory(): string | null {
-    return this.explorerState.selectedDirectory;
+    return this.isReadOnly
+      ? this.explorerState.virtualSelectedDirectory
+      : this.explorerState.fsSelectedDirectory;
   }
   set selectedDirectory(val: string | null) {
-    this.explorerState.selectedDirectory = val;
+    if (this.isReadOnly) {
+      this.explorerState.virtualSelectedDirectory = val;
+    } else {
+      this.explorerState.fsSelectedDirectory = val;
+    }
   }
 
   get directoryContents(): DirectoryItem[] {
-    return this.explorerState.directoryContents;
+    return this.isReadOnly
+      ? this.explorerState.virtualDirectoryContents
+      : this.explorerState.fsDirectoryContents;
   }
   set directoryContents(val: DirectoryItem[]) {
-    this.explorerState.directoryContents = val;
+    if (this.isReadOnly) {
+      this.explorerState.virtualDirectoryContents = val;
+    } else {
+      this.explorerState.fsDirectoryContents = val;
+    }
   }
+
 
   get errorMessage(): string | null {
     return this.explorerState.errorMessage;
@@ -192,7 +221,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   // Filtered contents for search
   get filteredDirectoryContents(): DirectoryItem[] {
-    const contents = this.explorerState.directoryContents;
+    let contents = this.directoryContents; // <- use the per-context slice
+    // Virtual drive filter
+    if (this.isReadOnly && this.selectedDrive !== 'all') {
+      contents = contents.filter((it: any) =>
+        it.drive && it.drive.toUpperCase() === this.selectedDrive.toUpperCase()
+      );
+    }
+
     if (!this.searchTerm) {
       const dir = contents.filter(i => i.isDirectory).sort(this.compareItems);
       const fil = contents.filter(i => i.isFile).sort(this.compareItems);
@@ -200,11 +236,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
 
     const term = this.searchTerm.toLowerCase();
-    const filtered = contents.filter(item => item.name.toLowerCase().includes(term));
+    const filtered = contents.filter((item: any) => {
+      if (!this.isReadOnly) return (item.name || '').toLowerCase().includes(term);
+      const haystacks: string[] = [];
+      if (item.name) haystacks.push(item.name);
+      const sd = item.scanData;
+      if (sd) {
+        if (sd.name) haystacks.push(sd.name);
+        if (sd.baseModel) haystacks.push(sd.baseModel);
+        if (Array.isArray(sd.tags)) haystacks.push(...sd.tags);
+        if (sd.mainModelName) haystacks.push(sd.mainModelName);
+        if (Array.isArray(sd.triggerWords)) haystacks.push(...sd.triggerWords);
+        if (sd.modelNumber && sd.versionNumber) haystacks.push(`${sd.modelNumber}_${sd.versionNumber}`);
+      }
+      return haystacks.join(' ').toLowerCase().includes(term);
+    });
+
     const dir = filtered.filter(i => i.isDirectory).sort(this.compareItems);
     const fil = filtered.filter(i => i.isFile).sort(this.compareItems);
     return [...dir, ...fil];
   }
+
+
 
   private getCreatedTime(stats: fs.Stats): Date {
     return stats.birthtime && stats.birthtime.getTime() > 0 ? stats.birthtime : stats.ctime;
@@ -398,10 +451,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // 2) Thin dispatcher that chooses FS vs. Virtual/DB by data source.
   async loadDirectoryContents(directoryPath: string | null) {
-    // If the injected data source is read-only, we're in Virtual/DB mode.
-    if (this.dataSource?.readOnly) {
+    if (this.isReadOnly) {
       this.ngZone.run(() => {
         this.isLoading = true;
         this.errorMessage = null;
@@ -409,17 +460,21 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
 
       const pathToLoad = directoryPath ?? this.dataSource.initialPath ?? '\\';
-
       this.dataSource.list(pathToLoad).subscribe({
         next: ({ items, selectedDirectory }) => {
           this.ngZone.run(() => {
             this.selectedDirectory = selectedDirectory;
             this.directoryContents = items;
+
+            // Collect available drives from items
+            const drives = new Set<string>();
+            for (const it of items) {
+              if ((it as any).drive) drives.add((it as any).drive);
+            }
+            this.availableDrives = Array.from(drives).sort();
+
             this.isLoading = false;
           });
-
-          // In Virtual/DB mode we do NOT call updateLocalPath/scanLocalFiles
-          // (keep FS-specific post-processing out of DB mode).
         },
         error: (err) => {
           console.error('Virtual/DB list() error:', err);
@@ -429,7 +484,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
           });
         }
       });
-
       return;
     }
 
@@ -541,11 +595,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   mergeScannedModelsIntoDirectoryContents(scannedModels: any[]): void {
-    this.explorerState.directoryContents = this.explorerState.directoryContents.map(item => {
+    this.directoryContents = this.directoryContents.map(item => {
       if (!item.isDirectory && item.name.includes('_')) {
-        const parts = item.name.split('_');
-        const modelID = parts[0];
-        const versionID = parts[1];
+        const [modelID, versionID] = item.name.split('_');
         const scanned = scannedModels.find(s =>
           s.modelNumber === modelID && s.versionNumber === versionID
         );
@@ -554,6 +606,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return item;
     });
   }
+
 
 
   /**
@@ -593,18 +646,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   async onRefresh() {
-    if (this.selectedDirectory) {
-      this.ngZone.run(() => {
-        this.isLoading = true;
-      });
-      await this.loadDirectoryContents(this.selectedDirectory);
+    if (!this.selectedDirectory) return;
 
-      // If the current directory is empty, navigate to the parent directory.
+    this.ngZone.run(() => { this.isLoading = true; });
+    await this.loadDirectoryContents(this.selectedDirectory);
+
+    if (!this.isReadOnly) { // FS-only fallback to parent
       if (!this.directoryContents || this.directoryContents.length === 0) {
         const parentDir = path.dirname(this.selectedDirectory);
-        // Only navigate up if we have a valid parent directory.
         if (parentDir && parentDir !== this.selectedDirectory) {
-          console.log('Current directory is empty. Navigating up to:', parentDir);
           this.selectedDirectory = parentDir;
           this.navigationService.navigateTo(parentDir);
           await this.loadDirectoryContents(parentDir);
@@ -612,6 +662,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       }
     }
   }
+
 
   setSort(key: 'name' | 'size' | 'modified' | 'created') {
     if (this.sortKey === key) {
@@ -652,11 +703,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   navigateByPath(newPath: string) {
+    if (this.isReadOnly) {            // if somehow called in Virtual, just delegate
+      this.onVirtualPathChange(newPath);
+      return;
+    }
+
     if (!fs.existsSync(newPath)) {
       this.errorMessage = `Path does not exist: ${newPath}`;
       return;
     }
-
     const stats = fs.statSync(newPath);
     if (!stats.isDirectory()) {
       this.errorMessage = `Path is not a directory: ${newPath}`;
@@ -673,6 +728,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.navigationService.navigateTo(newPath);
     this.loadDirectoryContents(newPath);
   }
+
 
   // ===============================
   // Handling Right-Click Logic
@@ -1168,6 +1224,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // import { shell } from 'electron';
 
   openNativeFileExplorer(): void {
+    if (this.isReadOnly) return; // hidden by template anyway, but belt+suspenders
     this.showEmptyAreaContextMenu = false;
     if (this.selectedDirectory) {
       shell.openPath(this.selectedDirectory)
@@ -1188,7 +1245,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.currentUpdateModel = 'Starting update...';
 
     // Filter for model files (assuming file names with '_' denote model files)
-    const filesToUpdate = this.explorerState.directoryContents.filter(
+    const filesToUpdate = this.directoryContents.filter(
       file => file.isFile && file.name.includes('_')
     );
 
@@ -1282,6 +1339,24 @@ export class HomeComponent implements OnInit, AfterViewInit {
     return this.sortDir === 'asc' ? cmp : -cmp;
   };
 
+
+  applyVirtualSearch(query: string) {
+    this.searchTerm = query || '';
+    // If you want advanced DB-style filtering (e.g., scanData), you can extend
+    // your getter filteredDirectoryContents to check scanData when isReadOnly is true.
+  }
+
+  onVirtualPathChange(newPath: string) {
+    // No fs.existsSync checks here — DB path is a logical path
+    if (!newPath.endsWith('\\')) newPath += '\\';
+    this.navigationService.navigateTo(newPath);
+    this.loadDirectoryContents(newPath);
+  }
+
+  onVirtualDriveChange(drive: string) {
+    this.selectedDrive = drive || 'all';
+    // Easiest: filter in your getter below (no need to refetch)
+  }
 
 
 

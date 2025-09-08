@@ -8,14 +8,21 @@
                    c-1.1 0-2-.9-2-2V9z" />
       </svg>
     </button>
-    <app-explorer-toolbar [currentPath]="selectedDirectory" [canGoBack]="navigationService.canGoBack()"
-      [canGoForward]="navigationService.canGoForward()" (back)="onBack()" (forward)="onForward()"
-      [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
-      (pathChanged)="navigateByPath($event)" (toggleZipSidebarEvent)="toggleZipSidebar()"
-      (updateAllModels)="updateAllModels()" (manualUpdateLocalPath)="updateLocalPath()"
-      (subdirSelect)="openSubDirectoryWithoutHistory($event)">
+    <app-explorer-toolbar *ngIf="!isReadOnly" [currentPath]="selectedDirectory"
+      [canGoBack]="navigationService.canGoBack()" [canGoForward]="navigationService.canGoForward()" (back)="onBack()"
+      (forward)="onForward()" [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()"
+      (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)"
+      (toggleZipSidebarEvent)="toggleZipSidebar()" (updateAllModels)="updateAllModels()"
+      (manualUpdateLocalPath)="updateLocalPath()" (subdirSelect)="openSubDirectoryWithoutHistory($event)">
       >
     </app-explorer-toolbar>
+
+    <app-virtual-explorer-toolbar *ngIf="isReadOnly" [currentPath]="selectedDirectory"
+      [canGoBack]="navigationService.canGoBack()" [canGoForward]="navigationService.canGoForward()"
+      [isPreloadComplete]="isPreloadComplete" [availableDrives]="availableDrives" [groupingMode]="groupingMode"
+      (back)="onBack()" (forward)="onForward()" (refresh)="onRefresh()" (searchQuery)="applyVirtualSearch($event)"
+      (pathChanged)="onVirtualPathChange($event)" (driveChanged)="onVirtualDriveChange($event)">
+    </app-virtual-explorer-toolbar>
   </div>
 
   <!-- Main Content Area -->
