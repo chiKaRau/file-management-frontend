@@ -188,39 +188,50 @@
 
             <!-- LOCAL details in full-screen overlay -->
             <div class="overlay-grid" *ngIf="fullSource === 'local'">
-                <div class="row"><label>Category</label>
-                    <div>{{ dbData?.model?.category || '—' }}</div>
-                </div>
-                <div class="row"><label>Type</label>
-                    <div>{{ dbData?.details?.type || '—' }}</div>
-                </div>
-                <div class="row"><label>Version #</label>
-                    <div>{{ dbData?.model?.versionNumber || '—' }}</div>
-                </div>
-                <div class="row"><label>Model #</label>
-                    <div>{{ dbData?.model?.modelNumber || '—' }}</div>
-                </div>
-                <div class="row"><label>Local Path</label>
-                    <div class="mono">{{ dbData?.model?.localPath || '—' }}</div>
+                <!-- High-level meta -->
+                <div class="row"><label>ID</label>
+                    <div>{{ dbId || '—' }}</div>
                 </div>
                 <div class="row"><label>Name</label>
-                    <div>{{ dbData?.model?.name || '—' }}</div>
+                    <div>{{ dbName }}</div>
                 </div>
                 <div class="row"><label>Main Model Name</label>
-                    <div>{{ dbData?.model?.mainModelName || '—' }}</div>
+                    <div>{{ dbMainModelName }}</div>
                 </div>
-                <div class="row"><label>Creator</label>
-                    <div>{{ dbCreator || '—' }}</div>
+                <div class="row"><label>Local Path</label>
+                    <div class="mono">{{ dbLocalPath }}</div>
                 </div>
+                <div class="row"><label>Category</label>
+                    <div>{{ dbCategory }}</div>
+                </div>
+
+                <!-- Version / model numbers -->
+                <div class="row"><label>Version #</label>
+                    <div>{{ dbVersionNumber }}</div>
+                </div>
+                <div class="row"><label>Model #</label>
+                    <div>{{ dbModelNumber }}</div>
+                </div>
+
+                <!-- Booleans -->
                 <div class="row">
-                    <label>URL</label>
+                    <label>NSFW</label>
                     <div>
-                        <a *ngIf="dbData?.url?.url" [href]="dbData?.url?.url" target="_blank" rel="noopener noreferrer">
-                            {{ dbData?.url?.url }}
-                        </a>
-                        <span *ngIf="!dbData?.url?.url">—</span>
+                        <span class="bool-pill" [class.true]="dbNSFW === true" [class.false]="dbNSFW === false">
+                            {{ dbNSFW === true ? 'Yes' : (dbNSFW === false ? 'No' : '—') }}
+                        </span>
                     </div>
                 </div>
+
+                <div class="row">
+                    <label>Flag</label>
+                    <div>
+                        <span class="bool-pill" [class.true]="dbFlag === true" [class.false]="dbFlag === false">
+                            {{ dbFlag === true ? 'Yes' : (dbFlag === false ? 'No' : '—') }}
+                        </span>
+                    </div>
+                </div>
+
                 <div class="row">
                     <label>URL Accessible</label>
                     <div>
@@ -230,6 +241,22 @@
                         </span>
                     </div>
                 </div>
+
+                <!-- Details -->
+                <div class="row"><label>Type</label>
+                    <div>{{ dbType }}</div>
+                </div>
+                <div class="row"><label>Base Model</label>
+                    <div>{{ dbBaseModelLocal }}</div>
+                </div>
+                <div class="row"><label>Uploaded</label>
+                    <div>{{ dbUploaded }}</div>
+                </div>
+                <div class="row"><label>Creator</label>
+                    <div>{{ dbCreator }}</div>
+                </div>
+
+                <!-- Dates -->
                 <div class="row"><label>Created</label>
                     <div>{{ dbCreatedAt | date:'medium' }}</div>
                 </div>
@@ -237,6 +264,7 @@
                     <div>{{ dbUpdatedAt | date:'medium' }}</div>
                 </div>
 
+                <!-- Tags / Aliases / Trigger Words -->
                 <div class="row">
                     <label>Tags</label>
                     <div>
@@ -244,6 +272,26 @@
                             <span class="chip" *ngFor="let t of dbTags">{{ t }}</span>
                         </ng-container>
                         <ng-template #noTagsFS>—</ng-template>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label>Local Tags</label>
+                    <div>
+                        <ng-container *ngIf="dbLocalTags?.length; else noLocalTagsFS">
+                            <span class="chip" *ngFor="let t of dbLocalTags">{{ t }}</span>
+                        </ng-container>
+                        <ng-template #noLocalTagsFS>—</ng-template>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label>Aliases</label>
+                    <div>
+                        <ng-container *ngIf="dbAliases?.length; else noAliasesFS">
+                            <span class="chip" *ngFor="let a of dbAliases">{{ a }}</span>
+                        </ng-container>
+                        <ng-template #noAliasesFS>—</ng-template>
                     </div>
                 </div>
 
@@ -257,6 +305,7 @@
                     </div>
                 </div>
 
+                <!-- Stats -->
                 <div class="row">
                     <label>Stats</label>
                     <div class="mono">
@@ -268,7 +317,38 @@
                         <ng-template #noStatsFS>—</ng-template>
                     </div>
                 </div>
+
+                <!-- Hash (pretty list) -->
+                <div class="row">
+                    <label>Hash</label>
+                    <div class="mono">
+                        <ng-container *ngIf="dbHash; else noHashFS">
+                            <div *ngFor="let h of dbHash | keyvalue">{{ h.key }}: {{ h.value }}</div>
+                        </ng-container>
+                        <ng-template #noHashFS>—</ng-template>
+                    </div>
+                </div>
+
+                <!-- Usage Tips -->
+                <div class="row">
+                    <label>Usage Tips</label>
+                    <div>{{ dbUsageTips || '—' }}</div>
+                </div>
+
+                <!-- URL (keep or remove as you like) -->
+                <div class="row">
+                    <label>URL</label>
+                    <div>{{ dbUrl || '—' }}</div>
+                </div>
+
+                <!-- Description (HTML) -->
+                <div class="row">
+                    <label>Description</label>
+                    <div *ngIf="dbDescriptionHtml; else noDescFS" [innerHTML]="dbDescriptionHtml"></div>
+                    <ng-template #noDescFS>—</ng-template>
+                </div>
             </div>
+
 
             <!-- LIVE details in full-screen overlay -->
             <div class="overlay-grid" *ngIf="fullSource === 'live'">

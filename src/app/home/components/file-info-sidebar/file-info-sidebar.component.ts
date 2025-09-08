@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from
 import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { HttpClient } from '@angular/common/http';
 import { ExplorerStateService } from '../../services/explorer-state.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 type Source = 'live' | 'local';
 
@@ -37,7 +38,7 @@ export class FileInfoSidebarComponent implements OnChanges {
   fullError: string | null = null;
   fullImageIndex = 0;
 
-  constructor(private http: HttpClient, private explorerState: ExplorerStateService) { }
+  constructor(private http: HttpClient, private explorerState: ExplorerStateService, private sanitizer: DomSanitizer) { }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['item'] && this.item && !this.item.isDirectory) {
@@ -228,35 +229,76 @@ export class FileInfoSidebarComponent implements OnChanges {
     this.openFullOverlay('live', this.currentImageIndex);
   }
 
+  // derived getters for local fields
+  // model.*
+  get dbId(): number | null { return this.dbData?.model?.id ?? null; }
+  get dbName(): string { return this.dbData?.model?.name ?? '—'; }
+  get dbMainModelName(): string { return this.dbData?.model?.mainModelName ?? '—'; }
+  get dbLocalPath(): string { return this.dbData?.model?.localPath ?? '—'; }
+  get dbCategory(): string { return this.dbData?.model?.category ?? '—'; }
+  get dbVersionNumber(): string { return this.dbData?.model?.versionNumber ?? '—'; }
+  get dbModelNumber(): string { return this.dbData?.model?.modelNumber ?? '—'; }
+  get dbNSFW(): boolean | null { return this.normalizeBool(this.dbData?.model?.nsfw); }
+  get dbFlag(): boolean | null { return this.normalizeBool(this.dbData?.model?.flag); }
+  get dbUrlAccessible(): boolean | null { return this.normalizeBool(this.dbData?.model?.urlAccessable); }
+  get dbCreatedAt(): string | Date | null { return this.dbData?.model?.createdAt ?? null; }
+  get dbUpdatedAt(): string | Date | null { return this.dbData?.model?.updatedAt ?? null; }
+
+  // arrays stored as JSON strings
+  get dbTags(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.tags, []) }
+  get dbLocalTags(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.localTags, []) }
+  get dbAliases(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.aliases, []) }
+  get dbTriggerWords(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.triggerWords, []) }
+
+  // details.*
+  get dbType(): string { return this.dbData?.details?.type ?? '—'; }
+  get dbUploaded(): string { return this.dbData?.details?.uploaded ?? '—'; }
+  get dbBaseModelLocal(): string { return this.dbData?.details?.baseModel ?? '—'; }
+  get dbHash(): Record<string, string> | null {
+    return this.parseJsonField<Record<string, string> | null>(
+      this.dbData?.details?.hash,
+      null
+    );
+  }
+
+  get dbStats(): any { return this.parseJsonField<any>(this.dbData?.details?.stats, null); }
+  get dbCreator(): string { return this.dbData?.details?.creatorName ?? this.dbData?.model?.creatorName ?? '—'; }
+  get dbUsageTips(): string | null { return this.dbData?.details?.usageTips ?? null; }
+
+  // description.*
+  get dbDescriptionHtml(): SafeHtml | '' {
+    const raw = this.dbData?.description?.description;
+    return raw ? this.sanitizer.bypassSecurityTrustHtml(raw) : '';
+  }
+
+  // url.*
+  get dbUrl(): string | null { return this.dbData?.url?.url ?? null; }
+
+  // images.* already parsed into this.dbImages elsewhere
+
+  // ======== existing helpers (keep yours) ========
+  private parseJsonField<T>(input: any, fallback: T): T {
+    if (input == null) return fallback;
+    if (typeof input !== 'string') return input as T;
+    try { return JSON.parse(input) as T; } catch { return fallback; }
+  }
+  private normalizeBool(v: any): boolean | null {
+    if (v === true || v === false) return v;
+    if (typeof v === 'string') {
+      const s = v.trim().toLowerCase();
+      if (s === 'true') return true;
+      if (s === 'false') return false;
+    }
+    return null;
+  }
+
   // helpers
   private getIdsFromItem(): { modelID: string; versionID: string } | null {
     if (!this.item) return null;
     const parts = this.item.name.split('_');
     return parts.length >= 2 ? { modelID: parts[0], versionID: parts[1] } : null;
   }
-  private parseJsonField<T>(input: any, fallback: T): T {
-    if (input == null) return fallback;
-    if (typeof input !== 'string') return input as T;
-    try { return JSON.parse(input) as T; } catch { return fallback; }
-  }
 
-  // derived getters for local fields
-  get dbTags(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.tags, []); }
-  get dbTriggerWords(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.triggerWords, []); }
-  get dbStats(): any { return this.parseJsonField<any>(this.dbData?.details?.stats, null); }
-  get dbCreator(): string { return this.dbData?.details?.creatorName ?? this.dbData?.model?.creatorName ?? ''; }
-  get dbUrlAccessible(): boolean | null {
-    const v = this.dbData?.model?.urlAccessable;
-    if (v === true || v === false) return v;
-    if (typeof v === 'string') {
-      const s = v.toLowerCase().trim();
-      if (s === 'true') return true;
-      if (s === 'false') return false;
-    }
-    return null;
-  }
-  get dbCreatedAt(): string | Date | null { return this.dbData?.model?.createdAt ?? null; }
-  get dbUpdatedAt(): string | Date | null { return this.dbData?.model?.updatedAt ?? null; }
 
   // Overlay carousel controls
   prevDbImage() {
