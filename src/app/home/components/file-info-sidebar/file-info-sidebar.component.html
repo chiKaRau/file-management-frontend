@@ -181,7 +181,8 @@
             <!-- source-aware carousel -->
             <div class="overlay-carousel" *ngIf="fullImages.length">
                 <button class="carousel-btn" (click)="prevFullImage()">&#10094;</button>
-                <img class="overlay-image" [src]="fullImages[fullImageIndex]?.url" alt="image" />
+                <img *ngIf="fullImages && fullImages.length > fullImageIndex" class="overlay-image"
+                    [src]="fullImages[fullImageIndex].url" alt="image" />
                 <button class="carousel-btn" (click)="nextFullImage()">&#10095;</button>
             </div>
 
