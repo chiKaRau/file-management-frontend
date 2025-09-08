@@ -225,7 +225,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // Virtual drive filter
     if (this.isReadOnly && this.selectedDrive !== 'all') {
       contents = contents.filter((it: any) =>
-        it.drive && it.drive.toUpperCase() === this.selectedDrive.toUpperCase()
+        this.normalizeDrive(it?.drive) === this.normalizeDrive(this.selectedDrive)
       );
     }
 
@@ -464,17 +464,36 @@ export class HomeComponent implements OnInit, AfterViewInit {
         next: ({ items, selectedDirectory }) => {
           this.ngZone.run(() => {
             this.selectedDirectory = selectedDirectory;
-            this.directoryContents = items;
 
-            // Collect available drives from items
+            const withDrives = (items || []).map((it: any) => {
+              // Prefer any known localPath, then fall back to existing drive
+              const lp =
+                it?.scanData?.localPath ??
+                it?.model?.localPath ??
+                it?.localPath ?? // some APIs return it here
+                it?.path ??      // logical path (usually no drive, but harmless)
+                '';
+
+              const derived = this.extractDrive(lp);             // e.g. "F"
+              const existing = this.normalizeDrive(it?.drive);   // e.g. "F" from API if present
+              const drive = derived ?? existing;                 // keep existing if derived is null
+
+              return { ...it, drive };
+            });
+
+            // Build unique, normalized drives
             const drives = new Set<string>();
-            for (const it of items) {
-              if ((it as any).drive) drives.add((it as any).drive);
+            for (const it of withDrives) {
+              const d = this.normalizeDrive(it?.drive);
+              if (d) drives.add(d);
             }
             this.availableDrives = Array.from(drives).sort();
 
+            this.directoryContents = withDrives;
             this.isLoading = false;
           });
+
+
         },
         error: (err) => {
           console.error('Virtual/DB list() error:', err);
@@ -497,6 +516,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
     await this.loadFromFilesystem(directoryPath);
   }
 
+  private normalizeDrive(v?: string | null): string | null {
+    if (!v) return null;
+    // UNC
+    if (v.startsWith('\\\\')) return '\\\\';
+    // Letter drive "F", "F:", "F:\..." -> normalize to "F"
+    const m = v.match(/^([A-Za-z])/);
+    return m ? m[1].toUpperCase() : null;
+  }
+
+  private extractDrive(p?: string): string | null {
+    if (!p) return null;
+    // "F:\...", "F:", or even just "F" -> "F"
+    const m = p.match(/^([A-Za-z]):?/);
+    if (m) return m[1].toUpperCase();
+
+    if (p.startsWith('\\\\')) return '\\\\'; // UNC
+    if (p.startsWith('/')) return '/';       // POSIX root (if you ever store these)
+    return null;
+  }
 
   updateLocalPath() {
 

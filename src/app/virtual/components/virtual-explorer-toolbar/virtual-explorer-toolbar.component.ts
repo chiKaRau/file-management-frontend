@@ -22,6 +22,8 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
   @Output() updateStats = new EventEmitter<void>();
   @Output() groupingToggled = new EventEmitter<void>();
 
+  @Input() selectedDrive: string = 'all';
+
 
   isEditingPath = false;
   displayedPath: string = this.currentPath || '';
