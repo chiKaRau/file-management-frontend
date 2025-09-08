@@ -14,4 +14,7 @@ export interface DirectoryItem {
 
     createdAt?: Date | string;
     modifiedAt?: Date | string;
+
+    drive?: string;          // optional (virtual)
+    imageUrl?: string;       // optional (virtual)
 }

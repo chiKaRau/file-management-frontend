@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  Inject,
   NgZone,
   OnDestroy,
   OnInit,
@@ -23,6 +24,9 @@ import { PreferencesService } from '../preferences/preferences.service';
 import { FileListComponent } from './components/file-list/file-list.component';
 import { HttpClient } from '@angular/common/http';
 import { shell } from 'electron';
+import { DATA_SOURCE } from '../shared/data-sources/DATA_SOURCE';
+import { ExplorerDataSource } from '../shared/data-sources/data-source';
+import { ActivatedRoute } from '@angular/router';
 
 
 @Component({
@@ -87,9 +91,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // Controls the visibility of the zip sidebar
   showZipSidebar: boolean = false;
 
-  // Controls the visibility of the grouping sidebar
-  showGroupingSidebar: boolean = false;
-
   // New properties for update-all overlay.
   isUpdatingAllModels: boolean = false;
   currentUpdateModel: string = '';
@@ -107,7 +108,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
     public explorerState: ExplorerStateService,
     public recycleService: RecycleService,
     public preferencesService: PreferencesService,
-    private http: HttpClient
+    private http: HttpClient,
+    @Inject(DATA_SOURCE) public dataSource: ExplorerDataSource,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit() {
@@ -124,6 +127,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
         this.onRefresh();
       }
     });
+
+    // If a data source supplies initialPath, use it (virtual); otherwise null (fs).
+    this.selectedDirectory = this.dataSource.initialPath ?? null;
+
+    // If virtual, optionally immediately load
+    if (this.selectedDirectory) {
+      this.isLoading = true;
+      this.loadDirectoryContents(this.selectedDirectory);
+    }
 
   }
 
@@ -204,6 +216,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   async openDirectory() {
+    // If the current route is using the Virtual/DB data source, don't open OS picker.
+    if (this.dataSource?.readOnly) {
+      // optional: show a friendly note; or just return silently
+      this.ngZone.run(() => {
+        this.infoMessage = 'Virtual view is read-only. Use the path bar / navigation to browse.';
+      });
+      return;
+    }
+
+    // Filesystem mode (unchanged)
     const directoryPath = await this.electronService.openDirectoryDialog();
     if (directoryPath) {
       this.ngZone.run(() => {
@@ -213,6 +235,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
 
       this.navigationService.navigateTo(directoryPath);
+      // Calls the dispatcher you added; in FS mode it will delegate to loadFromFilesystem()
       this.loadDirectoryContents(directoryPath);
     } else {
       this.ngZone.run(() => {
@@ -221,7 +244,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  async loadDirectoryContents(directoryPath: string) {
+  // 1) Your original logic, unchanged—just renamed.
+  private async loadFromFilesystem(directoryPath: string) {
     try {
       // Read the directory asynchronously.
       const files = await fs.promises.readdir(directoryPath);
@@ -281,7 +305,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
       } else {
         // Civitai Mode: Group files based on naming patterns.
         const directories: DirectoryItem[] = [];
-        const groupMap = new Map<string, { allFiles: string[]; previewPath?: string; totalSize: number, createdAt?: Date; modifiedAt?: Date }>();
+        const groupMap = new Map<string, {
+          allFiles: string[];
+          previewPath?: string;
+          totalSize: number;
+          createdAt?: Date;
+          modifiedAt?: Date;
+        }>();
 
         // Process each file asynchronously.
         await Promise.all(
@@ -317,7 +347,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
                 group.createdAt = group.createdAt ? (created < group.createdAt ? created : group.createdAt) : created;
                 group.modifiedAt = group.modifiedAt ? (modified > group.modifiedAt ? modified : group.modifiedAt) : modified;
 
-
                 // If this file is a preview image, record its path.
                 if (file.endsWith('.preview.png')) {
                   groupMap.get(prefix)!.previewPath = fullPath;
@@ -331,7 +360,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
         // Build grouped items only if a preview exists.
         const groupedItems: DirectoryItem[] = [];
-        groupMap.forEach((group, prefix) => {
+        groupMap.forEach((group) => {
           if (group.previewPath) {
             groupedItems.push({
               name: path.basename(group.previewPath),
@@ -368,6 +397,52 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
     }
   }
+
+  // 2) Thin dispatcher that chooses FS vs. Virtual/DB by data source.
+  async loadDirectoryContents(directoryPath: string | null) {
+    // If the injected data source is read-only, we're in Virtual/DB mode.
+    if (this.dataSource?.readOnly) {
+      this.ngZone.run(() => {
+        this.isLoading = true;
+        this.errorMessage = null;
+        this.infoMessage = null;
+      });
+
+      const pathToLoad = directoryPath ?? this.dataSource.initialPath ?? '\\';
+
+      this.dataSource.list(pathToLoad).subscribe({
+        next: ({ items, selectedDirectory }) => {
+          this.ngZone.run(() => {
+            this.selectedDirectory = selectedDirectory;
+            this.directoryContents = items;
+            this.isLoading = false;
+          });
+
+          // In Virtual/DB mode we do NOT call updateLocalPath/scanLocalFiles
+          // (keep FS-specific post-processing out of DB mode).
+        },
+        error: (err) => {
+          console.error('Virtual/DB list() error:', err);
+          this.ngZone.run(() => {
+            this.errorMessage = 'Failed to load contents.';
+            this.isLoading = false;
+          });
+        }
+      });
+
+      return;
+    }
+
+    // Otherwise, normal filesystem mode: use your original logic.
+    if (!directoryPath) return;
+    this.ngZone.run(() => {
+      this.isLoading = true;
+      this.errorMessage = null;
+      this.infoMessage = null;
+    });
+    await this.loadFromFilesystem(directoryPath);
+  }
+
 
   updateLocalPath() {
 
@@ -1087,16 +1162,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
       // this.fileListComponent.selectionChanged.emit(selectedItems);
     }
     // Optionally hide the sidebar.
-  }
-  // Toggle method triggered by the toolbar's grouping sidebar event
-  toggleGroupingSidebar(): void {
-    console.log('Toggling grouping sidebar');
-    this.showGroupingSidebar = !this.showGroupingSidebar;
-  }
-
-  // Method to close the grouping sidebar (triggered by the sidebar itself)
-  closeGroupingSidebar(): void {
-    this.showGroupingSidebar = false;
   }
 
   // Import shell if needed (depending on your electronService implementation)

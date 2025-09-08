@@ -1,12 +1,12 @@
-<div class="home-page">
-    <!-- Update Status Overlay -->
+<!-- <div class="home-page">
+    Update Status Overlay
     <div class="update-status-overlay" *ngIf="updateStatus">
         <div class="update-status-message">
             {{ updateStatus }}
         </div>
     </div>
 
-    <!-- Top Toolbar -->
+    Top Toolbar
     <div class="home-toolbar">
         <app-virtual-explorer-toolbar [currentPath]="currentPath" [canGoBack]="canGoBack" [canGoForward]="canGoForward"
             [isPreloadComplete]="loading" [availableDrives]="availableDrives" (back)="onBack()" (forward)="onForward()"
@@ -18,34 +18,34 @@
 
     <div class="blocker"></div>
 
-    <!-- Toggle button for virtual grouping sidebar, visible only when grouping mode is active -->
+    Toggle button for virtual grouping sidebar, visible only when grouping mode is active
     <div class="grouping-sidebar-toggle" *ngIf="groupingMode">
         <button (click)="toggleGroupingSidebar()">
             {{ groupingSidebarOpen ? 'Close Virtual Grouping Sidebar' : 'Open Virtual Grouping Sidebar' }}
         </button>
     </div>
 
-    <!-- Actual content arranged in a flex container -->
+    Actual content arranged in a flex container
     <div class="actual-content" [ngClass]="{'with-virtual-grouping-sidebar': groupingSidebarOpen}">
         <div class="main-container">
-            <!-- File-Info Sidebar (left) -->
+            File-Info Sidebar (left)
             <app-virtual-file-info-sidebar *ngIf="selectedFile && !selectedFile.isDirectory"
                 [selectedFile]="selectedFile" (openModalEvent)="onFileModalOpen($event)"
                 (modelUpdated)="onModelUpdated($event)" (closed)="selectedFile = null">
             </app-virtual-file-info-sidebar>
 
-            <!-- File List Container (middle) -->
+            File List Container (middle)
             <div class="file-list-container">
                 <div *ngIf="loading" class="loading">Loading files...</div>
                 <div *ngIf="!loading">
-                    <!-- Normal Mode: groupingMode is off -->
+                    Normal Mode: groupingMode is off
                     <ng-container *ngIf="!groupingMode; else groupingView">
                         <app-virtual-file-list [items]="virtualItems" [viewMode]="viewMode"
                             (fileSelected)="selectedFile = $event" (openFolder)="onPathChange($event)">
                         </app-virtual-file-list>
                     </ng-container>
 
-                    <!-- Grouping Mode: show three sub-tabs -->
+                    Grouping Mode: show three sub-tabs
                     <ng-template #groupingView>
                         <div class="grouping-tabs">
                             <div class="tab" [class.active]="groupingSubTab === 'grouped'"
@@ -62,7 +62,7 @@
                             </div>
                         </div>
                         <div class="grouping-content">
-                            <!-- Grouped Files Section (existing) -->
+                            Grouped Files Section (existing)
                             <ng-container *ngIf="groupingSubTab === 'grouped'">
                                 <ng-container *ngFor="let group of uniqueGroups">
                                     <div class="tag-header">{{ group }}</div>
@@ -74,7 +74,7 @@
                                 </ng-container>
                             </ng-container>
 
-                            <!-- Ungrouped Files Section (existing) -->
+                            Ungrouped Files Section (existing)
                             <ng-container *ngIf="groupingSubTab === 'ungrouped'">
                                 <div class="files-container" (click)="clearFileSelection($event)">
                                     <ng-container *ngIf="selectedTokens && selectedTokens.length > 0; else noFilter">
@@ -101,7 +101,7 @@
                                 </div>
                             </ng-container>
 
-                            <!-- Suggest Ungrouped Section -->
+                            Suggest Ungrouped Section
                             <ng-container *ngIf="groupingSubTab === 'suggest'">
 
                                 <div class="digit-input-container">
@@ -110,7 +110,7 @@
                                         (input)="onSuggestDigitChange($any($event.target).valueAsNumber)" />
                                 </div>
 
-                                <!-- min token length -->
+                                min token length
                                 <div class="digit-input-container">
                                     <label for="string-digit">Min token length:</label>
                                     <input id="string-digit" type="number" min="1" [value]="stringDigit"
@@ -134,7 +134,7 @@
                                     <div class="suggestions-container"
                                         *ngIf="filteredByStringDigit(activeGroupSuggestions).length > 0; else noSuggestions">
                                         <div *ngFor="let suggestion of filteredByStringDigit(activeGroupSuggestions)">
-                                            <!-- only render if there are ungrouped files -->
+                                            only render if there are ungrouped files
                                             <ng-container *ngIf="filterUngrouped(suggestion.models).length > 0">
                                                 <div class="suggestion-block">
                                                     <div class="suggestion-combination">
@@ -154,7 +154,7 @@
                                                         </ng-container>
                                                     </div>
 
-                                                    <!-- show only the ungrouped files -->
+                                                    show only the ungrouped files
                                                     <app-virtual-file-list [items]="filterUngrouped(suggestion.models)"
                                                         [viewMode]="viewMode" (fileSelected)="selectedFile = $event">
                                                     </app-virtual-file-list>
@@ -205,8 +205,8 @@
     </div>
 
 
-    <!-- Modal Component -->
+    Modal Component
     <app-virtual-model-modal *ngIf="selectedModelVersion" [modelVersion]="selectedModelVersion"
         (close)="selectedModelVersion = null">
     </app-virtual-model-modal>
-</div>
+</div> -->

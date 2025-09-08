@@ -11,13 +11,11 @@ import { FileInfoSidebarComponent } from './components/file-info-sidebar/file-in
 import { UpdateSidebarComponent } from './components/update-sidebar/update-sidebar.component';
 import { ModelModalComponent } from './components/model-modal/model-modal.component';
 import { ZipSidebarComponent } from './components/zip-sidebar/zip-sidebar.component';
-import { GroupingSidebarComponent } from './components/grouping-sidebar/grouping-sidebar.component';
 
 @NgModule({
   declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent,
-    FileInfoSidebarComponent, UpdateSidebarComponent, ModelModalComponent, ZipSidebarComponent,
-    GroupingSidebarComponent],
+    FileInfoSidebarComponent, UpdateSidebarComponent, ModelModalComponent, ZipSidebarComponent],
   imports: [CommonModule, SharedModule, HomeRoutingModule],
-  exports: [FileListComponent]
+  exports: [FileListComponent, HomeComponent]
 })
 export class HomeModule { }

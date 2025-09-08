@@ -1,9 +1,15 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { VirtualComponent } from './virtual.component';
+import { HomeComponent } from '../home/home.component';
+import { VirtualDbDataSource } from '../shared/data-sources/virtual-data-source.service';
+import { DATA_SOURCE } from '../shared/data-sources/DATA_SOURCE';
 
 const routes: Routes = [
-    { path: '', component: VirtualComponent }
+    {
+        path: '',
+        component: HomeComponent,
+        providers: [{ provide: DATA_SOURCE, useClass: VirtualDbDataSource }]
+    }
 ];
 
 @NgModule({
