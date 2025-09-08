@@ -52,17 +52,44 @@ export class FileInfoSidebarComponent implements OnChanges {
       this.error = null;
       this.isLoading = true;
 
-      // file name: {modelID}_{versionID}_{...}
-      const parts = this.item.name.split('_');
-      if (parts.length >= 2) {
-        const versionID = parts[1];
-        this.fetchModelVersion(versionID);
+      const ids = this.resolveIdsFromItem(this.item);
+      if (ids) {
+        this.fetchModelVersion(ids.versionID);   // <— use versionID from resolver
       } else {
-        this.error = 'Invalid file name format.';
+        this.error = 'Unable to resolve model/version IDs from item.';
         this.isLoading = false;
       }
     }
   }
+
+
+  /** Resolve IDs no matter if item is Virtual, FS+scan, or filename-based. */
+  private resolveIdsFromItem(item: any): { modelID: string; versionID: string } | null {
+    // Virtual payload (nested under model)
+    const v1 = item?.model?.versionNumber;
+    const m1 = item?.model?.modelNumber;
+    if (v1 && m1) return { modelID: String(m1), versionID: String(v1) };
+
+    // Flattened (if your datasource already lifted them)
+    const v2 = item?.versionNumber;
+    const m2 = item?.modelNumber;
+    if (v2 && m2) return { modelID: String(m2), versionID: String(v2) };
+
+    // FS after scan (stored in scanData)
+    const v3 = item?.scanData?.versionNumber;
+    const m3 = item?.scanData?.modelNumber;
+    if (v3 && m3) return { modelID: String(m3), versionID: String(v3) };
+
+    // Fallback: filename like {modelID}_{versionID}_...
+    const name: string | undefined = item?.name;
+    if (typeof name === 'string') {
+      const m = name.match(/^(\d+)_(\d+)_/);
+      if (m) return { modelID: m[1], versionID: m[2] };
+    }
+
+    return null;
+  }
+
 
   // ===== LIVE fetch for sidebar mini view =====
   fetchModelVersion(versionID: string) {
@@ -114,11 +141,11 @@ export class FileInfoSidebarComponent implements OnChanges {
 
   updateModel(updateFields: { [key: string]: any }): void {
     if (!this.item) return;
-    const parts = this.item.name.split('_');
-    if (parts.length < 2) return;
 
-    const modelId = parts[0];
-    const versionId = parts[1];
+    const ids = this.resolveIdsFromItem(this.item);
+    if (!ids) return;
+
+    const { modelID: modelId, versionID: versionId } = ids;
 
     const payload: any = {
       modelId, versionId,
@@ -132,17 +159,23 @@ export class FileInfoSidebarComponent implements OnChanges {
         if (this.item && updateFields.stats) {
           if (!this.item.scanData) this.item.scanData = {};
           this.item.scanData.stats = JSON.stringify(updateFields.stats);
-          const idx = this.explorerState.directoryContents.findIndex(i => i.path === this.item!.path);
+
+          const list = this.explorerState.virtualSelectedDirectory
+            ? this.explorerState.virtualDirectoryContents
+            : this.explorerState.fsDirectoryContents;
+
+          const idx = list.findIndex(i => i.path === this.item!.path);
           if (idx !== -1) {
-            Object.assign(this.explorerState.directoryContents[idx], {
-              scanData: { ...(this.explorerState.directoryContents[idx].scanData || {}), stats: JSON.stringify(updateFields.stats) }
-            });
+            const oldScan = list[idx].scanData || {};
+            list[idx].scanData = { ...oldScan, stats: JSON.stringify(updateFields.stats) };
           }
+
         }
       },
       error: (e) => console.error('Error updating model:', e)
     });
   }
+
 
   // mini carousel helpers
   get currentImageUrl(): string {
@@ -167,9 +200,9 @@ export class FileInfoSidebarComponent implements OnChanges {
   }
 
   fetchLocalRecord(): void {
-    const ids = this.getIdsFromItem();
+    const ids = this.resolveIdsFromItem(this.item);
     if (!ids) {
-      this.dbError = 'Invalid file name format.';
+      this.dbError = 'Unable to resolve model/version IDs from item.';
       this.dbData = null; this.dbImages = []; this.dbLoading = false;
       return;
     }
@@ -201,6 +234,7 @@ export class FileInfoSidebarComponent implements OnChanges {
     });
   }
 
+
   // ===== FULL-SCREEN overlay logic =====
   openFullOverlay(source: Source, startIndex = 0) {
     this.fullSource = source;
@@ -210,12 +244,10 @@ export class FileInfoSidebarComponent implements OnChanges {
     this.fullImageIndex = startIndex;
 
     if (source === 'local') {
-      // if user tapped from the local carousel inside the sidebar, dbData is already present.
-      // guard just in case:
       if (!this.dbData) {
-        const ids = this.getIdsFromItem();
+        const ids = this.resolveIdsFromItem(this.item);
         if (!ids) {
-          this.fullError = 'Invalid file name format.';
+          this.fullError = 'Unable to resolve model/version IDs from item.';
           return;
         }
         this.fullLoading = true;
@@ -239,6 +271,7 @@ export class FileInfoSidebarComponent implements OnChanges {
         });
       }
     }
+
     // for LIVE, we already have modelVersion from the sidebar fetch
   }
 
@@ -326,14 +359,6 @@ export class FileInfoSidebarComponent implements OnChanges {
     }
     return null;
   }
-
-  // helpers
-  private getIdsFromItem(): { modelID: string; versionID: string } | null {
-    if (!this.item) return null;
-    const parts = this.item.name.split('_');
-    return parts.length >= 2 ? { modelID: parts[0], versionID: parts[1] } : null;
-  }
-
 
   // Overlay carousel controls
   prevDbImage() {
