@@ -1,3 +1,15 @@
-<p>
-  page-not-found works!
-</p>
+<div class="not-found">
+  <div class="card">
+    <div class="illustration" aria-hidden="true">🧭</div>
+    <h1 class="code">404</h1>
+    <h2 class="title">Page not found</h2>
+    <p class="desc">
+      The page you’re looking for doesn’t exist or may have moved.
+    </p>
+
+    <div class="actions">
+      <a routerLink="/home" class="btn primary">Go to Home</a>
+      <button type="button" class="btn ghost" (click)="goBack()">Go Back</button>
+    </div>
+  </div>
+</div>

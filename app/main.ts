@@ -11,7 +11,7 @@ const args = process.argv.slice(1),
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
-    width: 1850,
+    width: 1875,
     height: 900,
     show: false,
     webPreferences: {

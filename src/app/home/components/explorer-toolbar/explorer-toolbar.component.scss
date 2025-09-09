@@ -1,125 +1,307 @@
 /* explorer-toolbar.component.scss */
-.toolbar-container {
-    display: flex;
-    flex-wrap: wrap;
-    /* allow wrapping to multiple rows */
-    align-items: center;
-    padding: 6px 10px;
-    /* <-- NORMAL padding (no %!) */
-    background-color: #e9ecef;
-    border-bottom: 1px solid #ccc;
-    gap: 10px;
-    font-family: "Segoe UI", sans-serif;
-    font-size: 14px;
+
+:host {
+    display: block;
+    /* make the host a block-level element */
+    flex: 1 1 auto;
+    /* allow it to grow inside the parent flex row */
+    min-width: 0;
+    /* allow inner breadcrumbs to truncate properly */
 }
 
+
+/* ==== Container: Explorer-like bar with two logical rows ==== */
+.toolbar-container {
+    display: flex;
+    flex-direction: column;
+    /* two stacked rows */
+    gap: 8px;
+    /* vertical space between rows */
+    padding: 6px 10px;
+
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    font-family: "Segoe UI", system-ui, -apple-system, "Segoe UI Variable", sans-serif;
+    font-size: 14px;
+    color: var(--text);
+}
+
+/* ==== Generic buttons (nav, refresh, actions) ==== */
 .toolbar-container button {
-    background-color: #f8f9fa;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
     padding: 4px 8px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
 
     &:disabled {
-        opacity: 0.5;
+        opacity: .55;
         cursor: default;
     }
 
     &:not(:disabled):hover {
-        background-color: #e2e6ea;
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
     }
 }
 
-.breadcrumb-section {
+/* ==== Row scaffolding ==== */
+.row {
     display: flex;
-    gap: 4px;
     align-items: center;
-    flex: 1;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Row 1: nav + path (left)  |  search (right) */
+.row-primary {
+    justify-content: space-between;
+    /* pins search to the far right */
+}
+
+/* Left cluster on row 1: nav buttons + path take remaining width */
+.row-primary .left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    /* enables truncation for the path */
+}
+
+/* Small square nav buttons */
+.row-primary .left>button {
+    width: 30px;
+    height: 28px;
+    padding: 0;
+}
+
+/* Path area (breadcrumbs OR edit input) */
+.row-primary .path {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 auto;
     min-width: 0;
 }
 
-.breadcrumb-view,
-.edit-view {
+/* Non-editing breadcrumb strip */
+.breadcrumb-view {
     display: flex;
     align-items: center;
-    flex: 1;
-    overflow: hidden;
     gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px 6px;
+    overflow: hidden;
+    cursor: text;
+    /* indicates click-to-edit */
 }
 
 .breadcrumb-part {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
-    max-width: 150px;
+    max-width: 160px;
+    padding: 2px 6px;
+    border-radius: 6px;
+
+    &:hover {
+        background: var(--row-hover);
+    }
 }
 
 .separator {
     margin: 0 2px;
-    color: #666;
+    color: var(--text-muted);
 }
 
-.path-input {
-    width: 100%;
-    padding: 4px 6px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    outline: none;
-}
+/* Edit mode matches the strip */
+.edit-view {
+    flex: 1 1 auto;
+    min-width: 0;
 
-.search-container {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+    .path-input {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        outline: none;
+        transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 
-.search-container input[type="text"] {
-    width: 180px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 4px 6px;
-    outline: none;
-    transition: border-color 0.2s;
+        &::placeholder {
+            color: var(--text-muted);
+        }
 
-    &:focus {
-        border-color: #888;
+        &:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-ring);
+        }
     }
 }
 
+/* Right cluster on row 1: Search (fixed-right) */
+.row-primary .right {
+    flex: 0 0 auto;
+    /* never grow */
+    margin-left: 12px;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.search-container input[type="text"] {
+    width: 100%;
+    max-width: 240px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+
+    &::placeholder {
+        color: var(--text-muted);
+    }
+
+    &:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
+
+/* Row 2: utility controls (wraps nicely) */
+.row-secondary {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+}
+
+/* Auto-update + manual update */
 .update-checkbox {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
+
+    input[type="checkbox"] {
+        accent-color: var(--accent);
+    }
+
+    button {
+        background: var(--accent);
+        color: var(--accent-contrast);
+        border-color: transparent;
+
+        &:hover {
+            background: var(--accent-weak);
+        }
+    }
 }
 
-.subdir-nav {
-    flex: 0 0 100%;
-    display: flex;
+/* Zip toggle */
+.sidebar-toggle-container {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 6px;
+
+    button {
+        background: var(--bg);
+        border: 1px solid var(--border);
+
+        &:hover {
+            background: var(--menu-hover);
+        }
+    }
 }
 
-.subdir-nav select {
-    padding: 4px 6px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.sidebar-toggle-container,
+/* Update all models CTA */
 .update-models-button {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+
+    button {
+        background: var(--accent);
+        color: var(--accent-contrast);
+        border: 1px solid transparent;
+
+        &:hover {
+            background: var(--accent-weak);
+        }
+    }
 }
 
-.locked-label {
-    margin-left: 8px;
-    font-style: italic;
-    color: #555;
+/* Sub-directory navigator */
+.subdir-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    select {
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        outline: none;
+        transition: border-color .15s ease, box-shadow .15s ease;
+
+        &:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-ring);
+        }
+    }
+
+    /* small arrow buttons for subdir paging */
+    button {
+        width: 30px;
+        height: 28px;
+        padding: 0;
+    }
+
+    .lock-checkbox {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        input[type="checkbox"] {
+            accent-color: var(--accent);
+        }
+    }
+
+    .locked-label {
+        margin-left: 6px;
+        font-style: italic;
+        color: var(--text-muted);
+    }
+}
+
+/* ==== Responsive niceties (optional) ==== */
+@media (max-width: 920px) {
+    .search-container input[type="text"] {
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 720px) {
+    .search-container input[type="text"] {
+        max-width: 180px;
+    }
 }

@@ -1,83 +1,79 @@
-<!-- explorer-toolbar.component.html -->
 <div class="toolbar-container">
-    <div class="breadcrumb-section">
-        <!-- Navigation Buttons -->
-        <button (click)="onBack()" [disabled]="isPreloadComplete || !canGoBack">←</button>
-        <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
-        <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
+    <!-- Row 1: nav + path (left)  |  search (right) -->
+    <div class="row row-primary">
+        <div class="left">
+            <!-- Navigation Buttons -->
+            <button (click)="onBack()" [disabled]="isPreloadComplete || !canGoBack">←</button>
+            <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
+            <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
 
-        <!-- Breadcrumbs -->
-        <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
-            <ng-container *ngFor="let part of truncatedBreadcrumbs; let i = index">
-                <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">
-                    {{ part }}
-                </span>
-                <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
-            </ng-container>
+            <!-- Path (breadcrumbs OR edit) -->
+            <div class="path">
+                <!-- Breadcrumbs -->
+                <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
+                    <ng-container *ngFor="let part of truncatedBreadcrumbs; let i = index">
+                        <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">{{ part }}</span>
+                        <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
+                    </ng-container>
+                </div>
+
+                <!-- Path edit -->
+                <div *ngIf="isEditingPath" class="edit-view">
+                    <input type="text" class="path-input" [value]="currentPath" [disabled]="isPreloadComplete"
+                        (keyup.enter)="onPathEnter($any($event.target).value)"
+                        (blur)="exitEditMode($any($event.target).value)" autofocus />
+                </div>
+            </div>
         </div>
 
-        <!-- Path edit -->
-        <div *ngIf="isEditingPath" class="edit-view">
-            <input type="text" class="path-input" [value]="currentPath" [disabled]="isPreloadComplete"
-                (keyup.enter)="onPathEnter($any($event.target).value)" (blur)="exitEditMode($any($event.target).value)"
-                autofocus />
+        <!-- Search (always pinned right) -->
+        <div class="right search-container">
+            <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
         </div>
     </div>
 
-    <!-- Search -->
-    <div class="search-container">
-        <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
-    </div>
+    <!-- Row 2: utility controls -->
+    <div class="row row-secondary">
+        <!-- Auto-update + manual update -->
+        <div class="update-checkbox">
+            <label>
+                <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
+                Auto Update Local Path
+            </label>
+            <button (click)="onManualUpdate()" [disabled]="isPreloadComplete || !explorerState.selectedDirectory">
+                Update Path
+            </button>
+        </div>
 
-    <!-- Auto-update + manual update -->
-    <div class="update-checkbox">
-        <label>
-            <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
-            Auto Update Local Path
-        </label>
-        <button (click)="onManualUpdate()" [disabled]="isPreloadComplete || !explorerState.selectedDirectory">
-            Update Path
-        </button>
-    </div>
+        <!-- Zip toggle -->
+        <div class="sidebar-toggle-container">
+            <button (click)="toggleZipSidebar()">Zip</button>
+        </div>
 
-    <!-- Zip toggle -->
-    <div class="sidebar-toggle-container">
-        <button (click)="toggleZipSidebar()">Zip</button>
-    </div>
+        <!-- Update all models -->
+        <div class="update-models-button">
+            <button (click)="onUpdateAllModels()">Update All Models</button>
+        </div>
 
-    <!-- Update all models -->
-    <div class="update-models-button">
-        <button (click)="onUpdateAllModels()">Update All Models</button>
-    </div>
+        <!-- Sub-directory navigator -->
+        <div class="subdir-nav" *ngIf="displayedSubDirectories.length > 0">
+            <select [(ngModel)]="selectedSubdirIndex" (ngModelChange)="onSubdirChange($event)"
+                [disabled]="isPreloadComplete">
+                <option *ngFor="let dir of displayedSubDirectories; let i = index" [value]="i">{{ dir.name }}</option>
+            </select>
 
-    <!-- Sub-directory navigator (own row) -->
-    <div class="subdir-nav" *ngIf="displayedSubDirectories.length > 0">
-        <select [(ngModel)]="selectedSubdirIndex" (ngModelChange)="onSubdirChange($event)"
-            [disabled]="isPreloadComplete">
-            <option *ngFor="let dir of displayedSubDirectories; let i = index" [value]="i">
-                {{ dir.name }}
-            </option>
-        </select>
+            <button (click)="prevSubdir()" [disabled]="isPreloadComplete || selectedSubdirIndex <= 0">←</button>
+            <button (click)="nextSubdir()"
+                [disabled]="isPreloadComplete || selectedSubdirIndex >= displayedSubDirectories.length - 1">
+                →
+            </button>
 
-        <button (click)="prevSubdir()" [disabled]="isPreloadComplete || selectedSubdirIndex <= 0">
-            ←
-        </button>
-        <button (click)="nextSubdir()" [disabled]="
-        isPreloadComplete ||
-        selectedSubdirIndex >= displayedSubDirectories.length - 1
-      ">
-            →
-        </button>
+            <label class="lock-checkbox">
+                <input type="checkbox" [(ngModel)]="lockEnabled" (ngModelChange)="onLockChange($event)" />
+                Lock
+            </label>
 
-        <!-- Lock checkbox -->
-        <label class="lock-checkbox">
-            <input type="checkbox" [(ngModel)]="lockEnabled" (ngModelChange)="onLockChange($event)" />
-            Lock
-        </label>
-
-        <!-- Display locked directory name -->
-        <span class="locked-label" *ngIf="lockEnabled">
-            Locked: {{ lockedDirName }}
-        </span>
+            <span class="locked-label" *ngIf="lockEnabled">Locked: {{ lockedDirName }}</span>
+        </div>
     </div>
 </div>

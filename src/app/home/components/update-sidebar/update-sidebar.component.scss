@@ -7,8 +7,9 @@
     position: static;
     box-sizing: border-box;
 
-    background: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 0 10px var(--shadow);
 
     /* Make just the content scroll inside the sidebar */
     overflow: hidden;
@@ -18,13 +19,25 @@
         justify-content: space-between;
         align-items: center;
         padding: 10px;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--border);
 
         button {
             background: transparent;
             border: none;
             cursor: pointer;
             font-size: 16px;
+            color: var(--text);
+            border-radius: 6px;
+            padding: 4px 6px;
+
+            &:hover {
+                background: var(--menu-hover);
+            }
+
+            &:focus-visible {
+                outline: none;
+                box-shadow: 0 0 0 3px var(--accent-ring);
+            }
         }
     }
 
@@ -36,14 +49,45 @@
         padding: 10px;
     }
 
+    /* spinner picks up theme */
     .spinner {
         display: inline-block;
         width: 16px;
         height: 16px;
-        border: 2px solid rgba(0, 0, 0, 0.3);
+        border: 2px solid var(--border);
         border-radius: 50%;
-        border-top-color: #000;
-        animation: spin 1s ease-in-out infinite;
+        border-top-color: var(--accent);
+        animation: spin 1s linear infinite;
+    }
+
+    /* (optional) common inline status chips */
+    .status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.4;
+        background: var(--row-hover);
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+
+    .status.ok {
+        background: rgba(46, 160, 67, .15);
+        border-color: rgba(46, 160, 67, .35);
+        color: #b9ffd0;
+    }
+
+    .status.warn {
+        background: rgba(227, 179, 65, .15);
+        border-color: rgba(227, 179, 65, .35);
+        color: #ffe4a3;
+    }
+
+    .status.error {
+        background: rgba(248, 81, 73, .15);
+        border-color: rgba(248, 81, 73, .35);
+        color: #ffb3b3;
     }
 }
 

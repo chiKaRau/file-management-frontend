@@ -1,0 +1,97 @@
+/* Center the card nicely on any background */
+.not-found {
+    min-height: 60vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: var(--text);
+}
+
+/* Panel-style card that works in light/dark */
+.card {
+    width: min(560px, 92vw);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px var(--shadow);
+    text-align: center;
+    padding: 28px 24px;
+}
+
+/* Little emoji or icon up top */
+.illustration {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+/* Big “404” with accent */
+.code {
+    margin: 0;
+    font-size: clamp(44px, 7vw, 64px);
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--accent);
+}
+
+/* Title + copy */
+.title {
+    margin: 4px 0 10px;
+    font-size: clamp(18px, 2.6vw, 22px);
+    font-weight: 700;
+    color: var(--text);
+}
+
+.desc {
+    margin: 0 auto 18px;
+    max-width: 46ch;
+    color: var(--text-muted);
+}
+
+/* Actions */
+.actions {
+    display: inline-flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+/* Buttons (local styles; theme variables do the heavy lifting) */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+
+    &:hover {
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
+
+/* Primary CTA in React-ish accent */
+.btn.primary {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border-color: transparent;
+
+    &:hover {
+        background: var(--accent-weak);
+    }
+}
+
+/* Secondary/ghost action */
+.btn.ghost {
+    background: var(--bg);
+    color: var(--text);
+}

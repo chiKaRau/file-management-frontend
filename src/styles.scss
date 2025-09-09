@@ -73,3 +73,178 @@ body {
   padding-top: 40px;
   /* must match .tab-bar height */
 }
+
+/* ---------- Light (refined) ---------- */
+:root,
+:root.theme-light {
+  --bg: #ffffff;
+  --bg-elevated: #fafafa;
+  --panel: #ffffff;
+
+  --text: #0f1419;
+  --text-muted: #6b7785;
+  --icon: #3b4252;
+
+  --border: #d7dde5;
+  --border-soft: #eef1f5;
+
+  --menu-bg: #ffffff;
+  --menu-hover: #f2f4f7;
+
+  --overlay: rgba(255, 255, 255, 0.85);
+  --shadow: rgba(0, 0, 0, 0.08);
+
+  /* React-ish blue for light */
+  --accent: #087ea4;
+  --accent-weak: #066584;
+  --accent-contrast: #ffffff;
+  --accent-ring: rgba(8, 126, 164, 0.35);
+
+  --row-hover: rgba(8, 126, 164, 0.08);
+  --row-selected: rgba(8, 126, 164, 0.16);
+
+  --success: #118d57;
+  --warning: #b76e00;
+  --danger: #b42318;
+  --info: #0b6bcb;
+
+  --muted-bg: #f6f8fb;
+}
+
+/* ---------- Dark (based on #202020) ---------- */
+:root.theme-dark {
+  /* Surfaces */
+  --bg: #202020;
+  /* page background */
+  --bg-elevated: #242424;
+  /* toolbars / sheets */
+  --panel: #262626;
+  /* panels / docks / cards */
+
+  /* Text & icons */
+  --text: #e9edf1;
+  /* near-white, soft */
+  --text-muted: #b5bac1;
+  /* secondary text */
+  --icon: #d6dbe1;
+
+  /* Lines / dividers */
+  --border: #333333;
+  /* visible but subtle */
+  --border-soft: #2a2a2a;
+  /* inner separators */
+
+  /* Menus */
+  --menu-bg: #242424;
+  --menu-hover: #2c2c2c;
+
+  /* Effects */
+  --overlay: rgba(0, 0, 0, 0.55);
+  --shadow: rgba(0, 0, 0, 0.5);
+
+  /* React accent */
+  --accent: #61dafb;
+  --accent-weak: #4ec8e8;
+  --accent-contrast: #06212a;
+  --accent-ring: rgba(97, 218, 251, 0.35);
+
+  /* List states */
+  --row-hover: rgba(97, 218, 251, 0.07);
+  --row-selected: rgba(97, 218, 251, 0.15);
+
+  /* Placeholders / muted blocks */
+  --muted-bg: #1d1d1d;
+}
+
+/* ---------- Base apply ---------- */
+/* Base apply (keeps your light block as-is) */
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* optional: remove any previous glow/gradient */
+html.theme-dark body {
+  background: var(--bg);
+}
+
+/* Helpful globals */
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-weak);
+}
+
+:where(button, [role="button"], input, select, textarea, a):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  border-radius: 6px;
+}
+
+/* ---------- Light ---------- */
+:root,
+:root.theme-light {
+  --scroll-track: #eef1f5;
+  /* track */
+  --scroll-thumb: #c7d0db;
+  /* thumb */
+  --scroll-thumb-hover: #b5becb;
+}
+
+/* ---------- Dark ---------- */
+:root.theme-dark {
+  --scroll-track: #2a2a2a;
+  --scroll-thumb: #474747;
+  --scroll-thumb-hover: #575757;
+}
+
+/* Firefox */
+* {
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+  scrollbar-width: thin;
+  /* auto | thin | none */
+}
+
+/* Chromium/Electron (WebKit-like) */
+::-webkit-scrollbar {
+  width: 10px;
+  /* vertical */
+  height: 10px;
+  /* horizontal */
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  /* creates inset “padding” */
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--scroll-track);
+}
+
+/* add to styles.scss (global) */
+.file-list-container,
+.left-dock,
+.right-dock,
+.db-panel-body,
+.sheet-body,
+html,
+body {
+  scrollbar-gutter: stable both-edges;
+  /* Chrome 114+, FF 109+ */
+}

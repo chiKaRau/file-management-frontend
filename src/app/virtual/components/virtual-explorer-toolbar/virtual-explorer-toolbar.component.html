@@ -1,47 +1,51 @@
 <div class="virtual-toolbar">
-    <div class="nav-buttons">
-        <button (click)="onBack()" [disabled]="isPreloadComplete || !canGoBack">←</button>
-        <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
-        <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
-    </div>
+    <!-- Row 1: nav + path + drive (left) | search (right) -->
+    <div class="row row-primary">
+        <div class="left">
+            <div class="nav-buttons">
+                <button (click)="onBack()" [disabled]="isPreloadComplete || !canGoBack">←</button>
+                <button (click)="onForward()" [disabled]="isPreloadComplete || !canGoForward">→</button>
+                <button (click)="onRefresh()" [disabled]="isPreloadComplete">⟳</button>
+            </div>
 
-    <!-- Breadcrumb / Path Display -->
-    <div class="breadcrumb-section">
-        <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
-            <ng-container *ngFor="let crumb of truncatedBreadcrumbs; let i = index">
-                <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">
-                    {{ crumb }}
-                </span>
-                <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
-            </ng-container>
+            <!-- Breadcrumb / Path -->
+            <div class="breadcrumb-section">
+                <div class="breadcrumb-view" *ngIf="!isEditingPath" (click)="enterEditMode()">
+                    <ng-container *ngFor="let crumb of truncatedBreadcrumbs; let i = index">
+                        <span class="breadcrumb-part" (click)="onBreadcrumbClick(i, $event)">{{ crumb }}</span>
+                        <span class="separator" *ngIf="i < truncatedBreadcrumbs.length - 1">></span>
+                    </ng-container>
+                </div>
+
+                <div class="edit-view" *ngIf="isEditingPath">
+                    <input #pathInput type="text" class="path-input" [value]="displayedPath"
+                        [disabled]="isPreloadComplete" (keyup.enter)="onPathEnter(pathInput.value)"
+                        (blur)="exitEditMode(pathInput.value)" autofocus />
+                </div>
+            </div>
+
+            <!-- Drive dropdown -->
+            <div class="drive-dropdown">
+                <select [value]="selectedDrive" (change)="onDriveChange($event)">
+                    <option value="all">All Drives</option>
+                    <option *ngFor="let drive of availableDrives" [value]="drive">{{ drive }}</option>
+                </select>
+            </div>
         </div>
-        <div class="edit-view" *ngIf="isEditingPath">
-            <input #pathInput type="text" class="path-input" [value]="displayedPath" [disabled]="isPreloadComplete"
-                (keyup.enter)="onPathEnter(pathInput.value)" (blur)="exitEditMode(pathInput.value)" autofocus />
+
+        <!-- Search (always pinned right) -->
+        <div class="right search-container">
+            <input #searchInput type="text" placeholder="Search files..." (input)="onSearchChange(searchInput.value)"
+                [value]="searchText" />
         </div>
     </div>
 
-    <!-- Drive Dropdown -->
-    <div class="drive-dropdown">
-        <select [value]="selectedDrive" (change)="onDriveChange($event)">
-            <option value="all">All Drives</option>
-            <option *ngFor="let drive of availableDrives" [value]="drive">{{ drive }}</option>
-        </select>
+    <!-- Row 2: actions -->
+    <div class="row row-secondary">
+        <div class="update-models-button">
+            <button (click)="onUpdateStats()" [disabled]="isPreloadComplete">
+                Update All Models
+            </button>
+        </div>
     </div>
-
-    <!-- Update all models (virtual) -->
-    <div class="update-models-button">
-        <button (click)="onUpdateStats()" [disabled]="isPreloadComplete">
-            Update All Models
-        </button>
-    </div>
-
-
-    <!-- Search Box -->
-    <div class="search-container">
-        <input #searchInput type="text" placeholder="Search files..." (input)="onSearchChange(searchInput.value)"
-            [value]="searchText" />
-    </div>
-
-
 </div>

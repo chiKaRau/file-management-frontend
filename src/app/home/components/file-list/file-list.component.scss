@@ -1,28 +1,73 @@
+/* ---------- Icon colors (semantic) ---------- */
 .icon-download {
-    color: #3f51b5; // Indigo for downloads
+    color: var(--info);
 }
 
+/* downloads */
 .icon-rating {
-    color: #fbc02d; // Yellow for rating
+    color: #fbc02d;
 }
 
+/* star yellow keeps good contrast on both themes */
 .icon-rating-count {
-    color: #009688; // Teal for rating count
+    color: var(--accent);
 }
 
+/* review count -> accent/cyan */
 .icon-thumb-up {
-    color: #4caf50; // Green for thumbs up
+    color: var(--success);
 }
 
 .icon-thumb-down {
-    color: #f44336; // Red for thumbs down
+    color: var(--danger);
 }
 
+/* ===== ExtraLarge CARD: center folder icon + label together ===== */
+.file-card.directory {
+    /* replace grid w/ centered column layout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* vertical center inside the 400px card */
+    gap: 6px;
+    /* <— distance between icon and text */
+    background: var(--panel);
+}
 
+/* keep the icon size */
+.file-card.directory svg {
+    width: 96px;
+    height: 96px;
+    fill: var(--icon);
+    opacity: .95;
+}
+
+/* override the bottom-anchored caption */
+.file-card.directory .filename {
+    position: static !important;
+    margin: 0;
+    max-width: 90%;
+    text-align: center;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: none;
+}
+
+/* Optional: slightly lift on hover like file thumbnails */
+.file-card.directory:hover {
+    box-shadow: 0 8px 24px var(--shadow);
+    border-color: var(--border);
+}
+
+/* ---------- Shared list layout ---------- */
 .file-list {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+    color: var(--text);
 
     .file-item {
         display: flex;
@@ -30,14 +75,17 @@
         align-items: center;
         cursor: pointer;
         text-align: center;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+        border-radius: 6px;
+        transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+        border: 1px solid transparent;
 
         .icon {
             /* default icon size if none of the below rules match */
             width: 64px;
             height: 64px;
             overflow: hidden;
+            color: var(--icon);
+            /* svg fill=currentColor in your HTML */
 
             img,
             svg {
@@ -53,10 +101,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%;
+            color: var(--text);
         }
 
         &:hover {
-            background-color: #f0f0f0;
+            background-color: var(--row-hover);
         }
     }
 
@@ -67,7 +116,6 @@
         .file-item {
             width: 160px;
 
-            /* or whatever you want */
             .icon {
                 width: 128px;
                 height: 128px;
@@ -121,10 +169,8 @@
     /* 5) List Mode */
     /* =========================================== */
     &.list {
-        /* Typically list mode is a single column with a small icon to the left */
         display: block;
 
-        /* or flex but "column" direction */
         .file-item {
             flex-direction: row;
             align-items: center;
@@ -142,7 +188,6 @@
                 margin-top: 0;
                 width: auto;
                 flex: 1 1 auto;
-                /* let it fill the line */
             }
         }
     }
@@ -151,15 +196,12 @@
     /* 6) Details Mode */
     /* =========================================== */
     &.details {
-        /* Often details mode is a table-like layout 
-         We'll do a simple table approach as an example */
         display: table;
         width: 100%;
 
         .file-item {
             display: table-row;
 
-            /* each item is a row */
             .icon {
                 width: 24px;
                 height: 24px;
@@ -173,10 +215,25 @@
     }
 }
 
+/* ===== Keep directory icons centered in non-card modes, too ===== */
+/* Your markup puts the folder <svg> directly in .file-item, not in .icon.
+   This normalizes its box and centers it like the .icon block does. */
+.file-list .file-item>svg {
+    display: block;
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+    color: var(--icon);
+    margin: 0 auto;
+    /* horizontal center */
+}
+
+/* ---------- States (deleted / selected) ---------- */
 .file-item.deleted {
     position: relative;
     filter: grayscale(50%) brightness(90%);
-    border: 2px dashed #ff4d4d;
+    border: 2px dashed var(--danger);
+    /* keep a subtle red glow similar to your original */
     box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
 
     &:after {
@@ -184,27 +241,26 @@
         position: absolute;
         top: 4px;
         right: 4px;
-        background: rgba(255, 77, 77, 0.85);
+        background: var(--danger);
         color: #fff;
         padding: 2px 6px;
         font-size: 12px;
         font-weight: bold;
-        border-radius: 2px;
+        border-radius: 4px;
         text-transform: uppercase;
     }
 }
 
 .file-item.selected {
-    /* Change the background color to a light gray (or any color you prefer) */
-    background-color: #e0e0e0;
-
-    /* Optional: add a border or outline for additional emphasis */
-    border: 2px solid #0078d7;
+    background-color: var(--row-selected);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 /* =========================================== */
 /* Extra Large Card View Mode (for "extraLarge") */
 /* =========================================== */
+
 .file-card-container {
     display: flex;
     flex-wrap: wrap;
@@ -214,71 +270,82 @@
     padding-top: 50px;
 }
 
+/* keep tile so card+caption stay together */
+.card-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .file-card {
     position: relative;
-    width: 300px; // Card width
-    height: 400px; // Card height
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    width: 300px;
+    /* Card width */
+    height: 400px;
+    /* Card height */
+    border: 1px solid var(--border);
+    border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow .2s ease, border-color .15s ease;
 
     &:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 24px var(--shadow);
+        border-color: var(--border);
     }
 
-    // Top-left badge for Model ID / Version ID
+    /* Top-left badge: Model/Version IDs */
     .badge.top-left {
         position: absolute;
         top: 8px;
         left: 8px;
-        background: rgba(0, 0, 0, 0.5); // semi-transparent dark background
+        background: rgba(0, 0, 0, 0.55);
         color: #fff;
-        font-weight: bold;
+        font-weight: 700;
         padding: 4px 8px;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 12px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    // Top-right badge for Base Model
+    /* Top-right badge: Base Model */
     .badge.top-right {
         position: absolute;
         top: 8px;
         right: 8px;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.55);
         color: #fff;
-        font-weight: bold;
+        font-weight: 700;
         padding: 4px 8px;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 12px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    // Footer overlay for creator and main model info
+    /* Footer overlay with creator + stats */
     .card-footer {
         position: absolute;
         bottom: 0;
         width: 100%;
         background: rgba(0, 0, 0, 0.6);
+        /* scrim over image; reads fine in both themes */
         color: #fff;
         padding: 8px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
 
         .creator {
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -290,12 +357,33 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+
+            .material-icons {
+                font-size: 16px;
+                vertical-align: middle;
+            }
+        }
+
+        .size-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .material-icons {
+                font-size: 16px;
+            }
+        }
     }
 }
 
 .file-card.deleted {
     filter: grayscale(50%) brightness(90%);
-    border: 2px dashed #ff4d4d;
+    border: 2px dashed var(--danger);
     box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
 
     &::after {
@@ -304,40 +392,41 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        /* center it */
-        background: rgba(255, 77, 77, 0.85);
+        background: var(--danger);
         color: #fff;
         padding: 6px 10px;
         font-size: 12px;
         font-weight: bold;
-        border-radius: 4px;
+        border-radius: 6px;
         text-transform: uppercase;
         z-index: 2;
         /* above badges/image */
         pointer-events: none;
-        /* don't block clicks */
+        /* don’t block clicks */
     }
 }
 
 /* Optional styles for selected cards */
 .file-card.selected {
-    border: 2px solid #0078d7;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
-.file-card .card-footer .deleted-info {
-    margin-top: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    opacity: 0.85;
-    font-size: 0.95rem;
-}
-
+/* Below-card deleted info rows */
 .deleted-info-below,
 .deleted-path-below {
     width: 300px;
     /* match .file-card width */
     box-sizing: border-box;
+    color: var(--text-muted);
+}
+
+.deleted-info-below .material-icons {
+    color: var(--danger);
+}
+
+.deleted-path-below .material-icons {
+    color: var(--icon);
 }
 
 .deleted-path-below .path-text {
@@ -348,7 +437,5 @@
     text-overflow: clip;
     /* no ellipsis */
     overflow-wrap: anywhere;
-    /* wrap long segments if needed */
     word-break: break-word;
-    /* safer than break-all */
 }

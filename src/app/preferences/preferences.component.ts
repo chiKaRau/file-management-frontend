@@ -10,6 +10,7 @@ import { dialog } from 'electron';
 import { ElectronService } from '../core/services/electron/electron.service';
 import { PreferencesService } from './preferences.service';
 import { SearchService } from '../home/services/search.service';
+import { Theme, ThemeService } from '../home/services/theme.service';
 
 @Component({
   selector: 'app-preferences',
@@ -21,6 +22,7 @@ export class PreferencesComponent {
   rememberLastDirectory = true;
   enableCivitaiMode = false;
   viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
+  theme: Theme = 'dark';
 
   // Directory inputs start empty.
   storageDir: string = '';
@@ -40,6 +42,7 @@ export class PreferencesComponent {
     private ngZone: NgZone,
     private preferencesService: PreferencesService,
     private searchService: SearchService,
+    private themeService: ThemeService,
   ) {
     // Load existing preferences if available.
     this.enableCivitaiMode = explorerState.enableCivitaiMode;
@@ -47,6 +50,11 @@ export class PreferencesComponent {
   }
 
   ngOnInit(): void {
+    // load saved
+    this.theme = (this.preferencesService.theme as Theme) || this.themeService.theme;
+    // apply current on enter (in case route loaded before root applied)
+    this.themeService.setTheme(this.theme);
+
     // Load values from service when the component initializes
     this.storageDir = this.preferencesService.storageDir;
     this.deleteDir = this.preferencesService.deleteDir;
@@ -220,12 +228,19 @@ export class PreferencesComponent {
     this.preferencesService.scanVerified = this.scanVerified;
   }
 
+  onThemeToggle() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    this.themeService.setTheme(this.theme);
+    this.preferencesService.theme = this.theme; // remember alongside your other prefs
+  }
+
   /**
    * Saves the other preferences (view mode, etc.).
    * Since directory creation is handled immediately via Verify,
    * this method does not interact with the recycle service.
    */
   savePreferences(): void {
+    this.preferencesService.theme = this.theme;
     this.explorerState.enableCivitaiMode = this.enableCivitaiMode;
     this.explorerState.saveViewMode(this.viewMode);
 

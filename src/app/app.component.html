@@ -7,6 +7,7 @@
         <a routerLink="/virtual" routerLinkActive="active">Virtual</a>
     </nav>
 
-    <!-- Listen for activation events -->
-    <router-outlet (activate)="onActivate($event)"></router-outlet>
+    <main class="app-body">
+        <router-outlet (activate)="onActivate($event)"></router-outlet>
+    </main>
 </div>

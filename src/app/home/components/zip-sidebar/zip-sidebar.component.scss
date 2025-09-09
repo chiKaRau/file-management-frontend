@@ -7,8 +7,9 @@
     position: static;
     box-sizing: border-box;
 
-    background: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 0 10px var(--shadow);
 
     /* Let only the inner content scroll */
     overflow: hidden;
@@ -18,13 +19,25 @@
         justify-content: space-between;
         align-items: center;
         padding: 10px;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--border);
 
         button {
             background: transparent;
             border: none;
             cursor: pointer;
             font-size: 16px;
+            color: var(--text);
+            border-radius: 6px;
+            padding: 4px 6px;
+
+            &:hover {
+                background: var(--menu-hover);
+            }
+
+            &:focus-visible {
+                outline: none;
+                box-shadow: 0 0 0 3px var(--accent-ring);
+            }
         }
     }
 
@@ -34,5 +47,61 @@
         overflow-y: auto;
         overflow-x: hidden;
         padding: 10px;
+    }
+
+    /* optional helpers if you list zips/sets here */
+    .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 8px;
+        border-radius: 6px;
+
+        &:hover {
+            background: var(--row-hover);
+        }
+
+        &.selected {
+            background: var(--row-selected);
+            box-shadow: 0 0 0 2px var(--accent-ring) inset;
+        }
+    }
+
+    .row-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .row-actions {
+        display: inline-flex;
+        gap: 6px;
+
+        button {
+            background: var(--row-hover);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+
+            &:hover {
+                background: var(--menu-hover);
+            }
+        }
+    }
+
+    .empty-state {
+        margin: 12px;
+        padding: 12px;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        background: var(--muted-bg);
+        color: var(--text-muted);
+        text-align: center;
     }
 }

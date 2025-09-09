@@ -1,37 +1,92 @@
-.fixed-top {
+/* app.component.scss */
+
+/* let the root component behave like a page container */
+:host {
+    display: block;
+}
+
+/* height for the fixed tab bar (keeps other components aligned) */
+:root {
+    --tabbar-h: 40px;
+}
+
+/* layout: push content below the fixed bar */
+.app-layout {
+    min-height: 100vh;
+    padding-top: var(--tabbar-h);
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* fixed top nav */
+.tab-bar.fixed-top {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 40px;
-    /* or however tall your tab bar is */
-    background-color: #f1f1f1;
+    right: 0;
+    height: var(--tabbar-h);
     z-index: 9999;
+
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #ccc;
-    /* possibly some padding, etc. */
+    gap: 6px;
+    padding: 0 10px;
+
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
 }
 
-.tab-bar {
-
-    background-color: #ddd;
-
-}
-
-/* Example link styles: */
+/* links */
 .tab-bar a {
-    margin-right: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 28px;
+    padding: 0 12px;
+
     text-decoration: none;
-    color: #333;
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: .1px;
+
+    border: 1px solid transparent;
+    border-radius: 8px;
+
+    transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+
+    &:hover {
+        background: var(--row-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
 }
 
+/* active tab: subtle filled state + accent underline */
 .tab-bar a.active {
-    font-weight: bold;
+    background: var(--row-selected);
+    border-color: var(--border);
+    position: relative;
+
+    /* small accent bar at the bottom, like Explorer tabs */
+    &::after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 4px;
+        height: 2px;
+        background: var(--accent);
+        border-radius: 2px;
+    }
 }
 
-.router-outlet {
-    flex: 1;
-    /* if using a flex layout for full height */
-    overflow-y: auto;
+/* optional: main content wrapper if you add one (see note below) */
+.app-body {
+    min-height: calc(100vh - var(--tabbar-h));
+    /* if you want the main area to scroll instead of each page: */
+    /* overflow: auto; */
 }

@@ -1,116 +1,234 @@
+/* Make the host expand so the search can truly sit at the far right */
+:host {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    /* enables truncation inside */
+}
+
+/* ===== Container with two rows ===== */
 .virtual-toolbar {
     display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    background-color: #e9ecef;
-    border-bottom: 1px solid #ccc;
-    gap: 10px;
-    font-family: "Segoe UI", sans-serif;
+    flex-direction: column;
+    /* stack rows */
+    gap: 8px;
+    padding: 6px 10px;
+
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    font-family: "Segoe UI", system-ui, -apple-system, "Segoe UI Variable", sans-serif;
     font-size: 14px;
+    color: var(--text);
+}
+
+/* Buttons baseline */
+.virtual-toolbar button {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+
+    &:disabled {
+        opacity: .55;
+        cursor: default;
+    }
+
+    &:not(:disabled):hover {
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
+
+/* Rows scaffolding */
+.row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Row 1: left cluster grows, search pinned right */
+.row-primary {
+    justify-content: space-between;
+}
+
+.row-primary .left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    /* allow path to truncate */
 }
 
 .nav-buttons {
-    display: flex;
+    display: inline-flex;
     gap: 4px;
 }
 
 .nav-buttons button {
-    background-color: #f8f9fa;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 4px 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: default;
-    }
-
-    &:hover:not(:disabled) {
-        background-color: #e2e6ea;
-    }
+    width: 30px;
+    height: 28px;
+    padding: 0;
 }
 
+/* Breadcrumb / path */
 .breadcrumb-section {
-    flex: 1;
     display: flex;
     align-items: center;
-    overflow: hidden;
-    cursor: pointer;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.breadcrumb-view,
-.edit-view {
-    flex: 1;
+.breadcrumb-view {
     display: flex;
     align-items: center;
     gap: 4px;
+    flex: 1 1 auto;
     min-width: 0;
+
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px 6px;
+    overflow: hidden;
+    cursor: text;
 }
 
 .breadcrumb-part {
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 150px;
+    overflow: hidden;
+    max-width: 160px;
+    padding: 2px 6px;
+    border-radius: 6px;
+
+    &:hover {
+        background: var(--row-hover);
+    }
 }
 
 .separator {
     margin: 0 2px;
-    color: #666;
+    color: var(--text-muted);
 }
 
-.path-input {
-    width: 100%;
-    padding: 4px 6px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    outline: none;
-}
+.edit-view {
+    flex: 1 1 auto;
+    min-width: 0;
 
-.drive-dropdown {
-    select {
-        padding: 4px 6px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .path-input {
+        width: 100%;
+        padding: 6px 8px;
         font-size: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
         outline: none;
+        transition: border-color .15s ease, box-shadow .15s ease;
+
+        &::placeholder {
+            color: var(--text-muted);
+        }
+
+        &:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-ring);
+        }
     }
 }
 
+/* Drive dropdown */
+.drive-dropdown select {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+
+    &:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
+
+/* Search pinned to the far right of row 1 */
+.row-primary .right {
+    flex: 0 0 auto;
+    margin-left: 12px;
+}
+
 .search-container {
-    width: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 .search-container input {
     width: 100%;
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    max-width: 240px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
     outline: none;
-}
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 
-/* New style for the Update Stats button */
-.update-stats-button {
-    margin-left: 10px;
-}
-
-.update-stats-button button {
-    background-color: #f8f9fa;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 4px 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: default;
+    &::placeholder {
+        color: var(--text-muted);
     }
 
-    &:hover:not(:disabled) {
-        background-color: #e2e6ea;
+    &:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
+
+/* Row 2: actions */
+.row-secondary {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+}
+
+.update-models-button {
+    display: inline-flex;
+    align-items: center;
+
+    button {
+        background: var(--accent);
+        color: var(--accent-contrast);
+        border: 1px solid transparent;
+
+        &:hover {
+            background: var(--accent-weak);
+        }
+    }
+}
+
+/* Responsive niceties */
+@media (max-width: 920px) {
+    .search-container input {
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 720px) {
+    .search-container input {
+        max-width: 180px;
     }
 }

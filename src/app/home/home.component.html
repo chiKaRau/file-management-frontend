@@ -14,7 +14,6 @@
       (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)"
       (toggleZipSidebarEvent)="toggleZipSidebar()" (updateAllModels)="updateAllModels()"
       (manualUpdateLocalPath)="updateLocalPath()" (subdirSelect)="openSubDirectoryWithoutHistory($event)">
-      >
     </app-explorer-toolbar>
 
     <app-virtual-explorer-toolbar *ngIf="isReadOnly" [currentPath]="selectedDirectory"
@@ -146,10 +145,10 @@
           <span *ngIf="sortKey==='created'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
         </div>
 
-        <div class="submenu-item" style="border-top:1px solid rgba(255,255,255,.15); margin-top:4px; padding-top:4px"
-          (click)="toggleSortDirection()">
+        <div class="submenu-item submenu-divider" (click)="toggleSortDirection()">
           Reverse order
         </div>
+
       </div>
     </div>
     <div class="menu-item" *ngIf="!dataSource.readOnly && clipboard" (click)="pasteFiles()">Paste</div>
