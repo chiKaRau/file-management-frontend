@@ -136,9 +136,11 @@
 
 .left-dock,
 .right-dock {
-    position: sticky;
-    top: 90px;
-    height: calc(100vh - 90px);
+    position: relative;
+    /* not sticky */
+    top: 0;
+    height: auto;
+    /* grid will stretch them */
     background: var(--panel);
 }
 

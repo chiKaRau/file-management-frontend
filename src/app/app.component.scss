@@ -1,92 +1,80 @@
-/* app.component.scss */
-
-/* let the root component behave like a page container */
-:host {
-    display: block;
-}
-
-/* height for the fixed tab bar (keeps other components aligned) */
-:root {
-    --tabbar-h: 40px;
-}
-
-/* layout: push content below the fixed bar */
-.app-layout {
-    min-height: 100vh;
-    padding-top: var(--tabbar-h);
-    background: var(--bg);
-    color: var(--text);
-}
-
-/* fixed top nav */
-.tab-bar.fixed-top {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--tabbar-h);
-    z-index: 9999;
-
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 10px;
-
+/* THEME-ONLY OVERRIDES — no height, padding, margins changed */
+.fixed-top {
     background: var(--bg-elevated);
-    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-color: var(--border);
 }
 
-/* links */
+/* React-ish tab look — visuals only, no layout changes */
+
+/* subtle frosted toolbar (visual only) */
+.tab-bar.fixed-top {
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: saturate(150%) blur(6px);
+}
+
+/* more rounded “chip” tabs + smooth states */
 .tab-bar a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    height: 28px;
+    position: relative;
+    /* for underline */
+    border: 1px solid transparent;
+    /* active outline */
+    border-radius: 999px;
+    /* pill */
     padding: 0 12px;
-
-    text-decoration: none;
-    color: var(--text);
+    /* keep your horizontal-only padding */
     font-weight: 600;
     letter-spacing: .1px;
-
-    border: 1px solid transparent;
-    border-radius: 8px;
-
-    transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
-
-    &:hover {
-        background: var(--row-hover);
-    }
-
-    &:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 3px var(--accent-ring);
-    }
+    color: var(--text);
+    transition:
+        background .15s ease,
+        color .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease,
+        transform .12s ease;
 }
 
-/* active tab: subtle filled state + accent underline */
+/* hover/press states (visual only) */
+.tab-bar a:hover {
+    background: var(--row-hover);
+}
+
+.tab-bar a:active {
+    transform: translateY(0.5px);
+}
+
+/* animated accent underline (CSS-only) */
+.tab-bar a::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform .2s ease;
+    pointer-events: none;
+}
+
+/* focus ring (visual only) */
+.tab-bar a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-ring);
+    border-radius: 999px;
+}
+
+/* active tab: subtle fill + border; show underline */
 .tab-bar a.active {
     background: var(--row-selected);
     border-color: var(--border);
-    position: relative;
-
-    /* small accent bar at the bottom, like Explorer tabs */
-    &::after {
-        content: "";
-        position: absolute;
-        left: 10px;
-        right: 10px;
-        bottom: 4px;
-        height: 2px;
-        background: var(--accent);
-        border-radius: 2px;
-    }
 }
 
-/* optional: main content wrapper if you add one (see note below) */
-.app-body {
-    min-height: calc(100vh - var(--tabbar-h));
-    /* if you want the main area to scroll instead of each page: */
-    /* overflow: auto; */
+.tab-bar a.active::after {
+    transform: scaleX(1);
 }
+
+
+/* keep your existing .router-outlet rules as-is */
