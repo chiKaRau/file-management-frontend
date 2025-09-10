@@ -1,10 +1,8 @@
-import { Directive, ElementRef, Input, OnDestroy, OnInit, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnDestroy, OnInit, OnChanges, SimpleChanges, Renderer2 } from '@angular/core';
 
-@Directive({
-    selector: '[appLazyBg]'
-})
-export class LazyBgDirective implements OnInit, OnDestroy {
-    @Input('appLazyBg') bgUrl: string | '' = '';
+@Directive({ selector: '[appLazyBg]' })
+export class LazyBgDirective implements OnInit, OnDestroy, OnChanges {
+    @Input('appLazyBg') bgUrl: string = '';
 
     private io?: IntersectionObserver;
     private applied = false;
@@ -12,28 +10,35 @@ export class LazyBgDirective implements OnInit, OnDestroy {
     constructor(private el: ElementRef<HTMLElement>, private r: Renderer2) { }
 
     ngOnInit() {
-        if (!this.bgUrl) return;
-
+        // Always set up the observer (even if bgUrl is empty at first)
         this.io = new IntersectionObserver(entries => {
             for (const entry of entries) {
-                if (entry.isIntersecting && !this.applied) {
-                    this.r.setStyle(this.el.nativeElement, 'backgroundImage', `url("${this.bgUrl}")`);
-                    this.r.setStyle(this.el.nativeElement, 'backgroundSize', 'cover');
-                    this.r.setStyle(this.el.nativeElement, 'backgroundPosition', 'center');
-                    this.applied = true;
+                if (entry.isIntersecting && !this.applied && this.bgUrl) {
+                    this.applyBg();
                 }
-                // Optional: if you want to release memory when far away, you can unset when not intersecting.
-                // else if (!entry.isIntersecting && this.applied) {
-                //   this.r.removeStyle(this.el.nativeElement, 'backgroundImage');
-                //   this.applied = false;
-                // }
             }
         }, { root: null, rootMargin: '200px 0px', threshold: 0.01 });
 
         this.io.observe(this.el.nativeElement);
     }
 
-    ngOnDestroy() {
-        this.io?.disconnect();
+    ngOnChanges(changes: SimpleChanges) {
+        // If URL shows up later (after scanning) and card is already in/near view, apply now
+        if (changes['bgUrl'] && this.bgUrl && !this.applied) {
+            const rect = this.el.nativeElement.getBoundingClientRect();
+            const inView = rect.top < (window.innerHeight + 200) && rect.bottom > -200; // match rootMargin
+            if (inView) this.applyBg();
+        }
+        // If you ever change URLs after applied, re-apply
+        if (changes['bgUrl'] && this.bgUrl && this.applied) this.applyBg();
     }
+
+    private applyBg() {
+        this.r.setStyle(this.el.nativeElement, 'backgroundImage', `url("${this.bgUrl}")`);
+        this.r.setStyle(this.el.nativeElement, 'backgroundSize', 'cover');
+        this.r.setStyle(this.el.nativeElement, 'backgroundPosition', 'center');
+        this.applied = true;
+    }
+
+    ngOnDestroy() { this.io?.disconnect(); }
 }

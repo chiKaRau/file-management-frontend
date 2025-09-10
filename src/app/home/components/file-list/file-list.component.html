@@ -1,7 +1,8 @@
 <!--file-list.component.html-->
 <!-- Extra Large View Mode -->
 <div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
-    <ng-container *ngFor="let item of combinedItems; let i = index">
+    <ng-container *ngFor="let item of combinedItems; let i = index; trackBy: trackByPath">
+
 
         <!-- NEW wrapper so the card + caption stay together in one grid cell -->
         <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
