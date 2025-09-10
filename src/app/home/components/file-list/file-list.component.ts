@@ -1,15 +1,17 @@
-import { Component, Input, Output, EventEmitter, ViewChildren, QueryList, ElementRef, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChildren, QueryList, ElementRef, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { DirectoryItem } from './model/directory-item.model';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-file-list',
   templateUrl: './file-list.component.html',
-  styleUrls: ['./file-list.component.scss']
+  styleUrls: ['./file-list.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class FileListComponent {
 
   @ViewChildren('fileCard') fileCards!: QueryList<ElementRef>;
+
 
   ngAfterViewInit() {
     this.scrollToSelected();
@@ -78,15 +80,32 @@ export class FileListComponent {
   /**
  * Returns the parsed stats for the given item.
  */
+
   getParsedStats(item: DirectoryItem): any {
-    try {
-      // If the scanData and stats property exist, parse the JSON
-      return item.scanData && item.scanData.stats ? JSON.parse(item.scanData.stats) : {};
-    } catch (error) {
-      console.error('Error parsing stats for item', item, error);
-      return {};
-    }
+    const sd: any = (item as any).scanData;
+    if (!sd) return {};
+
+    if (sd.statsParsed && typeof sd.statsParsed === 'object') return sd.statsParsed;
+
+    // Try several common homes for stats
+    const raw =
+      sd.stats ??
+      sd.details?.stats ??
+      sd.model?.stats ??
+      sd.version?.stats ??
+      sd.modelVersion?.stats ??
+      null;
+
+    if (!raw) return {};
+    if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return {}; } }
+    return typeof raw === 'object' ? raw : {};
   }
+
+
+
+
+  /** trackBy: keep DOM stable during virtualization/recycling */
+  trackByPath = (_: number, item: DirectoryItem) => item.path;
 
   getBackgroundImage(originalPath: string): SafeStyle {
     // 1) Convert backslashes to forward slashes:
@@ -238,30 +257,60 @@ export class FileListComponent {
     const sd: any = (item as any).scanData;
     if (!sd) return null;
 
-    // typical shapes: imageUrls OR images.imageUrls
+    // Prefer precomputed
+    if (sd.firstImageUrl) return sd.firstImageUrl;
+
     let urls: any = sd.imageUrls ?? sd.images?.imageUrls;
     if (!urls) return null;
 
-    // if stringified JSON, parse
     if (typeof urls === 'string') {
       try { urls = JSON.parse(urls); } catch { return null; }
     }
-
     if (Array.isArray(urls) && urls.length) {
       const first = urls[0];
-      // support ["url", ...] or [{url: "..."}]
       return typeof first === 'string' ? first : first?.url ?? null;
     }
     return null;
   }
 
-  // For the small <img> icon in non-extraLarge modes
+  /** For extraLarge background directive */
+  getVirtualUrl(item: DirectoryItem): string | '' {
+    if (!item.isFile || !this.isReadOnly) return '';
+    const url = this.firstImageUrl(item);
+    return url || '';
+  }
+
+
+  // ADD: helper to normalize local paths to file:/// URLs
+  private toFileUrl(p: string): string {
+    if (!p) return '';
+    let normalized = p.replace(/\\/g, '/'); // backslashes → forward slashes
+    if (!/^file:\/\//i.test(normalized)) normalized = 'file:///' + normalized;
+    // encode unsafe characters after the scheme
+    const prefix = 'file:///';
+    const pathPart = normalized.slice(prefix.length);
+    return prefix + encodeURI(pathPart);
+  }
+
+  // NEW: one source of truth for card background (works for virtual + local)
+  getCardBgUrl(item: DirectoryItem): string {
+    if (!item.isFile) return '';
+    if (this.isReadOnly) {
+      return this.firstImageUrl(item) || '';
+    } else {
+      return this.isImage(item) ? this.toFileUrl(item.path) : '';
+    }
+  }
+
+  // UPDATE: use file:/// for local thumbnails
   getThumbnailSrc(item: DirectoryItem): string | null {
     if (!item.isFile) return null;
-    return this.isReadOnly
-      ? this.firstImageUrl(item)                    // Virtual → remote URL
-      : (this.isImage(item) ? item.path : null);   // FS → local file
+    if (this.isReadOnly) {
+      return this.firstImageUrl(item);
+    }
+    return this.isImage(item) ? this.toFileUrl(item.path) : null;
   }
+
 
   // For extraLarge card background in Virtual
   getVirtualBg(item: DirectoryItem): SafeStyle | '' {

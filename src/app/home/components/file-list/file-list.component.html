@@ -7,16 +7,9 @@
         <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
 
             <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-                [ngClass]="{
-               'deleted': item.isDeleted,
-               'selected': isSelected(item),
-               'directory': item.isDirectory,
-               'file': item.isFile
-             }" [style.background-image]="item.isFile
-             ? (isReadOnly
-                 ? getVirtualBg(item)                     
-                 : (isImage(item) ? getBackgroundImage(item.path) : ''))
-             : ''">
+                [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
+                [appLazyBg]="getCardBgUrl(item)">
+
 
                 <!-- Directory Icon -->
                 <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
@@ -94,7 +87,9 @@
 
         <div class="icon">
             <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                    style="object-fit: cover" />
+
             </ng-container>
 
             <ng-template #fallbackIcon>
@@ -128,7 +123,9 @@
 
         <div class="icon">
             <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                    style="object-fit: cover" />
+
             </ng-container>
 
             <ng-template #fallbackIcon>
@@ -162,7 +159,9 @@
 
         <div class="icon">
             <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                    style="object-fit: cover" />
+
             </ng-container>
 
             <ng-template #fallbackIcon>
@@ -196,7 +195,9 @@
 
         <div class="icon">
             <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                    style="object-fit: cover" />
+
             </ng-container>
 
             <ng-template #fallbackIcon>
@@ -230,7 +231,9 @@
 
         <div class="icon">
             <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [src]="thumb" alt="{{ item.name }}" width="40" height="40" style="object-fit: cover" />
+                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                    style="object-fit: cover" />
+
             </ng-container>
 
             <ng-template #fallbackIcon>

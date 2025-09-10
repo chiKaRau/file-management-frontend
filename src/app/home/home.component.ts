@@ -1,5 +1,7 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   HostListener,
@@ -32,7 +34,8 @@ import { ActivatedRoute } from '@angular/router';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class HomeComponent implements OnInit, AfterViewInit {
   // Search filter
@@ -78,6 +81,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // Add a property to store the scan result if needed:
   scannedModels: any[] = [];
 
+  renderItems: DirectoryItem[] = [];
+
+  /** debounce timer for search */
+  private searchDebounceTimer: any = null;
 
   // Keep a subscription reference so we can unsubscribe later.
   private homeRefreshSub!: Subscription;
@@ -105,8 +112,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
   selectedDrive: string = 'all';
   groupingMode = false; // if you want the toggle wire-up
 
-
-
   constructor(
     private electronService: ElectronService,
     private scrollState: ScrollStateService,
@@ -118,7 +123,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     public preferencesService: PreferencesService,
     private http: HttpClient,
     @Inject(DATA_SOURCE) public dataSource: ExplorerDataSource,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -170,6 +176,51 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.homeRefreshSub.unsubscribe();
     }
   }
+
+  /** Build renderItems from directoryContents given current filters/sort */
+  private recomputeRenderItems(): void {
+    const isVirtual = this.isReadOnly;
+    const drive = this.selectedDrive;
+    const term = (this.searchTerm || '').toLowerCase();
+
+    let contents = this.directoryContents ?? [];
+
+    // Drive filter (virtual only)
+    if (isVirtual && drive !== 'all') {
+      contents = contents.filter((it: any) =>
+        this.normalizeDrive(it?.drive) === this.normalizeDrive(drive)
+      );
+    }
+
+    // Fast search: precomputed _searchText if present; else fallback to building once
+    const filtered = term
+      ? contents.filter((item: any) => {
+        if (item._searchText) return item._searchText.includes(term);
+        // one-time build for items without it
+        const hay: string[] = [];
+        if (item.name) hay.push(item.name);
+        const sd = (item as any).scanData;
+        if (sd) {
+          if (sd.name) hay.push(sd.name);
+          if (sd.baseModel) hay.push(sd.baseModel);
+          if (Array.isArray(sd.tags)) hay.push(...sd.tags);
+          if (sd.mainModelName) hay.push(sd.mainModelName);
+          if (Array.isArray(sd.triggerWords)) hay.push(...sd.triggerWords);
+          if (sd.modelNumber && sd.versionNumber) hay.push(`${sd.modelNumber}_${sd.versionNumber}`);
+        }
+        item._searchText = hay.join(' ').toLowerCase(); // memoize
+        return item._searchText.includes(term);
+      })
+      : contents;
+
+    // Directories first, then files, each sorted
+    const dirs = filtered.filter(i => i.isDirectory).sort(this.compareItems);
+    const files = filtered.filter(i => i.isFile).sort(this.compareItems);
+
+    this.renderItems = [...dirs, ...files];
+    this.cdr.markForCheck(); // OnPush
+  }
+
 
   get selectedDirectory(): string | null {
     return this.isReadOnly
@@ -266,6 +317,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   applySearch(newTerm: string) {
     this.searchTerm = newTerm;
+    clearTimeout(this.searchDebounceTimer);
+    this.searchDebounceTimer = setTimeout(() => {
+      this.recomputeRenderItems();
+    }, 250);
   }
 
   async openDirectory() {
@@ -354,6 +409,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
         this.ngZone.run(() => {
           this.directoryContents = fileItems.filter(item => item !== null) as DirectoryItem[];
           this.isLoading = false;
+          this.recomputeRenderItems();
+
         });
       } else {
         // Civitai Mode: Group files based on naming patterns.
@@ -433,6 +490,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
           // Combine directories and grouped items.
           this.directoryContents = [...directories, ...groupedItems];
           this.isLoading = false;
+          this.recomputeRenderItems();
         });
       }
 
@@ -491,6 +549,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
             this.directoryContents = withDrives;
             this.isLoading = false;
+            this.recomputeRenderItems();
           });
 
 
@@ -576,8 +635,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response) => {
           console.log('Local path update successful:', response);
-          // Re-enable explorer UI when finished
           this.isPreloadComplete = false;
+          this.recomputeRenderItems();          // optional
+          this.cdr.detectChanges();             // optional
         },
         error: (err) => {
           console.error('Error updating local path:', err);
@@ -620,26 +680,36 @@ export class HomeComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response: any) => {
           console.log('Scan local files response:', response);
-          const scannedData = response.payload?.modelsList || [];
+          const scannedData = response.payload?.modelsList ?? []; // fallback safe
           this.mergeScannedModelsIntoDirectoryContents(scannedData);
-          // Re-enable explorer UI
+
+          // ✅ Rebuild the array the template actually uses
+          this.recomputeRenderItems();
           this.isPreloadComplete = false;
+          this.cdr.detectChanges(); // ensure the UI reflects new stats
         },
         error: (err) => {
           console.error('Error scanning local files:', err);
           this.isPreloadComplete = false;
         }
       });
+
   }
 
   mergeScannedModelsIntoDirectoryContents(scannedModels: any[]): void {
+    // Index by "modelId_versionId" as strings to avoid 123 vs "123" mismatches
+    const byKey = new Map<string, any>(
+      scannedModels.map(s => [`${String(s.modelNumber)}_${String(s.versionNumber)}`, s])
+    );
+
     this.directoryContents = this.directoryContents.map(item => {
       if (!item.isDirectory && item.name.includes('_')) {
         const [modelID, versionID] = item.name.split('_');
-        const scanned = scannedModels.find(s =>
-          s.modelNumber === modelID && s.versionNumber === versionID
-        );
-        return scanned ? { ...item, scanData: scanned } : item;
+        const scanned = byKey.get(`${String(modelID)}_${String(versionID)}`);
+        if (scanned) {
+          // Keep the original item, attach scanData (don’t mutate in place)
+          return { ...item, scanData: scanned };
+        }
       }
       return item;
     });
@@ -704,19 +774,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   setSort(key: 'name' | 'size' | 'modified' | 'created') {
     if (this.sortKey === key) {
-      // toggle direction when choosing the same key
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortKey = key;
-      // sensible defaults
       this.sortDir = key === 'name' ? 'asc' : 'desc';
     }
     this.sortSubmenuOpen = false;
     this.showEmptyAreaContextMenu = false;
+    this.recomputeRenderItems();
   }
 
   toggleSortDirection() {
     this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    this.recomputeRenderItems();
   }
 
   onMouseEnterSortSubmenu(_: MouseEvent) {
@@ -1307,8 +1377,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
         );
 
         // 3) Update in-memory item (if you want the UI to reflect immediately)
-        (item as any).scanData = (item as any).scanData || {};
+        (item as any).scanData = { ...(item as any).scanData };
+        (item as any).scanData.statsParsed = modelVersion?.stats ?? {};
+        // (optional) also keep string if your backend expects it somewhere else:
         (item as any).scanData.stats = JSON.stringify(modelVersion?.stats ?? {});
+        this.cdr.markForCheck(); // OnPush: reflect the new numbers immediately
+
       } catch (err) {
         console.error(`Error updating ${this.currentUpdateModel}:`, err);
       }
@@ -1381,8 +1455,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   onVirtualDriveChange(drive: string) {
     this.selectedDrive = drive || 'all';
-    // Easiest: filter in your getter below (no need to refetch)
+    this.recomputeRenderItems();
   }
+
 
   // Add this helper inside HomeComponent
   private extractIdsFromItem(item: DirectoryItem): { modelId: string; versionId: string } | null {

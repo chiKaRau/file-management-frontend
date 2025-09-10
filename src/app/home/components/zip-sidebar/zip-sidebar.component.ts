@@ -89,7 +89,7 @@ export class ZipSidebarComponent {
    * - Otherwise, remove the standard extension.
    */
   private normalizeSetId(fileName: string): string {
-    const lowerFile = fileName.toLowerCase();
+    const lowerFile = fileName;
 
     // Remove the full multi-part extension for civitai.info
     if (lowerFile.endsWith('.civitai.info')) {
