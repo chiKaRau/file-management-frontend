@@ -409,3 +409,12 @@
     border: 1px solid var(--border);
     border-radius: 6px;
 }
+
+/* file-info-sidebar.component.scss */
+.content,
+.db-panel-body,
+.sheet-body {
+    content-visibility: auto;
+    contain-intrinsic-size: 600px;
+    /* rough height hint; adjust as needed */
+}

@@ -7,10 +7,15 @@
     <div *ngIf="item" class="content">
         <!-- LIVE (Civitai) mini carousel -->
         <div class="carousel">
-            <button class="carousel-btn" (click)="prevImage()">&#10094;</button>
+            <button class="carousel-btn" (click)="prevImage()"
+                [disabled]="!(modelVersion?.images?.length > 1)">&#10094;</button>
             <!-- NOTE: keep openModal() in template; we'll repurpose it in TS to open full-screen overlay -->
-            <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" (click)="openModal()" />
-            <button class="carousel-btn" (click)="nextImage()">&#10095;</button>
+            <!-- Sidebar mini carousel -->
+            <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" loading="lazy" decoding="async"
+                fetchpriority="low" (click)="openModal()" />
+
+            <button class="carousel-btn" (click)="nextImage()"
+                [disabled]="!(modelVersion?.images?.length > 1)">&#10095;</button>
         </div>
 
         <p><strong>Name:</strong> {{ item.name }}</p>
@@ -191,8 +196,11 @@
             <!-- source-aware carousel -->
             <div class="overlay-carousel" *ngIf="showFullCarousel && fullImages.length">
                 <button class="carousel-btn" (click)="prevFullImage()">&#10094;</button>
+                <!-- Full-screen overlay -->
                 <img *ngIf="fullImages && fullImages.length > fullImageIndex" class="overlay-image"
-                    [src]="fullImages[fullImageIndex].url" alt="image" />
+                    [src]="fullImages[fullImageIndex].url" alt="image" loading="lazy" decoding="async"
+                    fetchpriority="low" />
+
                 <button class="carousel-btn" (click)="nextFullImage()">&#10095;</button>
             </div>
 

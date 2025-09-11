@@ -162,7 +162,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private readonly PAGE_SIZE = 200;    // tune 100–400
+  private readonly PAGE_SIZE = 100;    // tune 100–400
   visibleCount = this.PAGE_SIZE;
   private io?: IntersectionObserver;
 
