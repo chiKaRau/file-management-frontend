@@ -162,19 +162,48 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private readonly PAGE_SIZE = 200;    // tune 100–400
+  visibleCount = this.PAGE_SIZE;
+  private io?: IntersectionObserver;
+
+  get visibleItems(): DirectoryItem[] {
+    return this.renderItems.slice(0, this.visibleCount);
+  }
+
+  private resetWindow() {
+    this.visibleCount = this.PAGE_SIZE;
+    // If the sentinel is already on-screen (short lists), push one more page
+    if (this.renderItems.length <= this.visibleCount) return;
+  }
+
+  private expandWindow() {
+    if (this.visibleCount < this.renderItems.length) {
+      this.visibleCount = Math.min(this.visibleCount + this.PAGE_SIZE, this.renderItems.length);
+      this.cdr.detectChanges();
+    }
+  }
+
+  // After your view init, wire the sentinel
+  @ViewChild('infiniteSentinel') infiniteSentinel!: ElementRef<HTMLElement>;
+
   ngAfterViewInit() {
     // Restore the scroll position after the view has initialized
     window.scrollTo(0, this.scrollState.homeScrollPosition);
     console.log('Restored window.scrollY to', this.scrollState.homeScrollPosition);
+
+    this.io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (e.isIntersecting) this.expandWindow();
+      }
+    }, { root: null, rootMargin: '800px 0px', threshold: 0.01 }); // prefetch ahead
+
+    // Wait a tick so the sentinel exists
+    setTimeout(() => this.infiniteSentinel && this.io?.observe(this.infiniteSentinel.nativeElement), 0);
   }
 
   ngOnDestroy() {
-    // Save the current scroll offset in the service
-    // this.scrollState.homeScrollPosition = window.scrollY;
-    // console.log('Stored window.scrollY', this.scrollState.homeScrollPosition);
-    if (this.homeRefreshSub) {
-      this.homeRefreshSub.unsubscribe();
-    }
+    this.io?.disconnect();
+    if (this.homeRefreshSub) this.homeRefreshSub.unsubscribe();
   }
 
   /** Build renderItems from directoryContents given current filters/sort */
@@ -218,7 +247,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const files = filtered.filter(i => i.isFile).sort(this.compareItems);
 
     this.renderItems = [...dirs, ...files];
-    this.cdr.markForCheck(); // OnPush
+    this.resetWindow();
+    this.cdr.markForCheck();
   }
 
 
@@ -319,7 +349,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.searchTerm = newTerm;
     clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
-      this.recomputeRenderItems();
+      this.recomputeRenderItems();     // ← resets window to first page
     }, 250);
   }
 

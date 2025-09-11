@@ -11,7 +11,7 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 export class FileListComponent {
 
   @ViewChildren('fileCard') fileCards!: QueryList<ElementRef>;
-
+  @Input() combined = false; // NEW: parent says "items are already combined/ordered"
 
   ngAfterViewInit() {
     this.scrollToSelected();
@@ -230,16 +230,10 @@ export class FileListComponent {
     return /\.(png|jpe?g|gif|webp)$/i.test(item.name);
   }
 
-  get directoryItems(): DirectoryItem[] {
-    return this.items.filter(item => item.isDirectory);
-  }
-
-  get fileItems(): DirectoryItem[] {
-    return this.items.filter(item => item.isFile);
-  }
-
+  get directoryItems(): DirectoryItem[] { return this.items.filter(i => i.isDirectory); }
+  get fileItems(): DirectoryItem[] { return this.items.filter(i => i.isFile); }
   get combinedItems(): DirectoryItem[] {
-    return [...this.directoryItems, ...this.fileItems];
+    return this.combined ? this.items : [...this.directoryItems, ...this.fileItems];
   }
 
   formatBytes(bytes?: number): string {

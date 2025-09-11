@@ -31,24 +31,27 @@
                         <div class="creator">{{ item.scanData?.creatorName }}</div>
                         <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
 
-                        <div class="stats">
-                            <span>
-                                <span class="material-icons icon-download">file_download</span>
-                                {{ getParsedStats(item).downloadCount ?? 'N/A' }}
-                            </span>
-                            <span>
-                                <span class="material-icons icon-rating-count">rate_review</span>
-                                {{ getParsedStats(item).ratingCount ?? 'N/A' }}
-                            </span>
-                            <span>
-                                <span class="material-icons icon-rating">star_rate</span>
-                                {{ getParsedStats(item).rating ?? 'N/A' }}
-                            </span>
-                            <span>
-                                <span class="material-icons icon-thumb-up">thumb_up</span>
-                                {{ getParsedStats(item).thumbsUpCount ?? 'N/A' }}
-                            </span>
-                        </div>
+                        <ng-container *ngIf="getParsedStats(item) as stats">
+                            <div class="stats">
+                                <span>
+                                    <span class="material-icons icon-download">file_download</span>
+                                    {{ stats.downloadCount ?? 'N/A' }}
+                                </span>
+                                <span>
+                                    <span class="material-icons icon-rating-count">rate_review</span>
+                                    {{ stats.ratingCount ?? 'N/A' }}
+                                </span>
+                                <span>
+                                    <span class="material-icons icon-rating">star_rate</span>
+                                    {{ stats.rating ?? 'N/A' }}
+                                </span>
+                                <span>
+                                    <span class="material-icons icon-thumb-up">thumb_up</span>
+                                    {{ stats.thumbsUpCount ?? 'N/A' }}
+                                </span>
+                            </div>
+                        </ng-container>
+
 
                         <div class="size-line" *ngIf="item.size != null">
                             <span class="material-icons">sd_storage</span>
