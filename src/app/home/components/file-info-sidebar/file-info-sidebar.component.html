@@ -368,13 +368,27 @@
                 </div>
             </div>
 
+            <!-- Controls -->
+            <div class="overlay-grid" *ngIf="fullSource === 'live'">
+                <label>Raw JSON (Model)</label>
+                <div>
+                    <button (click)="showModelRaw = !showModelRaw">
+                        {{ showModelRaw ? 'Hide' : 'Show' }}
+                    </button>
+                    <button *ngIf="showModelRaw && modelRawJson" (click)="copyModelRaw()">Copy</button>
+                </div>
+            </div>
+
+            <!-- Display highlighted HTML -->
+            <pre *ngIf="fullSource === 'live' && showModelRaw" class="json-pre" [innerHTML]="modelRawHtml"></pre>
+
             <!-- LIVE details in full-screen overlay -->
             <div class="overlay-grid" *ngIf="fullSource === 'live'">
                 <!-- your existing summary fields stay here ... -->
 
                 <!-- Raw JSON controls -->
                 <div class="row">
-                    <label>Raw JSON</label>
+                    <label>Raw JSON (Version API)</label>
                     <div>
                         <button (click)="toggleLiveRawJson()">
                             {{ showLiveRaw ? 'Hide' : 'Show' }}

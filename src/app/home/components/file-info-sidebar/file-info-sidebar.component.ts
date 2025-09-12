@@ -42,6 +42,12 @@ export class FileInfoSidebarComponent implements OnChanges {
   showLiveRaw = false;
   liveRawJson = '';
 
+  modelJson: any = null;
+  showModelRaw = false;
+  modelRawJson = '';                 // <-- add this
+  modelRawHtml: SafeHtml = '';       // <-- and this
+  highlightVersionId: number | null = null;
+
   showSidebarCarousel = true;
   showFullCarousel = true;
 
@@ -103,6 +109,13 @@ export class FileInfoSidebarComponent implements OnChanges {
         // keep Raw JSON in sync if panel open
         this.refreshLiveRawJson();
 
+        // version we want to highlight in the model JSON
+        this.highlightVersionId = Number(this.modelVersion?.id ?? versionID);
+
+        // fetch the model and prepare highlighted HTML
+        const modelId = String(this.modelVersion?.modelId ?? this.resolveIdsFromItem(this.item!)?.modelID ?? '');
+        if (modelId) this.fetchModelById(modelId);
+
         // write stats back locally
         this.updateModel({ stats: this.modelVersion?.stats });
       },
@@ -121,6 +134,44 @@ export class FileInfoSidebarComponent implements OnChanges {
     }
   }
 
+  private renderJsonWithHighlight(value: any, highlightVersionId: number | null): string {
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const IND = '  '; // 2-space indent
+
+    const render = (val: any, path: Array<string | number>, depth: number): string => {
+      const pad = IND.repeat(depth);
+
+      if (Array.isArray(val)) {
+        const items = val.map((v, i) => render(v, path.concat(i), depth + 1));
+        return '[\n' + items.map(s => IND.repeat(depth + 1) + s).join(',\n') + '\n' + pad + ']';
+      }
+
+      if (val && typeof val === 'object') {
+        // We’re inside modelVersions[index] if the second-to-last path segment is 'modelVersions'
+        const isInModelVersions = path.length >= 2 && path[path.length - 2] === 'modelVersions';
+        const isTarget =
+          isInModelVersions && highlightVersionId != null &&
+          Number((val as any).id) === Number(highlightVersionId);
+
+        const keys = Object.keys(val);
+        const body = keys
+          .map((k) => `${IND.repeat(depth + 1)}"${esc(k)}": ${render(val[k], path.concat(k), depth + 1)}`)
+          .join(',\n');
+
+        const obj = `{\n${body}\n${pad}}`;
+        return isTarget ? `<span class="hl-block">${obj}</span>` : obj;
+      }
+
+      if (typeof val === 'string') return `"${esc(val)}"`;
+      return esc(String(val));
+    };
+
+    return render(value, [], 0);
+  }
+
+
   toggleLiveRawJson() {
     this.showLiveRaw = !this.showLiveRaw;
     this.refreshLiveRawJson();
@@ -134,6 +185,36 @@ export class FileInfoSidebarComponent implements OnChanges {
     } catch (e) {
       console.warn('Clipboard copy failed', e);
     }
+  }
+
+  private fetchModelById(modelId: string) {
+    if (!modelId) return;
+    this.http.get<any>(`https://civitai.com/api/v1/models/${modelId}`).subscribe({
+      next: (data) => {
+        this.modelJson = data;
+        // plain string (for Copy)
+        this.modelRawJson = JSON.stringify(this.modelJson, null, 2);
+        // highlighted HTML (for display)
+        this.modelRawHtml = this.sanitizer.bypassSecurityTrustHtml(
+          this.renderJsonWithHighlight(this.modelJson, this.highlightVersionId)
+        );
+      },
+      error: (err) => console.error('Error fetching model data:', err)
+    });
+  }
+
+
+
+  // Same-style toggle & copy as your version block
+  toggleModelRaw() {
+    this.showModelRaw = !this.showModelRaw;
+    this.modelRawJson = this.showModelRaw && this.modelJson
+      ? JSON.stringify(this.modelJson, null, 2)
+      : '';
+  }
+  async copyModelRaw() {
+    try { await navigator.clipboard.writeText(this.modelRawJson || ''); }
+    catch (e) { console.warn('Clipboard copy failed', e); }
   }
 
   toggleSidebarCarousel() { this.showSidebarCarousel = !this.showSidebarCarousel; }
