@@ -55,8 +55,11 @@
 
                         <div class="size-line" *ngIf="item.size != null">
                             <span class="material-icons">sd_storage</span>
-                            {{ formatBytes(item.size) }}
+                            <span class="size-text" [ngClass]="sizeClass(item.size)">
+                                {{ formatBytes(item.size) }}
+                            </span>
                         </div>
+
                     </div>
                 </ng-container>
 

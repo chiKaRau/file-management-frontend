@@ -314,4 +314,17 @@ export class FileListComponent {
       : '';
   }
 
+  sizeClass(bytes?: number): string {
+    if (bytes == null) return '';
+    const MB = 1024 * 1024;
+    const mb = bytes / MB;
+
+    if (mb >= 1024) return 'size-red';      // ≥ 1 GB
+    if (mb >= 400) return 'size-orange';   // 400 MB – < 1 GB
+    if (mb >= 250) return 'size-amber';    // 250 – < 400 MB
+    if (mb >= 125) return 'size-green';    // 125 – < 250 MB
+    return 'size-ok';                       // < 125 MB
+  }
+
+
 }

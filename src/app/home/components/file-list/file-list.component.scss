@@ -441,3 +441,35 @@
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+
+/* Bold all size text */
+.size-text {
+    font-weight: 700;
+}
+
+/* File size text colors by tier (no blue) */
+.size-text.size-ok {
+    color: inherit;
+}
+
+/* keep current color */
+.size-text.size-green {
+    color: #a5d6a7;
+}
+
+/* soft green (good contrast) */
+.size-text.size-amber {
+    color: #ffd54f;
+}
+
+/* light amber */
+.size-text.size-orange {
+    color: #ffb74d;
+}
+
+/* orange */
+.size-text.size-red {
+    color: #ff8a80;
+}
+
+/* red (≥1GB) */
