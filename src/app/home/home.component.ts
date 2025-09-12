@@ -56,6 +56,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   viewSubmenuShouldFlip = false;
   sortSubmenuShouldFlip = false;
 
+  @ViewChild('listColumn') listColumnRef!: ElementRef<HTMLElement>;
+  @ViewChild('statusBar') statusBarRef!: ElementRef<HTMLElement>;
 
   // The file the user right-clicked on (if any)
   selectedFile: DirectoryItem | null = null;
@@ -187,6 +189,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
   @ViewChild('infiniteSentinel') infiniteSentinel!: ElementRef<HTMLElement>;
 
   ngAfterViewInit() {
+
+    this.syncStatusBar();
+    // give it another tick after Angular settles
+    setTimeout(() => this.syncStatusBar(), 0);
+
     // Restore the scroll position after the view has initialized
     window.scrollTo(0, this.scrollState.homeScrollPosition);
     console.log('Restored window.scrollY to', this.scrollState.homeScrollPosition);
@@ -1517,7 +1524,38 @@ export class HomeComponent implements OnInit, AfterViewInit {
     return null;
   }
 
+  get totalFilesCount(): number {
+    const list = this.directoryContents ?? [];
+    return list.reduce((n, it) => n + (it.isFile ? 1 : 0), 0);
+  }
+  get totalDirsCount(): number {
+    const list = this.directoryContents ?? [];
+    return list.reduce((n, it) => n + (it.isDirectory ? 1 : 0), 0);
+  }
+  /** visible (after your drive/search/sort filters) */
+  get visibleFilesCount(): number {
+    const list = this.renderItems ?? [];
+    return list.reduce((n, it) => n + (it.isFile ? 1 : 0), 0);
+  }
 
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onWinChange() { this.syncStatusBar(); }
 
+  private syncStatusBar() {
+    const col = this.listColumnRef?.nativeElement;
+    const bar = this.statusBarRef?.nativeElement;
+    if (!col || !bar) return;
+
+    const r = col.getBoundingClientRect();
+
+    // Size/position the bar to the middle column
+    bar.style.left = `${Math.max(0, r.left)}px`;
+    bar.style.width = `${Math.max(0, r.width)}px`;
+
+    // Show only when the column is onscreen
+    const isVisible = r.bottom > 0 && r.top < window.innerHeight && r.width > 0;
+    bar.style.display = isVisible ? 'flex' : 'none';
+  }
 
 }

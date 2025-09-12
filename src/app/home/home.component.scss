@@ -196,6 +196,7 @@
 .file-list-container {
     height: 100%;
     z-index: 1;
+    min-height: 0;
     overflow-y: auto;
     scroll-behavior: smooth;
 }
@@ -251,7 +252,31 @@
     color: var(--danger);
 }
 
-/* home.component.scss */
+.list-scroll {
+    /* add space so the fixed bar doesn't cover the last items */
+    padding-bottom: var(--statusbar-h, 28px);
+}
+
 .infinite-sentinel {
     height: 1px;
+    margin-bottom: var(--statusbar-h, 28px);
+}
+
+/* the fixed bar itself (aligned via TS) */
+.list-status-bar.fixed {
+    position: fixed;
+    bottom: 0;
+    z-index: 5;
+    /* above thumbnails, below modals */
+    height: var(--statusbar-h, 28px);
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    /* lets lasso/ctx-menu pass through */
 }
