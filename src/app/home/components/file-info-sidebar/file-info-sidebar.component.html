@@ -64,12 +64,12 @@
     </div>
 
     <!-- ===== IN-SIDEBAR bottom sheet overlay (unchanged) ===== -->
-    <div class="db-panel-backdrop" *ngIf="dbOverlayOpen" (click)="closeDbOverlay()"></div>
+    <div class="db-panel-backdrop" *ngIf="dbOverlayOpen" (click)="$event.stopPropagation(); closeDbOverlay()"></div>
 
     <div class="db-panel" *ngIf="dbOverlayOpen" (click)="$event.stopPropagation()">
         <div class="db-panel-header">
             <h3>Local Record</h3>
-            <button class="db-close" (click)="closeDbOverlay()">✕</button>
+            <button class="db-close" (click)="$event.stopPropagation(); closeDbOverlay()">✕</button>
         </div>
 
         <div class="db-panel-body">
@@ -170,12 +170,12 @@
 </div>
 
 <!-- ===== FULL-SCREEN bottom-sheet overlay (new) ===== -->
-<div class="full-overlay-backdrop" *ngIf="fullOverlayOpen" (click)="closeFullOverlay()"></div>
+<div class="full-overlay-backdrop" *ngIf="fullOverlayOpen" (click)="$event.stopPropagation(); closeFullOverlay()"></div>
 
 <div class="full-bottom-sheet" *ngIf="fullOverlayOpen" (click)="$event.stopPropagation()">
     <div class="sheet-header">
         <h3>{{ fullSource === 'local' ? 'Local Record' : 'Live Details' }}</h3>
-        <button class="sheet-close" (click)="closeFullOverlay()">✕</button>
+        <button class="sheet-close" (click)="$event.stopPropagation(); closeFullOverlay()">✕</button>
     </div>
 
     <div class="sheet-body">
