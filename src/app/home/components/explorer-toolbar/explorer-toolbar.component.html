@@ -60,10 +60,7 @@
             <select [(ngModel)]="selectedSubdirIndex" (ngModelChange)="onSubdirChange($event)"
                 [disabled]="isPreloadComplete">
                 <option *ngFor="let dir of displayedSubDirectories; let i = index" [value]="i">
-                    {{ dir.name }}
-                    <span *ngIf="dir.lastAccessedAt">
-                        (Last access: {{ dir.lastAccessedAt | date:'yyyy-MM-dd HH:mm' }})
-                    </span>
+                    {{ optionLabel(dir) }}
                 </option>
             </select>
 

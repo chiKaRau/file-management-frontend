@@ -45,6 +45,11 @@ export class ExplorerToolbarComponent {
     if (changes['currentPath'] && !this.lockEnabled) {
       this.selectedSubdirIndex = 0;
     }
+    // Recompute latest key on relevant input changes
+    if (changes['visitedSubDirectories'] || changes['currentPath'] || changes['isReadOnly']) {
+      // force recompute on next getter access by clearing cache; getter will call recompute
+      // (No-op here; displayedSubDirectories calls recomputeLatestVisitedKey)
+    }
   }
 
   onBack() {
@@ -172,11 +177,46 @@ export class ExplorerToolbarComponent {
   // ExplorerToolbarComponent (getter)
   // prefer visitedSubDirectories when present; else fall back to current logic
   get displayedSubDirectories(): any[] {
-    if (this.lockEnabled) return this.lockedSubDirs as any[];
-    if (this.visitedSubDirectories && this.visitedSubDirectories.length > 0) {
-      return this.visitedSubDirectories;
+    // Base list = actual subdirectories from current view (or locked snapshot)
+    const base: any[] = this.lockEnabled ? (this.lockedSubDirs as any[]) : (this.subDirectories as any[]);
+
+    // Build a map of visited by normalized key
+    const vmap = new Map<string, { lastAccessedAt?: string }>();
+    for (const v of (this.visitedSubDirectories ?? [])) {
+      vmap.set(this.normalizeKey(v.path), { lastAccessedAt: v.lastAccessedAt });
     }
-    return this.subDirectories;
+
+    // Merge: keep only actual subdirs, enrich with lastAccessedAt if present
+    const merged = base.map(d => {
+      const key = this.normalizeKey(d.path);
+      const last = vmap.get(key)?.lastAccessedAt;
+      return {
+        // retain original DirectoryItem fields you rely on:
+        ...d,
+        name: d.name ?? this.leafName(d.path),
+        lastAccessedAt: last,
+        _key: key
+      };
+    });
+
+    // Refresh the “freshest” visited key among those we actually display
+    this.recomputeLatestVisitedKey(merged);
+
+    return merged;
+  }
+
+  private recomputeLatestVisitedKey(merged: any[]): void {
+    const allowed = new Set<string>(merged.map(m => m._key));
+    let bestKey = '';
+    let bestTime = -1;
+
+    for (const v of (this.visitedSubDirectories ?? [])) {
+      const k = this.normalizeKey(v.path);
+      if (!allowed.has(k)) continue;            // only arrow items that are actually in the dropdown
+      const t = this.toTime(v.lastAccessedAt);
+      if (t > bestTime) { bestTime = t; bestKey = k; }
+    }
+    this.latestVisitedKey = bestKey;
   }
 
 
@@ -202,19 +242,91 @@ export class ExplorerToolbarComponent {
 
   onLockChange(locked: boolean) {
     this.lockEnabled = locked;
-
     if (locked) {
-      // snapshot subdirs
       this.lockedSubDirs = [...this.subDirectories];
       this.selectedSubdirIndex = 0;
-      // extract the folder name from currentPath
       const parts = this.currentPath?.split(/[\\/]/).filter(Boolean) || [];
       this.lockedDirName = parts.length > 0 ? parts[parts.length - 1] : this.currentPath;
     } else {
-      // clear lock
       this.lockedSubDirs = [];
       this.selectedSubdirIndex = 0;
       this.lockedDirName = null;
     }
+    // Latest arrow may change when locking/unlocking
+    this.recomputeLatestVisitedKey(this.displayedSubDirectories as any[]);
   }
+
+  // Add below your existing inputs/getters in ExplorerToolbarComponent
+
+  /** Are we showing the visited list (so we have lastAccessedAt)? */
+  get usingVisitedList(): boolean {
+    return !this.lockEnabled && !!this.visitedSubDirectories?.length;
+  }
+
+  /** Cache the freshest visited key among *displayed* items */
+  private latestVisitedKey: string = '';
+
+  /** Normalize a path to a key that ignores the drive and slashes. */
+  private normalizeKey(p?: string): string {
+    if (!p) return '';
+    let s = p.replace(/^[A-Za-z]:/, ''); // drop "F:" / "G:"
+    s = s.replace(/\\/g, '/');           // to POSIX
+    s = s.replace(/\/+$/, '');           // trim trailing slash
+    return s;
+  }
+
+  /** Get leaf folder name from a path. */
+  private leafName(p?: string): string {
+    if (!p) return 'Unknown';
+    const parts = this.normalizeKey(p).split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : 'Unknown';
+  }
+
+  private toTime(iso?: string): number {
+    if (!iso) return -1;
+    // If no timezone suffix (no 'Z' or ±HH:MM), assume UTC
+    const hasTZ = /Z|[+-]\d{2}:\d{2}$/.test(iso);
+    const normalized = hasTZ ? iso : `${iso}Z`;
+    const t = Date.parse(normalized);
+    return Number.isFinite(t) ? t : -1;
+  }
+
+  private relativeTimeFromNow(iso?: string): string {
+    const t = this.toTime(iso);
+    if (t < 0) return 'Not access yet';
+    let diff = Math.floor((Date.now() - t) / 1000); // seconds
+    if (diff < 0) diff = 0;
+
+    if (diff === 0) return 'just now';            // ← nicer than "0 seconds ago"
+    if (diff < 60) return `${diff} second${diff === 1 ? '' : 's'} ago`;
+
+    const mins = Math.floor(diff / 60);
+    if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+    const weeks = Math.floor(days / 7);
+    if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+
+    const months = Math.floor(days / 30.44);
+    if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+
+    const years = Math.floor(days / 365.25);
+    return `${years} year${years === 1 ? '' : 's'} ago`;
+  }
+
+  /** Build the label for the dropdown option. */
+  optionLabel(entry: any): string {
+    const name = entry?.name ?? 'Unknown';
+    const when = entry?.lastAccessedAt ? this.relativeTimeFromNow(entry.lastAccessedAt) : 'Not access yet';
+    const arrow = (entry?._key && entry._key === this.latestVisitedKey) ? ' <-' : '';
+    return `${name} (Last access: ${when})${arrow}`;
+  }
+
+
+
 }
