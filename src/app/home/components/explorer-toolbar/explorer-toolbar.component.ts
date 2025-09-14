@@ -32,6 +32,8 @@ export class ExplorerToolbarComponent {
   lockedDirName: string | null = null;
   private lockedSubDirs: DirectoryItem[] = [];
 
+  // ExplorerToolbarComponent (inputs)
+  @Input() visitedSubDirectories: { name: string; path: string; lastAccessedAt?: string }[] = [];
 
 
   constructor(public explorerState: ExplorerStateService) { } // Injected as public to bind in the template
@@ -167,9 +169,16 @@ export class ExplorerToolbarComponent {
     return (list || []).filter(i => i.isDirectory);
   }
 
-  get displayedSubDirectories(): DirectoryItem[] {
-    return this.lockEnabled ? this.lockedSubDirs : this.subDirectories;
+  // ExplorerToolbarComponent (getter)
+  // prefer visitedSubDirectories when present; else fall back to current logic
+  get displayedSubDirectories(): any[] {
+    if (this.lockEnabled) return this.lockedSubDirs as any[];
+    if (this.visitedSubDirectories && this.visitedSubDirectories.length > 0) {
+      return this.visitedSubDirectories;
+    }
+    return this.subDirectories;
   }
+
 
   onSubdirChange(idx: number) {
     this.selectedSubdirIndex = idx;

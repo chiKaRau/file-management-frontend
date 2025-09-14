@@ -59,8 +59,14 @@
         <div class="subdir-nav" *ngIf="displayedSubDirectories.length > 0">
             <select [(ngModel)]="selectedSubdirIndex" (ngModelChange)="onSubdirChange($event)"
                 [disabled]="isPreloadComplete">
-                <option *ngFor="let dir of displayedSubDirectories; let i = index" [value]="i">{{ dir.name }}</option>
+                <option *ngFor="let dir of displayedSubDirectories; let i = index" [value]="i">
+                    {{ dir.name }}
+                    <span *ngIf="dir.lastAccessedAt">
+                        (Last access: {{ dir.lastAccessedAt | date:'yyyy-MM-dd HH:mm' }})
+                    </span>
+                </option>
             </select>
+
 
             <button (click)="prevSubdir()" [disabled]="isPreloadComplete || selectedSubdirIndex <= 0">←</button>
             <button (click)="nextSubdir()"

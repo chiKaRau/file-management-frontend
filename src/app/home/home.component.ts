@@ -85,6 +85,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   renderItems: DirectoryItem[] = [];
 
+  visitedSubdirs: { name: string; path: string; lastAccessedAt?: string }[] = [];
+
+
   /** debounce timer for search */
   private searchDebounceTimer: any = null;
 
@@ -535,6 +538,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         this.updateLocalPath();
         this.scanLocalFiles();
         this.updateVisitedPath();
+        this.fetchVisitedChildren();
       }
 
       console.log('Directory Contents:', this.directoryContents);
@@ -699,6 +703,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
     });
   }
 
+  private fetchVisitedChildren(): void {
+    if (!this.selectedDirectory) return;
+
+    // Only perform the update if the flag is enabled
+    if (!this.explorerState.updateLocalPathEnabled) {
+      return;
+    }
+
+    const parentPath = this.selectedDirectory.replace(/\\/g, '/'); // API uses forward slashes
+    this.http.post<any>('http://localhost:3000/api/get-visited-paths-children', { parentPath })
+      .subscribe({
+        next: (res) => {
+          const rows: any[] = res?.payload?.payload ?? [];
+          this.visitedSubdirs = rows.map(r => ({
+            name: this.extractLeafDirName(r.path), // ignores drive letter
+            path: r.path,
+            lastAccessedAt: r.lastAccessedAt
+          }));
+        },
+        error: (err) => console.error('get-visited-paths-children failed:', err)
+      });
+  }
 
   /**
  * Call the scan-local-files API.
@@ -1574,5 +1600,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const isVisible = r.bottom > 0 && r.top < window.innerHeight && r.width > 0;
     bar.style.display = isVisible ? 'flex' : 'none';
   }
+
+  // HomeComponent (private helpers)
+  private extractLeafDirName(p: string): string {
+    if (!p) return '';
+    // strip drive letter like "F:" or "G:" and normalize to '/'
+    const noDrive = p.replace(/^[A-Za-z]:/, '');
+    const normalized = noDrive.replace(/\\/g, '/').replace(/\/+$/, '');
+    const parts = normalized.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : normalized;
+  }
+
 
 }
