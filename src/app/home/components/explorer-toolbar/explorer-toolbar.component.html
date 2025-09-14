@@ -38,7 +38,7 @@
         <div class="update-checkbox">
             <label>
                 <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
-                Auto Update Local Path
+                Auto Update Info to DB
             </label>
             <button (click)="onManualUpdate()" [disabled]="isPreloadComplete || !explorerState.selectedDirectory">
                 Update Path

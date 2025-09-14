@@ -534,6 +534,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       if (this.directoryContents.length > 0) {
         this.updateLocalPath();
         this.scanLocalFiles();
+        this.updateVisitedPath();
       }
 
       console.log('Directory Contents:', this.directoryContents);
@@ -682,6 +683,22 @@ export class HomeComponent implements OnInit, AfterViewInit {
         }
       });
   }
+
+  private updateVisitedPath(): void {
+    if (!this.selectedDirectory) return;
+
+    // Only perform the update if the flag is enabled
+    if (!this.explorerState.updateLocalPathEnabled) {
+      return;
+    }
+
+    const body = { path: this.selectedDirectory };
+    this.http.post('http://localhost:3000/api/path-visited', body).subscribe({
+      next: () => console.log('Visited path recorded:', body.path),
+      error: (err) => console.error('Error recording visited path:', err)
+    });
+  }
+
 
   /**
  * Call the scan-local-files API.
