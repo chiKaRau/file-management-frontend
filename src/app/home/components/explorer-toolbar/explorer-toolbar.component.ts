@@ -34,6 +34,8 @@ export class ExplorerToolbarComponent {
 
   // ExplorerToolbarComponent (inputs)
   @Input() visitedSubDirectories: { name: string; path: string; lastAccessedAt?: string }[] = [];
+  // add near other outputs
+  @Output() lockContextChange = new EventEmitter<{ locked: boolean; basePath: string | null }>();
 
 
   constructor(public explorerState: ExplorerStateService) { } // Injected as public to bind in the template
@@ -228,33 +230,86 @@ export class ExplorerToolbarComponent {
     }
   }
 
-  prevSubdir() {
-    if (this.selectedSubdirIndex > 0) {
-      this.onSubdirChange(this.selectedSubdirIndex - 1);
+  // Add inside the ExplorerToolbarComponent class
+
+  /** pick next/prev target:
+   *  - cycle through unvisited (no lastAccessedAt)
+   *  - if none left, pick the OLDEST visited (smallest lastAccessedAt)
+   */
+  private pickPriorityIndex(direction: 'next' | 'prev'): number | null {
+    const list: any[] = this.displayedSubDirectories || [];
+    const n = list.length;
+    if (!n) return null;
+
+    const cur = Math.min(Math.max(this.selectedSubdirIndex ?? 0, 0), n - 1);
+
+    // Unvisited = no lastAccessedAt
+    const unvisited = list
+      .map((d, i) => (!d?.lastAccessedAt ? i : -1))
+      .filter(i => i >= 0)
+      .sort((a, b) => a - b);
+
+    if (unvisited.length > 0) {
+      // If current is unvisited, cycle among unvisited; otherwise go to first/last depending on direction
+      if (direction === 'next') {
+        // next unvisited after current, else wrap to first
+        const idx = unvisited.find(i => i > cur);
+        if (idx !== undefined) return idx;
+        // wrap
+        return unvisited[0];
+      } else {
+        // prev unvisited before current, else wrap to last
+        const prevs = unvisited.filter(i => i < cur);
+        if (prevs.length) return prevs[prevs.length - 1];
+        // wrap
+        return unvisited[unvisited.length - 1];
+      }
     }
+
+    // No unvisited left → choose OLDEST visited (smallest timestamp)
+    let oldestIdx = -1;
+    let oldestT = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < n; i++) {
+      const t = this.toTime(list[i]?.lastAccessedAt);
+      if (t >= 0 && t < oldestT) {
+        oldestT = t;
+        oldestIdx = i;
+      }
+    }
+    return oldestIdx >= 0 ? oldestIdx : cur;
+  }
+
+  prevSubdir() {
+    const idx = this.pickPriorityIndex('prev');
+    if (idx !== null) this.onSubdirChange(idx);
   }
 
   nextSubdir() {
-    if (this.selectedSubdirIndex < this.displayedSubDirectories.length - 1) {
-      this.onSubdirChange(this.selectedSubdirIndex + 1);
-    }
+    const idx = this.pickPriorityIndex('next');
+    if (idx !== null) this.onSubdirChange(idx);
   }
 
+
+  // change onLockChange:
   onLockChange(locked: boolean) {
     this.lockEnabled = locked;
+
     if (locked) {
       this.lockedSubDirs = [...this.subDirectories];
       this.selectedSubdirIndex = 0;
       const parts = this.currentPath?.split(/[\\/]/).filter(Boolean) || [];
       this.lockedDirName = parts.length > 0 ? parts[parts.length - 1] : this.currentPath;
+      this.lockContextChange.emit({ locked: true, basePath: this.currentPath || null });   // ← NEW
     } else {
       this.lockedSubDirs = [];
       this.selectedSubdirIndex = 0;
       this.lockedDirName = null;
+      this.lockContextChange.emit({ locked: false, basePath: null });                      // ← NEW
     }
-    // Latest arrow may change when locking/unlocking
+
     this.recomputeLatestVisitedKey(this.displayedSubDirectories as any[]);
   }
+
 
   // Add below your existing inputs/getters in ExplorerToolbarComponent
 

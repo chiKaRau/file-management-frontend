@@ -87,6 +87,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   visitedSubdirs: { name: string; path: string; lastAccessedAt?: string }[] = [];
 
+  // field near other state
+  visitedBasePath: string | null = null;
+
 
   /** debounce timer for search */
   private searchDebounceTimer: any = null;
@@ -260,6 +263,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.resetWindow();
     this.cdr.markForCheck();
   }
+
+  // handler wired from toolbar
+  onLockContextChange(e: { locked: boolean; basePath: string | null }) {
+    this.visitedBasePath = e.locked ? e.basePath : null;
+    this.fetchVisitedChildren();   // refresh with the anchored parent
+  }
+
 
 
   get selectedDirectory(): string | null {
@@ -703,21 +713,23 @@ export class HomeComponent implements OnInit, AfterViewInit {
     });
   }
 
+  // tweak your existing fetchVisitedChildren()
   private fetchVisitedChildren(): void {
-    if (!this.selectedDirectory) return;
+    const basePath = this.visitedBasePath ?? this.selectedDirectory;
+    if (!basePath) return;
 
-    // Only perform the update if the flag is enabled
     if (!this.explorerState.updateLocalPathEnabled) {
       return;
     }
 
-    const parentPath = this.selectedDirectory.replace(/\\/g, '/'); // API uses forward slashes
+
+    const parentPath = basePath.replace(/\\/g, '/');
     this.http.post<any>('http://localhost:3000/api/get-visited-paths-children', { parentPath })
       .subscribe({
         next: (res) => {
           const rows: any[] = res?.payload?.payload ?? [];
           this.visitedSubdirs = rows.map(r => ({
-            name: this.extractLeafDirName(r.path), // ignores drive letter
+            name: this.extractLeafDirName(r.path),
             path: r.path,
             lastAccessedAt: r.lastAccessedAt
           }));

@@ -13,8 +13,8 @@
       [isReadOnly]="isReadOnly" (back)="onBack()" (forward)="onForward()" [isPreloadComplete]="isPreloadComplete"
       (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)"
       (toggleZipSidebarEvent)="toggleZipSidebar()" (updateAllModels)="updateAllModels()"
-      [visitedSubDirectories]="visitedSubdirs" (manualUpdateLocalPath)="updateLocalPath()"
-      (subdirSelect)="openSubDirectoryWithoutHistory($event)">
+      (lockContextChange)="onLockContextChange($event)" [visitedSubDirectories]="visitedSubdirs"
+      (manualUpdateLocalPath)="updateLocalPath()" (subdirSelect)="openSubDirectoryWithoutHistory($event)">
     </app-explorer-toolbar>
 
     <app-virtual-explorer-toolbar *ngIf="isReadOnly" [currentPath]="selectedDirectory"
