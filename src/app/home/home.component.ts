@@ -221,50 +221,50 @@ export class HomeComponent implements OnInit, AfterViewInit {
     if (this.homeRefreshSub) this.homeRefreshSub.unsubscribe();
   }
 
-  /** Build renderItems from directoryContents given current filters/sort */
   private recomputeRenderItems(): void {
     const isVirtual = this.isReadOnly;
     const drive = this.selectedDrive;
     const term = (this.searchTerm || '').toLowerCase();
 
-    let contents = this.directoryContents ?? [];
+    // Use deep results as the source when active
+    let contents = this.deepSearchActive ? (this.deepSearchItems ?? []) : (this.directoryContents ?? []);
 
-    // Drive filter (virtual only)
-    if (isVirtual && drive !== 'all') {
-      contents = contents.filter((it: any) =>
-        this.normalizeDrive(it?.drive) === this.normalizeDrive(drive)
-      );
+    if (!this.deepSearchActive) {
+      // normal filters only in non-deep mode
+      if (isVirtual && drive !== 'all') {
+        contents = contents.filter((it: any) => this.normalizeDrive(it?.drive) === this.normalizeDrive(drive));
+      }
+
+      contents = term
+        ? contents.filter((item: any) => {
+          if (item._searchText) return item._searchText.includes(term);
+          const hay: string[] = [];
+          if (item.name) hay.push(item.name);
+          const sd = (item as any).scanData;
+          if (sd) {
+            if (sd.name) hay.push(sd.name);
+            if (sd.baseModel) hay.push(sd.baseModel);
+            if (Array.isArray(sd.tags)) hay.push(...sd.tags);
+            if (sd.mainModelName) hay.push(sd.mainModelName);
+            if (Array.isArray(sd.triggerWords)) hay.push(...sd.triggerWords);
+            if (sd.modelNumber && sd.versionNumber) hay.push(`${sd.modelNumber}_${sd.versionNumber}`);
+          }
+          item._searchText = hay.join(' ').toLowerCase();
+          return item._searchText.includes(term);
+        })
+        : contents;
     }
 
-    // Fast search: precomputed _searchText if present; else fallback to building once
-    const filtered = term
-      ? contents.filter((item: any) => {
-        if (item._searchText) return item._searchText.includes(term);
-        // one-time build for items without it
-        const hay: string[] = [];
-        if (item.name) hay.push(item.name);
-        const sd = (item as any).scanData;
-        if (sd) {
-          if (sd.name) hay.push(sd.name);
-          if (sd.baseModel) hay.push(sd.baseModel);
-          if (Array.isArray(sd.tags)) hay.push(...sd.tags);
-          if (sd.mainModelName) hay.push(sd.mainModelName);
-          if (Array.isArray(sd.triggerWords)) hay.push(...sd.triggerWords);
-          if (sd.modelNumber && sd.versionNumber) hay.push(`${sd.modelNumber}_${sd.versionNumber}`);
-        }
-        item._searchText = hay.join(' ').toLowerCase(); // memoize
-        return item._searchText.includes(term);
-      })
-      : contents;
-
-    // Directories first, then files, each sorted
-    const dirs = filtered.filter(i => i.isDirectory).sort(this.compareItems);
-    const files = filtered.filter(i => i.isFile).sort(this.compareItems);
+    const dirs = contents.filter(i => i.isDirectory).sort(this.compareItems);
+    const files = contents.filter(i => i.isFile).sort(this.compareItems);
 
     this.renderItems = [...dirs, ...files];
+
+    // ✅ reset virtualization window & notify
     this.resetWindow();
     this.cdr.markForCheck();
   }
+
 
   // handler wired from toolbar
   onLockContextChange(e: { locked: boolean; basePath: string | null }) {
@@ -1621,48 +1621,33 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   onDeepSearch(raw: string) {
-    // Split by space or comma, trim, drop empties
-    const tagList = (raw || '')
-      .split(/[,\s]+/)
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    if (tagList.length === 0) {
-      this.clearDeepSearch();
-      return;
-    }
+    const tagList = (raw || '').split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+    if (!tagList.length) { this.clearDeepSearch(); return; }
 
     this.isLoading = true;
-
     this.http.post<any>(
       'http://localhost:3000/api/find-list-of-models-dto-from-all-table-by-tagsList-tampermonkey',
       { tagsList: tagList }
     ).subscribe({
       next: (res) => {
-        const list: any[] = Array.isArray(res) ? res :
-          (res?.payload?.modelsList ??
-            res?.payload?.list ??
-            res?.models ??
-            res?.data ??
-            []);
-        this.deepSearchItems = (list || []).map(dto => this.mapDeepDtoToDirectoryItem(dto));
-        // optional: reuse your current sort
-        this.deepSearchItems.sort(this.compareItems);
+        const list: any[] = res?.payload?.modelsList ?? [];
+        this.deepSearchItems = list.map(dto => this.mapDeepDtoToDirectoryItem(dto));
         this.deepSearchActive = true;
+
+        // ✅ Feed the virtualization pipeline
+        this.recomputeRenderItems();     // this will set renderItems and reset window
         this.isLoading = false;
-        this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Deep search failed:', err);
-        this.isLoading = false;
-      }
+      error: (err) => { console.error('Deep search failed:', err); this.isLoading = false; }
     });
   }
 
   clearDeepSearch() {
     this.deepSearchActive = false;
     this.deepSearchItems = [];
+    this.recomputeRenderItems();         // ✅ go back to normal windowed list
   }
+
 
   /** Normalize API DTO into the shape the file list expects in Virtual mode */
   private mapDeepDtoToDirectoryItem(dto: any): DirectoryItem {

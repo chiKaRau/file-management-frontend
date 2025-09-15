@@ -87,9 +87,9 @@
           </div>
 
 
-          <app-file-list #fileList [items]="deepSearchActive ? deepSearchItems : visibleItems"
-            [viewMode]="explorerState.viewMode" [isReadOnly]="isReadOnly" [combined]="true"
-            (openFolder)="openSubDirectory($event)" (fileRightClick)="onFileRightClick($event.file, $event.event)"
+          <app-file-list #fileList [items]="visibleItems" [viewMode]="explorerState.viewMode" [isReadOnly]="isReadOnly"
+            [combined]="true" (openFolder)="openSubDirectory($event)"
+            (fileRightClick)="onFileRightClick($event.file, $event.event)"
             (selectionChanged)="onSelectionChanged($event)">
           </app-file-list>
 
