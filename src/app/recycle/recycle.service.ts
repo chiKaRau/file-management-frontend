@@ -1,152 +1,171 @@
 import { Injectable } from '@angular/core';
-import { RecycleRecord } from './model/recycle-record.model';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import * as fs from 'fs';
 import * as path from 'path';
+
+export interface RecycleRecord {
+    id?: string; // server generates; optional on add
+    type: 'set' | 'directory';
+    originalPath: string;
+    deletedFromPath?: string | null;
+    files: string[];
+    deletedDate?: Date | string; // we’ll normalize to ISO on send; Date on read
+}
 
 @Injectable({
     providedIn: 'root'
 })
 export class RecycleService {
+    private readonly baseUrl = 'http://localhost:3000/api';
+
     private records: RecycleRecord[] = [];
-    private storagePath: string = '';       // Full file path for JSON
-    private deleteFolderPath: string = '';    // Delete folder directory
 
-    constructor() {
-        // Initially, do nothing since paths are not set.
-    }
+    // these two are still used for local file moves on "delete permanently"
+    private storagePath: string = '';
+    private deleteFolderPath: string = '';
 
+    constructor(private http: HttpClient) { }
+
+    /** Optional: preserve your existing path setup for local file operations */
     setPaths(storageDir: string, deleteDir: string): void {
-        storageDir = storageDir.trim();
-        deleteDir = deleteDir.trim();
+        storageDir = (storageDir || '').trim();
+        deleteDir = (deleteDir || '').trim();
+        if (!storageDir || !deleteDir) return;
 
-        if (!storageDir || !deleteDir) {
-            console.warn('Either storageDir or deleteDir is empty. Skipping path setup.');
-            return;
-        }
-
-        // Build the full file path for the recycle bin JSON file.
-        // (Assuming storageDir is the base path that already includes @scan@)
         this.storagePath = path.join(storageDir, 'data', 'recycle-bin.json');
-        // For delete, since you want the directory under @scan@:
         this.deleteFolderPath = path.join(deleteDir, 'delete');
-
-        // Optionally, you can verify here again if needed, but if your verify function already did that,
-        // then this is just to update the service's internal state.
     }
 
-    public loadRecords(): void {
-        if (this.storagePath && fs.existsSync(this.storagePath)) {
-            try {
-                const data = fs.readFileSync(this.storagePath, 'utf-8');
-                this.records = JSON.parse(data);
-                console.log('Loaded recycle records:', this.records);
-            } catch (err) {
-                console.error('Error reading recycle bin file:', err);
-                this.records = [];
-            }
-        } else {
-            this.records = [];
-        }
+    /** Server-backed load. Populates in-memory cache. */
+    async loadRecords(): Promise<void> {
+        const res: any = await firstValueFrom(
+            this.http.get(`${this.baseUrl}/get-recyclelist`)
+        );
+
+        const rows: any[] = res?.payload?.payload ?? [];
+        this.records = rows.map(r => ({
+            id: r.id,
+            type: r.type as 'set' | 'directory',
+            originalPath: r.originalPath,
+            deletedFromPath: r.deletedFromPath ?? null,
+            files: Array.isArray(r.files) ? r.files : [],
+            deletedDate: r.deletedDate ? new Date(r.deletedDate) : undefined
+        }));
     }
 
-
-    private saveRecords(): void {
-        if (this.storagePath) {
-            try {
-                fs.writeFileSync(this.storagePath, JSON.stringify(this.records, null, 2));
-            } catch (err) {
-                console.error('Error writing recycle bin file:', err);
-            }
-        }
-    }
-
+    /** Read-only getters (same as before) */
     getRecords(): RecycleRecord[] {
         return this.records;
     }
-
     getRecordsByType(type: 'set' | 'directory'): RecycleRecord[] {
-        return this.records.filter(record => record.type === type);
+        return this.records.filter(r => r.type === type);
     }
-
     getDeleteFolderPath(): string {
         return this.deleteFolderPath;
     }
 
-    addRecord(record: RecycleRecord): void {
-        // Check if any file in the new record already exists in a stored record.
-        const duplicate = this.records.some(existingRecord =>
-            record.files.some(filePath => existingRecord.files.includes(filePath))
+    /** Add via API; updates local cache with server copy (including generated id). */
+    async addRecord(record: RecycleRecord): Promise<void> {
+        const body = {
+            type: record.type,
+            originalPath: record.originalPath,
+            deletedFromPath: record.deletedFromPath ?? null,
+            // send ISO; backend will default if missing
+            deletedDate: record.deletedDate
+                ? (record.deletedDate instanceof Date
+                    ? record.deletedDate.toISOString()
+                    : record.deletedDate)
+                : undefined,
+            files: record.files ?? []
+        };
+
+        const res: any = await firstValueFrom(
+            this.http.post(`${this.baseUrl}/add-recycle-record`, body)
         );
 
-        if (duplicate) {
-            console.warn(`A record for one of the files already exists. Skipping duplicate.`);
-            return;
+        const saved = res?.payload?.payload ?? null;
+        if (saved) {
+            // push/replace in cache
+            const idx = this.records.findIndex(r => r.id === saved.id);
+            const normalized: RecycleRecord = {
+                id: saved.id,
+                type: (saved.type || 'set') as 'set' | 'directory',
+                originalPath: saved.originalPath,
+                deletedFromPath: saved.deletedFromPath ?? null,
+                files: Array.isArray(saved.files) ? saved.files : [],
+                deletedDate: saved.deletedDate ? new Date(saved.deletedDate) : undefined
+            };
+            if (idx >= 0) this.records[idx] = normalized;
+            else this.records.push(normalized);
         }
-
-        this.records.push(record);
-        this.saveRecords();
     }
 
-
-    restoreRecord(recordId: string): void {
-        const index = this.records.findIndex(r => r.id === recordId);
-        if (index !== -1) {
-            this.records.splice(index, 1);
-            this.saveRecords();
+    /** Remove a single record (used by Restore + Delete Permanently). */
+    async removeRecordFromServer(id: string): Promise<boolean> {
+        try {
+            const res: any = await firstValueFrom(
+                this.http.post(`${this.baseUrl}/delete-recycle-record`, { id })
+            );
+            const ok = !!res?.payload?.payload?.deleted;
+            if (ok) this.records = this.records.filter(r => r.id !== id);
+            return ok;
+        } catch {
+            return false;
         }
     }
 
-    restoreFiles(filePaths: string[]): void {
-        // Convert the file paths to a Set for quick lookup.
-        const restoreSet = new Set(filePaths);
-
-        // Remove any record that contains any file in the restoreSet.
-        this.records = this.records.filter(record => {
-            // If any file in this record is in the restoreSet, remove the entire record.
-            return !record.files.some(file => restoreSet.has(file));
-        });
-
-        this.saveRecords();
+    /** Restore = just drop the record from DB (no local FS work). */
+    async restoreRecord(recordId: string): Promise<void> {
+        await this.removeRecordFromServer(recordId);
     }
 
+    /** Restore a list = drop any record that references one of these files. */
+    async restoreFiles(filePaths: string[]): Promise<void> {
+        const set = new Set(filePaths || []);
+        const toRemove = this.records
+            .filter(r => (r.files || []).some(f => set.has(f)))
+            .map(r => r.id!)
+            .filter(Boolean);
 
-    deletePermanently(recordId: string): void {
-        const record = this.records.find(r => r.id === recordId);
-        if (record) {
-            record.files.forEach(filePath => {
-                try {
-                    if (fs.existsSync(filePath)) {
-                        const fileName = path.basename(filePath);
-                        const targetPath = path.join(this.deleteFolderPath, fileName);
-                        fs.renameSync(filePath, targetPath);
-                        console.log(`Moved file ${filePath} to ${targetPath}`);
-                    } else {
-                        console.warn(`File not found: ${filePath}`);
-                    }
-                } catch (err) {
-                    console.error(`Error moving file ${filePath} using renameSync:`, err);
-                    // Fallback: try copying the file and then deleting the original.
+        for (const id of toRemove) {
+            await this.removeRecordFromServer(id);
+        }
+    }
+
+    /**
+     * Delete permanently:
+     * - Move files to your configured "delete" folder (local action)
+     * - Remove the recycle record from DB
+     */
+    async deletePermanently(recordId: string): Promise<void> {
+        const rec = this.records.find(r => r.id === recordId);
+        if (!rec) return;
+
+        // Local FS move (your previous logic)
+        for (const filePath of rec.files || []) {
+            try {
+                if (fs.existsSync(filePath)) {
+                    const fileName = path.basename(filePath);
+                    const targetPath = path.join(this.deleteFolderPath, fileName);
                     try {
-                        if (fs.existsSync(filePath)) {
-                            const fileName = path.basename(filePath);
-                            const targetPath = path.join(this.deleteFolderPath, fileName);
-                            fs.copyFileSync(filePath, targetPath);
-                            fs.unlinkSync(filePath);
-                            console.log(`Copied and removed file ${filePath} to ${targetPath} as a fallback.`);
-                        }
-                    } catch (fallbackErr) {
-                        console.error(`Fallback error processing file ${filePath}:`, fallbackErr);
+                        fs.renameSync(filePath, targetPath);
+                    } catch (err) {
+                        // Fallback: copy + unlink
+                        fs.copyFileSync(filePath, targetPath);
+                        fs.unlinkSync(filePath);
                     }
                 }
-            });
-            this.records = this.records.filter(r => r.id !== recordId);
-            this.saveRecords();
+            } catch {
+                // ignore individual failures; keep going
+            }
         }
+
+        await this.removeRecordFromServer(recordId);
     }
 
+    /** Maintain your previous flag for preferences UI */
     public get arePathsSet(): boolean {
-        // Check that storagePath and deleteFolderPath are set and not empty strings.
         return this.storagePath.trim() !== '' && this.deleteFolderPath.trim() !== '';
     }
-
 }

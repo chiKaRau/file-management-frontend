@@ -425,7 +425,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
 
       // Load recycle records.
-      this.recycleService.loadRecords();
+      await this.recycleService.loadRecords();
       const recycleRecords = this.recycleService.getRecords();
 
       // Helper function to check if a file is marked as deleted.
@@ -1261,37 +1261,34 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
 
 
-  deleteFiles() {
+  async deleteFiles() {
     this.showFileContextMenu = false;
 
-    // Determine the files to delete:
     const filesToDelete: DirectoryItem[] =
-      this.selectedFiles && this.selectedFiles.length > 0
+      (this.selectedFiles && this.selectedFiles.length > 0)
         ? this.selectedFiles
         : (this.contextFile ? [this.contextFile] : []);
 
     if (filesToDelete.length === 0) return;
 
-    // Check if recycle paths are set
     if (!this.recycleService.arePathsSet) {
       console.warn('Recycle paths are not set. Please set up the recycle path in Preferences.');
       return;
     }
 
-    filesToDelete.forEach(file => {
+    // create records one-by-one (await each)
+    for (const file of filesToDelete) {
       const recordType: 'set' | 'directory' = file.isFile ? 'set' : 'directory';
       const record: RecycleRecord = {
-        id: Date.now().toString() + '-' + Math.random().toString(36).substring(2, 8), // create a unique id per file
         type: recordType,
         originalPath: file.path,
-        // If this file belongs to a civitai group, you can either store just the file or the entire group,
-        // depending on your desired behavior.
-        files: file.civitaiGroup && file.civitaiGroup.length ? file.civitaiGroup : [file.path],
+        files: (file.civitaiGroup && file.civitaiGroup.length) ? file.civitaiGroup : [file.path],
+        deletedFromPath: this.selectedDirectory || null,
         deletedDate: new Date()
       };
 
-      this.recycleService.addRecord(record);
-    });
+      await this.recycleService.addRecord(record);
+    }
 
     // Clear selections.
     this.selectedFiles = [];
@@ -1300,38 +1297,36 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     // Refresh the current directory to update deletion status.
     if (this.selectedDirectory) {
-      this.onRefresh();
+      await this.onRefresh(); // optional await
     }
   }
 
-  restoreFiles() {
-    // Hide the context menu.
+  async restoreFiles() {
     this.showFileContextMenu = false;
 
-    // Determine which files to restore.
     const filesToRestore: DirectoryItem[] =
-      this.selectedFiles && this.selectedFiles.length > 0
+      (this.selectedFiles && this.selectedFiles.length > 0)
         ? this.selectedFiles
         : (this.contextFile ? [this.contextFile] : []);
 
     if (filesToRestore.length === 0) return;
 
-    // Gather the file paths.
     const filePaths = filesToRestore.map(file => file.path);
 
-    // Call the new restoreFiles method from the RecycleService.
-    this.recycleService.restoreFiles(filePaths);
+    // ⬅️ wait for the server to remove recycle rows
+    await this.recycleService.restoreFiles(filePaths);
 
-    // Clear selections.
+    // clear selections
     this.selectedFiles = [];
     this.selectedFile = null;
     this.contextFile = null;
 
-    // Refresh the current directory to update the deletion status.
+    // ⬅️ now refresh; Home.loadFromFilesystem() will re-pull recycle list
     if (this.selectedDirectory) {
-      this.onRefresh();
+      await this.onRefresh();
     }
   }
+
 
   renameFile() {
     this.showFileContextMenu = false;
