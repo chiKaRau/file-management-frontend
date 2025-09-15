@@ -413,8 +413,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
       // If the directory is empty, update the UI to show it is empty.
       if (files.length === 0) {
         this.ngZone.run(() => {
+          this.selectedDirectory = directoryPath;                 // point UI at the empty folder
           this.directoryContents = [];
+          this.selectedFile = null;                                // clear any previous selection/sidebars
+          this.selectedFiles = [];
+          this.contextFile = null;
+
           this.errorMessage = 'The selected directory is empty.';
+          this.infoMessage = null;
+
+          this.recomputeRenderItems();                             // <- ensure visibleItems becomes []
           this.isLoading = false;
         });
         return;
@@ -851,16 +859,24 @@ export class HomeComponent implements OnInit, AfterViewInit {
     if (!this.selectedDirectory) return;
 
     this.ngZone.run(() => { this.isLoading = true; });
+    const current = this.selectedDirectory;
     await this.loadDirectoryContents(this.selectedDirectory);
 
-    if (!this.isReadOnly) { // FS-only fallback to parent
-      if (!this.directoryContents || this.directoryContents.length === 0) {
-        const parentDir = path.dirname(this.selectedDirectory);
-        if (parentDir && parentDir !== this.selectedDirectory) {
-          this.selectedDirectory = parentDir;
-          this.navigationService.navigateTo(parentDir);
-          await this.loadDirectoryContents(parentDir);
+    // FS-only recovery: if the directory no longer exists, go up
+    if (!this.isReadOnly) {
+      try {
+        // if path vanished (deleted/renamed), navigate to parent
+        // (this does NOT trigger when the folder is merely empty)
+        if (!fs.existsSync(current)) {
+          const parentDir = path.dirname(current);
+          if (parentDir && parentDir !== current) {
+            this.selectedDirectory = parentDir;
+            this.navigationService.navigateTo(parentDir);
+            await this.loadDirectoryContents(parentDir);
+          }
         }
+      } catch (_) {
+        // If fs check fails for some reason, quietly ignore.
       }
     }
   }
