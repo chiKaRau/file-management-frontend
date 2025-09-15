@@ -280,3 +280,46 @@
     pointer-events: none;
     /* lets lasso/ctx-menu pass through */
 }
+
+/* Shared button look for banner actions */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+
+    svg {
+        fill: var(--icon);
+    }
+
+    &:hover {
+        background: var(--menu-hover);
+    }
+
+    &:disabled {
+        opacity: .6;
+        cursor: default;
+    }
+}
+
+.btn-icon {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+}
+
+.deep-search-banner__label {
+    color: var(--text);
+}
+
+.deep-search-banner__count {
+    color: var(--text);
+    font-weight: 600;
+}

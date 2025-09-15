@@ -90,6 +90,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // field near other state
   visitedBasePath: string | null = null;
 
+  deepSearchActive = false;
+  deepSearchItems: DirectoryItem[] = [];
 
   /** debounce timer for search */
   private searchDebounceTimer: any = null;
@@ -1617,6 +1619,91 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const parts = normalized.split('/').filter(Boolean);
     return parts.length ? parts[parts.length - 1] : normalized;
   }
+
+  onDeepSearch(raw: string) {
+    // Split by space or comma, trim, drop empties
+    const tagList = (raw || '')
+      .split(/[,\s]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (tagList.length === 0) {
+      this.clearDeepSearch();
+      return;
+    }
+
+    this.isLoading = true;
+
+    this.http.post<any>(
+      'http://localhost:3000/api/find-list-of-models-dto-from-all-table-by-tagsList-tampermonkey',
+      { tagsList: tagList }
+    ).subscribe({
+      next: (res) => {
+        const list: any[] = Array.isArray(res) ? res :
+          (res?.payload?.modelsList ??
+            res?.payload?.list ??
+            res?.models ??
+            res?.data ??
+            []);
+        this.deepSearchItems = (list || []).map(dto => this.mapDeepDtoToDirectoryItem(dto));
+        // optional: reuse your current sort
+        this.deepSearchItems.sort(this.compareItems);
+        this.deepSearchActive = true;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Deep search failed:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  clearDeepSearch() {
+    this.deepSearchActive = false;
+    this.deepSearchItems = [];
+  }
+
+  /** Normalize API DTO into the shape the file list expects in Virtual mode */
+  private mapDeepDtoToDirectoryItem(dto: any): DirectoryItem {
+    const modelId = String(dto?.modelNumber ?? dto?.modelId ?? dto?.modelID ?? '');
+    const versionId = String(dto?.versionNumber ?? dto?.versionId ?? dto?.versionID ?? '');
+    const baseModel = dto?.baseModel ?? dto?.modelBase ?? '';
+    const mainName = dto?.mainModelName ?? dto?.name ?? dto?.modelName ?? '';
+
+    const name = [modelId, versionId, baseModel, mainName].filter(Boolean).join('_');
+    const logicalPath = `\\DEEP\\${modelId || 'M'}_${versionId || 'V'}\\${(mainName || 'model')}`;
+
+    // Normalize image urls into scanData.imageUrls (array of strings)
+    let imageUrls: any = dto?.imageUrls ?? dto?.images?.imageUrls ?? dto?.images ?? null;
+    if (typeof imageUrls === 'string') {
+      try { imageUrls = JSON.parse(imageUrls); } catch { imageUrls = null; }
+    }
+    if (Array.isArray(imageUrls)) {
+      imageUrls = imageUrls.map((u: any) => (typeof u === 'string' ? u : u?.url)).filter(Boolean);
+    }
+
+    const item: DirectoryItem = {
+      name,
+      path: logicalPath,          // just needs to be unique/stable for trackBy and selection
+      isFile: true,
+      isDirectory: false,
+      isDeleted: false
+    } as any;
+
+    // The file list already knows how to read thumbnails/stats/etc from scanData
+    (item as any).scanData = {
+      ...dto,
+      modelNumber: modelId || dto?.modelNumber,
+      versionNumber: versionId || dto?.versionNumber,
+      baseModel,
+      mainModelName: mainName,
+      imageUrls
+    };
+
+    return item;
+  }
+
 
 
 }

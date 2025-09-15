@@ -21,8 +21,11 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
   @Output() driveChanged = new EventEmitter<string>();
   @Output() updateStats = new EventEmitter<void>();
   @Output() groupingToggled = new EventEmitter<void>();
+  @Output() deepClear = new EventEmitter<void>();
 
   @Input() selectedDrive: string = 'all';
+
+  @Output() deepSearch = new EventEmitter<string>();
 
 
   isEditingPath = false;
@@ -121,6 +124,15 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
 
   onGroupingToggle() {
     this.groupingToggled.emit();
+  }
+
+  onDeepSearch(value: string): void {
+    this.deepSearch.emit(value || '');
+  }
+
+  onDeepClearClick(input: HTMLInputElement): void {
+    input.value = '';
+    this.deepClear.emit();
   }
 
 }
