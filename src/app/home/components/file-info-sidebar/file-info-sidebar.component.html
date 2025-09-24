@@ -50,10 +50,17 @@
             </p>
         </div>
 
-        <a [href]="'https://civitai.com/models/' + (modelVersion?.modelId) + '?modelVersionId=' + modelVersion?.id"
-            target="_blank" rel="noopener noreferrer">
+        <a *ngIf="linkModelId && linkVersionId" class="link-btn"
+            [href]="'https://civitai.com/models/' + linkModelId + '?modelVersionId=' + linkVersionId" target="_blank"
+            rel="noopener noreferrer" aria-label="Open model on Civitai (opens in new tab)">
+            <!-- tiny external-link icon -->
+            <svg class="icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z" />
+            </svg>
             Go to Model
         </a>
+
+
 
         <hr />
 

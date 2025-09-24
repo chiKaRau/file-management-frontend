@@ -453,5 +453,22 @@ export class FileInfoSidebarComponent implements OnChanges {
     }
   }
 
+  // Prefer the IDs from the clicked item's scanData (what the card shows).
+  // If they're missing, gracefully fall back to the existing resolver.
+  get linkModelId(): string | null {
+    const sd: any = (this.item as any)?.scanData;
+    if (sd?.modelNumber != null) return String(sd.modelNumber);
+    const ids = this.resolveIdsFromItem(this.item);
+    return ids ? String(ids.modelID) : null;
+  }
+
+  get linkVersionId(): string | null {
+    const sd: any = (this.item as any)?.scanData;
+    if (sd?.versionNumber != null) return String(sd.versionNumber);
+    const ids = this.resolveIdsFromItem(this.item);
+    return ids ? String(ids.versionID) : null;
+  }
+
+
   close() { this.closed.emit(); }
 }

@@ -444,3 +444,33 @@
     /* helps the background show across wrapped lines */
     padding: 0 2px;
 }
+
+/* button-style external link */
+.link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    text-decoration: none;
+    /* remove underline */
+    cursor: pointer;
+    user-select: none;
+
+    .icon {
+        fill: var(--icon);
+    }
+
+    &:hover {
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
