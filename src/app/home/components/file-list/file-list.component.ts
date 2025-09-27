@@ -326,5 +326,24 @@ export class FileListComponent {
     return 'size-ok';                       // < 125 MB
   }
 
+  getMyRating(item: DirectoryItem): number | null {
+    const sd: any = (item as any).scanData || {};
+    const v = sd?.myRating ?? sd?.model?.myRating ?? null;
+    if (v === null || v === undefined) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** Size a star from rating 1..20 using a gentle curve so small values stay readable */
+  starSize(r: number | null): number {
+    if (!r || r <= 0) return 0;
+    const clamped = Math.min(20, Math.max(1, r));
+    const minPx = 22;      // slightly bigger minimum so 1–3 are visible
+    const maxPx = 72;      // nice big star for 20
+    // Normalize to 0..1 and apply sqrt for non-linear growth
+    const t = Math.sqrt((clamped - 1) / 19);
+    return Math.round(minPx + (maxPx - minPx) * t);
+  }
+
 
 }

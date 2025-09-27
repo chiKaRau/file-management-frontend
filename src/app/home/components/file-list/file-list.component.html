@@ -3,7 +3,6 @@
 <div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
     <ng-container *ngFor="let item of combinedItems; let i = index; trackBy: trackByPath">
 
-
         <!-- NEW wrapper so the card + caption stay together in one grid cell -->
         <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
 
@@ -65,6 +64,18 @@
 
                 <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
             </div>
+
+
+            <!-- ⭐ Corner star overlay (only if rating > 0) -->
+            <ng-container *ngIf="getMyRating(item) as r">
+                <div class="rating-star" *ngIf="r > 0" [style.--star-size.px]="starSize(r)" [attr.title]="r + ' / 20'">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                            d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                    <div class="star-number">{{ r }}</div>
+                </div>
+            </ng-container>
 
             <div class="deleted-info-below" *ngIf="showDeletedInfo && item.deletedDate">
                 <span class="material-icons">delete</span>
