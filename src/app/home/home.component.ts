@@ -778,6 +778,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const compositeList = Array.from(fileSetMap.values());
     const scanRequestBody = { compositeList };
 
+    //Retrieve folder record by passing each modelID and versionID in the directory
     this.http.post('http://localhost:3000/api/scan-local-files', scanRequestBody)
       .subscribe({
         next: (response: any) => {
