@@ -277,7 +277,8 @@
     align-items: center;
     content-visibility: auto;
     contain-intrinsic-size: 320px 240px;
-    isolation: isolate;   /* star & card live in same isolated stack */
+    isolation: isolate;
+    /* star & card live in same isolated stack */
     z-index: 0;
 }
 
@@ -295,8 +296,10 @@
     background-position: center;
     background-repeat: no-repeat;
     transition: box-shadow .2s ease, border-color .15s ease;
-    z-index: 0;          /* card sits below overlay siblings */
-    overflow: hidden;    /* keep your background crop */
+    z-index: 0;
+    /* card sits below overlay siblings */
+    overflow: hidden;
+    /* keep your background crop */
 
     &:hover {
         box-shadow: 0 8px 24px var(--shadow);
@@ -416,7 +419,8 @@
 .file-card.selected {
     border: 2px solid var(--accent);
     box-shadow: 0 0 0 3px var(--accent-ring);
-    z-index: 0;           /* selected ring stays with the card layer */
+    z-index: 0;
+    /* selected ring stays with the card layer */
 
 }
 
@@ -478,10 +482,34 @@
     color: #ff8a80;
 }
 
+
+.card-slot {
+    position: relative;
+    /* overlay positioning context */
+    isolation: isolate;
+}
+
+.card-tile {
+    content-visibility: auto;
+    /* you can keep CV here now */
+    contain-intrinsic-size: 320px 240px;
+}
+
+.card-slot .rating-star {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(35%, -35%);
+    z-index: 30;
+    pointer-events: none;
+}
+
+
 .card-tile,
 .file-item {
     position: relative;
-    isolation: isolate;  /* <— important */
+    isolation: isolate;
+    /* <— important */
     /* anchor for absolute star */
 }
 
@@ -503,7 +531,8 @@
     justify-content: center;
     pointer-events: none;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35));
-    z-index: 10;          /* above the card + its border/ring */
+    z-index: 10;
+    /* above the card + its border/ring */
     pointer-events: none;
     /* (optional) force its own compositing layer in some browsers */
     transform: translate(35%, -35%) translateZ(0);

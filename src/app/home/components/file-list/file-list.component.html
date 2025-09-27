@@ -3,66 +3,79 @@
 <div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
     <ng-container *ngFor="let item of combinedItems; let i = index; trackBy: trackByPath">
 
-        <!-- NEW wrapper so the card + caption stay together in one grid cell -->
-        <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
+        <div class="card-slot">
 
-            <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-                [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
-                [appLazyBg]="getCardBgUrl(item)">
+            <!-- NEW wrapper so the card + caption stay together in one grid cell -->
+            <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
+
+                <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
+                    (dblclick)="onItemDblClick(item)"
+                    [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
+                    [appLazyBg]="getCardBgUrl(item)">
 
 
-                <!-- Directory Icon -->
-                <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
+                    <!-- Directory Icon -->
+                    <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
                      c-1.1 0-2-.9-2-2V9z" />
-                </svg>
+                    </svg>
 
-                <!-- File content -->
-                <ng-container *ngIf="item.isFile">
-                    <div class="badge top-left">
-                        ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
-                    </div>
-                    <div class="badge top-right">
-                        {{ item.scanData?.baseModel }}
-                    </div>
-
-                    <div class="card-footer">
-                        <div class="creator">{{ item.scanData?.creatorName }}</div>
-                        <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
-
-                        <ng-container *ngIf="getParsedStats(item) as stats">
-                            <div class="stats">
-                                <span>
-                                    <span class="material-icons icon-download">file_download</span>
-                                    {{ stats.downloadCount ?? 'N/A' }}
-                                </span>
-                                <span>
-                                    <span class="material-icons icon-rating-count">rate_review</span>
-                                    {{ stats.ratingCount ?? 'N/A' }}
-                                </span>
-                                <span>
-                                    <span class="material-icons icon-rating">star_rate</span>
-                                    {{ stats.rating ?? 'N/A' }}
-                                </span>
-                                <span>
-                                    <span class="material-icons icon-thumb-up">thumb_up</span>
-                                    {{ stats.thumbsUpCount ?? 'N/A' }}
-                                </span>
-                            </div>
-                        </ng-container>
-
-
-                        <div class="size-line" *ngIf="item.size != null">
-                            <span class="material-icons">sd_storage</span>
-                            <span class="size-text" [ngClass]="sizeClass(item.size)">
-                                {{ formatBytes(item.size) }}
-                            </span>
+                    <!-- File content -->
+                    <ng-container *ngIf="item.isFile">
+                        <div class="badge top-left">
+                            ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
+                        </div>
+                        <div class="badge top-right">
+                            {{ item.scanData?.baseModel }}
                         </div>
 
-                    </div>
-                </ng-container>
+                        <div class="card-footer">
+                            <div class="creator">{{ item.scanData?.creatorName }}</div>
+                            <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
 
-                <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
+                            <ng-container *ngIf="getParsedStats(item) as stats">
+                                <div class="stats">
+                                    <span>
+                                        <span class="material-icons icon-download">file_download</span>
+                                        {{ stats.downloadCount ?? 'N/A' }}
+                                    </span>
+                                    <span>
+                                        <span class="material-icons icon-rating-count">rate_review</span>
+                                        {{ stats.ratingCount ?? 'N/A' }}
+                                    </span>
+                                    <span>
+                                        <span class="material-icons icon-rating">star_rate</span>
+                                        {{ stats.rating ?? 'N/A' }}
+                                    </span>
+                                    <span>
+                                        <span class="material-icons icon-thumb-up">thumb_up</span>
+                                        {{ stats.thumbsUpCount ?? 'N/A' }}
+                                    </span>
+                                </div>
+                            </ng-container>
+
+
+                            <div class="size-line" *ngIf="item.size != null">
+                                <span class="material-icons">sd_storage</span>
+                                <span class="size-text" [ngClass]="sizeClass(item.size)">
+                                    {{ formatBytes(item.size) }}
+                                </span>
+                            </div>
+
+                        </div>
+                    </ng-container>
+
+                    <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
+                </div>
+
+                <div class="deleted-info-below" *ngIf="showDeletedInfo && item.deletedDate">
+                    <span class="material-icons">delete</span>
+                    Deleted: {{ item.deletedDate | date:'medium' }}
+                </div>
+                <div class="deleted-path-below" *ngIf="showDeletedInfo && item.deletedFromPath">
+                    <span class="material-icons">folder_open</span>
+                    <span class="path-text" [title]="item.deletedFromPath">{{ item.deletedFromPath }}</span>
+                </div>
             </div>
 
 
@@ -76,16 +89,9 @@
                     <div class="star-number">{{ r }}</div>
                 </div>
             </ng-container>
-
-            <div class="deleted-info-below" *ngIf="showDeletedInfo && item.deletedDate">
-                <span class="material-icons">delete</span>
-                Deleted: {{ item.deletedDate | date:'medium' }}
-            </div>
-            <div class="deleted-path-below" *ngIf="showDeletedInfo && item.deletedFromPath">
-                <span class="material-icons">folder_open</span>
-                <span class="path-text" [title]="item.deletedFromPath">{{ item.deletedFromPath }}</span>
-            </div>
+            
         </div>
+
     </ng-container>
 </div>
 
