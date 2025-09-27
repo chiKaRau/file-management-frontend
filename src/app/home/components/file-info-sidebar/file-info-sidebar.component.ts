@@ -51,6 +51,11 @@ export class FileInfoSidebarComponent implements OnChanges {
   showSidebarCarousel = true;
   showFullCarousel = true;
 
+  editingMyRating = false;
+  myRatingInput: number | null = null;
+  savingMyRating = false;
+  myRatingError: string | null = null;
+
   constructor(private http: HttpClient, private explorerState: ExplorerStateService, private sanitizer: DomSanitizer) { }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -392,6 +397,13 @@ export class FileInfoSidebarComponent implements OnChanges {
   get dbUrlAccessible(): boolean | null { return this.normalizeBool(this.dbData?.model?.urlAccessable); }
   get dbCreatedAt(): string | Date | null { return this.dbData?.model?.createdAt ?? null; }
   get dbUpdatedAt(): string | Date | null { return this.dbData?.model?.updatedAt ?? null; }
+  get dbMyRating(): number | null {
+    const v = this.dbData?.model?.myRating;
+    if (v === undefined || v === null) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
 
   // arrays stored as JSON strings
   get dbTags(): string[] { return this.parseJsonField<string[]>(this.dbData?.model?.tags, []) }
@@ -467,6 +479,67 @@ export class FileInfoSidebarComponent implements OnChanges {
     if (sd?.versionNumber != null) return String(sd.versionNumber);
     const ids = this.resolveIdsFromItem(this.item);
     return ids ? String(ids.versionID) : null;
+  }
+
+  /** Start editing on double-click */
+  startEditMyRating() {
+    this.myRatingError = null;
+    this.editingMyRating = true;
+    this.myRatingInput = this.dbMyRating ?? 0;
+    // give the input a tick to render, then focus it (optional)
+    setTimeout(() => {
+      const el = document.getElementById('myRatingInput') as HTMLInputElement | null;
+      el?.focus();
+      el?.select();
+    }, 0);
+  }
+
+  /** Save to server and update local state */
+  saveMyRating() {
+    this.myRatingError = null;
+    const val = Number(this.myRatingInput);
+    if (!Number.isFinite(val) || val < 0 || val > 20) {
+      this.myRatingError = 'Rating must be an integer from 0 to 20.';
+      return;
+    }
+
+    // Resolve IDs to call your API
+    const ids = this.resolveIdsFromItem(this.item);
+    if (!ids) {
+      this.myRatingError = 'Cannot resolve model/version IDs.';
+      return;
+    }
+
+    this.savingMyRating = true;
+    const body = { modelID: ids.modelID, versionID: ids.versionID, rating: Math.trunc(val) };
+    this.http.post<any>('http://localhost:3000/api/update-myrating-by-modelId-and-versionId', body)
+      .subscribe({
+        next: (res) => {
+          // update local cache so UI reflects immediately
+          if (!this.dbData) this.dbData = {};
+          if (!this.dbData.model) this.dbData.model = {};
+          this.dbData.model.myRating = Math.trunc(val);
+
+          // if your item has scanData and you want to surface it there too:
+          if ((this.item as any)?.scanData) {
+            (this.item as any).scanData.myRating = Math.trunc(val);
+          }
+
+          this.editingMyRating = false;
+          this.savingMyRating = false;
+        },
+        error: (err) => {
+          console.error('update myRating failed:', err);
+          this.myRatingError = 'Failed to update rating.';
+          this.savingMyRating = false;
+        }
+      });
+  }
+
+  /** Cancel editing without saving */
+  cancelMyRatingEdit() {
+    this.editingMyRating = false;
+    this.myRatingError = null;
   }
 
 

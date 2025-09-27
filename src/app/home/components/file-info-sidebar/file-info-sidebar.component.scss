@@ -474,3 +474,28 @@
         box-shadow: 0 0 0 3px var(--accent-ring);
     }
 }
+
+.rating-bar {
+    position: relative;
+    height: 6px;
+    width: 120px;
+    border-radius: 4px;
+    background: rgba(127, 127, 127, .25);
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: .5rem;
+}
+
+.rating-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0%;
+    /* bound inline via [style.width.%] */
+    border-radius: 4px;
+    background: currentColor;
+    /* inherits light/dark */
+    opacity: .7;
+}

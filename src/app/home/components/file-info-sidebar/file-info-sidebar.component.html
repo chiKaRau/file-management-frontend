@@ -98,6 +98,40 @@
                     <div class="row"><label>Category</label>
                         <div>{{ dbData?.model?.category }}</div>
                     </div>
+
+                    <!-- My Rating (editable) -->
+                    <div class="row" (dblclick)="startEditMyRating()">
+                        <label>My Rating</label>
+                        <div>
+                            <!-- VIEW MODE -->
+                            <ng-container *ngIf="!editingMyRating; else editRatingTpl">
+                                <ng-container *ngIf="dbMyRating !== null; else noMyRatingFS">
+                                    <span class="rating-text" title="Double-click to edit">{{ dbMyRating }} / 20</span>
+                                    <div class="rating-bar" aria-hidden="true">
+                                        <div class="rating-fill" [style.width.%]="(dbMyRating / 20) * 100"></div>
+                                    </div>
+                                </ng-container>
+                                <ng-template #noMyRatingFS>
+                                    <span class="muted" title="Double-click to set a rating">—</span>
+                                </ng-template>
+                            </ng-container>
+
+                            <!-- EDIT MODE -->
+                            <ng-template #editRatingTpl>
+                                <div class="rating-edit">
+                                    <input id="myRatingInput" type="number" min="0" max="20" [disabled]="savingMyRating"
+                                        [(ngModel)]="myRatingInput" (keydown.enter)="saveMyRating()"
+                                        (keydown.escape)="cancelMyRatingEdit()" />
+                                    <button class="btn" [disabled]="savingMyRating"
+                                        (click)="saveMyRating()">Save</button>
+                                    <button class="btn secondary" [disabled]="savingMyRating"
+                                        (click)="cancelMyRatingEdit()">Cancel</button>
+                                </div>
+                                <div class="field-error" *ngIf="myRatingError">{{ myRatingError }}</div>
+                            </ng-template>
+                        </div>
+                    </div>
+
                     <div class="row"><label>Type</label>
                         <div>{{ dbData?.details?.type }}</div>
                     </div>
