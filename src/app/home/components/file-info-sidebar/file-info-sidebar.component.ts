@@ -56,16 +56,26 @@ export class FileInfoSidebarComponent implements OnChanges {
   savingMyRating = false;
   myRatingError: string | null = null;
 
+  ten = Array.from({ length: 10 });       // 10 stars
+  hoverRating: number | null = null;      // 0..20 while hovering
+
+
   constructor(private http: HttpClient, private explorerState: ExplorerStateService, private sanitizer: DomSanitizer) { }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['item'] && this.item && !this.item.isDirectory) {
+      // seed the rating right away from the card’s data
+      const seed = this.readSeedRatingFromItem(this.item);
+      if (seed != null) this.seedSavedRating(seed);
+
       this.error = null;
       this.isLoading = true;
 
       const ids = this.resolveIdsFromItem(this.item);
       if (ids) {
-        this.fetchModelVersion(ids.versionID);   // <— use versionID from resolver
+        this.fetchModelVersion(ids.versionID);
+        // (optional) if you want the rest of local fields too:
+        // this.fetchLocalRecord();
       } else {
         this.error = 'Unable to resolve model/version IDs from item.';
         this.isLoading = false;
@@ -494,53 +504,121 @@ export class FileInfoSidebarComponent implements OnChanges {
     }, 0);
   }
 
-  /** Save to server and update local state */
-  saveMyRating() {
-    this.myRatingError = null;
-    const val = Number(this.myRatingInput);
-    if (!Number.isFinite(val) || val < 0 || val > 20) {
-      this.myRatingError = 'Rating must be an integer from 0 to 20.';
-      return;
-    }
-
-    // Resolve IDs to call your API
-    const ids = this.resolveIdsFromItem(this.item);
-    if (!ids) {
-      this.myRatingError = 'Cannot resolve model/version IDs.';
-      return;
-    }
-
-    this.savingMyRating = true;
-    const body = { modelID: ids.modelID, versionID: ids.versionID, rating: Math.trunc(val) };
-    this.http.post<any>('http://localhost:3000/api/update-myrating-by-modelId-and-versionId', body)
-      .subscribe({
-        next: (res) => {
-          // update local cache so UI reflects immediately
-          if (!this.dbData) this.dbData = {};
-          if (!this.dbData.model) this.dbData.model = {};
-          this.dbData.model.myRating = Math.trunc(val);
-
-          // if your item has scanData and you want to surface it there too:
-          if ((this.item as any)?.scanData) {
-            (this.item as any).scanData.myRating = Math.trunc(val);
-          }
-
-          this.editingMyRating = false;
-          this.savingMyRating = false;
-        },
-        error: (err) => {
-          console.error('update myRating failed:', err);
-          this.myRatingError = 'Failed to update rating.';
-          this.savingMyRating = false;
-        }
-      });
-  }
-
   /** Cancel editing without saving */
   cancelMyRatingEdit() {
     this.editingMyRating = false;
     this.myRatingError = null;
   }
+
+  get savedRating(): number {
+    // prefer DB, else immediate seed from the item, else 0
+    return this.dbMyRating ?? (this.readSeedRatingFromItem(this.item) ?? 0);
+  }
+
+  get effectiveRating(): number {
+    return this.hoverRating ?? this.savedRating;
+  }
+
+
+  /** Return 0, 50, or 100 (percent) for star index i based on rating (0..20). */
+  starFillPct(i: number): number {
+    const r = this.effectiveRating;           // 0..20
+    const start = i * 2;                      // star’s 0,2,4,... bucket
+    const filled = Math.min(Math.max(r - start, 0), 2); // 0..2
+    return (filled / 2) * 100;                // 0, 50, 100
+  }
+
+  /** For a11y label like "Rate 9 of 20". */
+  starAriaLabel(i: number): string {
+    const half = this.starFillPct(i) === 50 ? 1 : (this.starFillPct(i) === 100 ? 2 : 0);
+    const upto = i * 2 + half;
+    return `Rate ${upto} of 20`;
+  }
+
+  /** Compute half (1) or full (2) increment from pointer x within the star. */
+  private halfOrFullFromEvent(evt: MouseEvent | TouchEvent, targetEl: HTMLElement): 1 | 2 {
+    const rect = targetEl.getBoundingClientRect();
+    const clientX = (evt as TouchEvent).changedTouches?.[0]?.clientX ?? (evt as MouseEvent).clientX;
+    const relX = clientX - rect.left;
+    return relX < rect.width / 2 ? 1 : 2;
+  }
+
+  /** Preview (hover) — desktop */
+  onStarHover(evt: MouseEvent, i: number) {
+    const step = this.halfOrFullFromEvent(evt, evt.currentTarget as HTMLElement);
+    this.hoverRating = i * 2 + step; // 0..20
+  }
+
+  /** Touch preview (optional, mainly to determine half/full) */
+  onStarTouch(evt: TouchEvent, i: number) {
+    const step = this.halfOrFullFromEvent(evt, evt.currentTarget as HTMLElement);
+    this.hoverRating = i * 2 + step;
+  }
+
+  /** Commit click -> save to DB (keeps your existing API endpoint). */
+  onStarClick(evt: MouseEvent | TouchEvent, i: number) {
+    const el = evt.currentTarget as HTMLElement;
+    const step = this.halfOrFullFromEvent(evt as any, el);
+    const newVal = i * 2 + step; // 0..20
+    this.commitMyRating(newVal);
+  }
+
+  private commitMyRating(val: number) {
+    this.myRatingError = null;
+
+    // clamp & int
+    const rating = Math.max(0, Math.min(20, Math.trunc(val)));
+
+    const ids = this.resolveIdsFromItem(this.item);
+    if (!ids) { this.myRatingError = 'Cannot resolve model/version IDs.'; return; }
+
+    this.savingMyRating = true;
+
+    this.http.post<any>('http://localhost:3000/api/update-myrating-by-modelId-and-versionId', {
+      modelID: ids.modelID, versionID: ids.versionID, rating
+    }).subscribe({
+      next: () => {
+        // reflect locally
+        if (!this.dbData) this.dbData = {};
+        if (!this.dbData.model) this.dbData.model = {};
+        this.dbData.model.myRating = rating;
+        if ((this.item as any)?.scanData) (this.item as any).scanData.myRating = rating;
+
+        this.hoverRating = null;
+        this.savingMyRating = false;
+      },
+      error: (err) => {
+        console.error('update myRating failed:', err);
+        this.myRatingError = 'Failed to update rating.';
+        this.savingMyRating = false;
+      }
+    });
+  }
+
+  // add a tiny helper
+  private clamp0_20(v: any): number | null {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(0, Math.min(20, Math.trunc(n)));
+  }
+
+  private readSeedRatingFromItem(it: any): number | null {
+    // try a few likely places, in priority order
+    return (
+      this.clamp0_20(it?.scanData?.myRating) ??
+      this.clamp0_20(it?.model?.myRating) ??
+      this.clamp0_20(it?.myRating) ??
+      null
+    );
+  }
+
+  // call this to set a temporary rating before db loads
+  private seedSavedRating(n: number) {
+    if (!this.dbData) this.dbData = {};
+    if (!this.dbData.model) (this.dbData as any).model = {};
+    (this.dbData as any).model.myRating = n;
+  }
+
 
 
   close() { this.closed.emit(); }

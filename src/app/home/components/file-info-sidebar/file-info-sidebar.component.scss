@@ -499,3 +499,74 @@
     /* inherits light/dark */
     opacity: .7;
 }
+
+
+/* --- Stars --- */
+.stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+}
+
+.stars.saving {
+    opacity: .6;
+    pointer-events: none;
+}
+
+.star-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    width: 22px;
+    /* star size */
+    height: 22px;
+    position: relative;
+    border-radius: 4px;
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}
+
+.star {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+}
+
+.star svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.star .base {
+    color: var(--border-soft);
+    fill: currentColor;
+    opacity: .55;
+}
+
+.star .fillwrap {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+    /* clip to percentage width */
+}
+
+.star .fill {
+    color: #f7c948;
+    fill: currentColor;
+}
+
+.rating-value {
+    margin-left: 6px;
+    color: var(--text-muted);
+    font-weight: 600;
+}

@@ -19,6 +19,38 @@
         </div>
 
         <p><strong>Name:</strong> {{ item.name }}</p>
+
+        <!-- My Rating (10 stars, half-steps) -->
+        <div class="row">
+            <label>My Rating</label>
+
+            <div class="stars" [class.saving]="savingMyRating" (mouseleave)="hoverRating = null">
+                <button class="star-btn" type="button" *ngFor="let _ of ten; let i = index"
+                    (mousemove)="onStarHover($event, i)" (touchstart)="onStarTouch($event, i)"
+                    (click)="onStarClick($event, i)" [disabled]="savingMyRating" [attr.aria-label]="starAriaLabel(i)">
+                    <span class="star">
+                        <!-- base (empty) star -->
+                        <svg class="base" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+
+                        <!-- filled part clipped by width% -->
+                        <span class="fillwrap" [style.width.%]="starFillPct(i)">
+                            <svg class="fill" viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                        </span>
+                    </span>
+                </button>
+
+                <span class="rating-value">{{ effectiveRating }} / 20</span>
+            </div>
+
+            <div class="field-error" *ngIf="myRatingError">{{ myRatingError }}</div>
+        </div>
+
         <p><strong>Path:</strong> {{ item.path }}</p>
         <p><strong>Type:</strong> {{ item.isDirectory ? 'Folder' : 'File' }}</p>
 
@@ -60,8 +92,6 @@
             Go to Model
         </a>
 
-
-
         <hr />
 
         <!-- Button to open the IN-SIDEBAR local overlay (unchanged) -->
@@ -97,39 +127,6 @@
                 <div class="overlay-grid">
                     <div class="row"><label>Category</label>
                         <div>{{ dbData?.model?.category }}</div>
-                    </div>
-
-                    <!-- My Rating (editable) -->
-                    <div class="row" (dblclick)="startEditMyRating()">
-                        <label>My Rating</label>
-                        <div>
-                            <!-- VIEW MODE -->
-                            <ng-container *ngIf="!editingMyRating; else editRatingTpl">
-                                <ng-container *ngIf="dbMyRating !== null; else noMyRatingFS">
-                                    <span class="rating-text" title="Double-click to edit">{{ dbMyRating }} / 20</span>
-                                    <div class="rating-bar" aria-hidden="true">
-                                        <div class="rating-fill" [style.width.%]="(dbMyRating / 20) * 100"></div>
-                                    </div>
-                                </ng-container>
-                                <ng-template #noMyRatingFS>
-                                    <span class="muted" title="Double-click to set a rating">—</span>
-                                </ng-template>
-                            </ng-container>
-
-                            <!-- EDIT MODE -->
-                            <ng-template #editRatingTpl>
-                                <div class="rating-edit">
-                                    <input id="myRatingInput" type="number" min="0" max="20" [disabled]="savingMyRating"
-                                        [(ngModel)]="myRatingInput" (keydown.enter)="saveMyRating()"
-                                        (keydown.escape)="cancelMyRatingEdit()" />
-                                    <button class="btn" [disabled]="savingMyRating"
-                                        (click)="saveMyRating()">Save</button>
-                                    <button class="btn secondary" [disabled]="savingMyRating"
-                                        (click)="cancelMyRatingEdit()">Cancel</button>
-                                </div>
-                                <div class="field-error" *ngIf="myRatingError">{{ myRatingError }}</div>
-                            </ng-template>
-                        </div>
                     </div>
 
                     <div class="row"><label>Type</label>
