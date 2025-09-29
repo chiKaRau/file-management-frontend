@@ -96,8 +96,9 @@
 
         <!-- Button to open the IN-SIDEBAR local overlay (unchanged) -->
         <div class="db-actions">
-            <button class="db-button" (click)="openDbOverlay()">View Local Record</button>
+            <button class="db-button btn--sm" (click)="openDbOverlay()">View Local Record</button>
         </div>
+
     </div>
 
     <!-- ===== IN-SIDEBAR bottom sheet overlay (unchanged) ===== -->
@@ -246,8 +247,22 @@
 <div class="full-bottom-sheet" *ngIf="fullOverlayOpen" (click)="$event.stopPropagation()">
     <div class="sheet-header">
         <h3>{{ fullSource === 'local' ? 'Local Record' : 'Live Details' }}</h3>
+
+        <div *ngIf="fullSource === 'local'" class="btn-group">
+            <button *ngIf="!editing" (click)="startEdit()" class="btn btn--outline btn--sm">Edit</button>
+            <button *ngIf="editing" (click)="saveEdit()" [disabled]="savingEdit"
+                class="btn btn--primary btn--sm">Save</button>
+            <button *ngIf="editing" (click)="cancelEdit()" [disabled]="savingEdit"
+                class="btn btn--ghost btn--sm">Cancel</button>
+            <button *ngIf="editing" (click)="syncFromAPI()" [disabled]="syncingFromAPI || !canSyncNow"
+                class="btn btn--outline btn--sm" [title]="!canSyncNow ? 'Open Local Record first' : ''">
+                {{ syncingFromAPI ? 'Syncing…' : 'Sync From Civitai API' }}
+            </button>
+        </div>
+
         <button class="sheet-close" (click)="$event.stopPropagation(); closeFullOverlay()">✕</button>
     </div>
+
 
     <div class="sheet-body">
         <div *ngIf="fullLoading" class="overlay-loading">Loading…</div>
@@ -258,11 +273,12 @@
             <div class="row" *ngIf="fullImages?.length">
                 <label>Images</label>
                 <div>
-                    <button (click)="toggleFullCarousel()">
+                    <button (click)="toggleFullCarousel()" class="btn btn--ghost btn--sm">
                         {{ showFullCarousel ? 'Hide' : 'Show' }}
                     </button>
                 </div>
             </div>
+
 
             <!-- source-aware carousel -->
             <div class="overlay-carousel" *ngIf="showFullCarousel && fullImages.length">
@@ -282,8 +298,13 @@
                 <div class="row"><label>ID</label>
                     <div>{{ dbId || '—' }}</div>
                 </div>
-                <div class="row"><label>Name</label>
-                    <div>{{ dbName }}</div>
+                <!-- Name -->
+                <div class="row">
+                    <label>Name</label>
+                    <div *ngIf="!editing">{{ dbName }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.name" />
+                    </div>
                 </div>
 
                 <!-- My Rating (10 stars, half-steps) -->
@@ -318,17 +339,34 @@
                     <div class="field-error" *ngIf="myRatingError">{{ myRatingError }}</div>
                 </div>
 
-                <div class="row"><label>Main Model Name</label>
-                    <div>{{ dbMainModelName }}</div>
-                </div>
-                <div class="row"><label>Local Path</label>
-                    <div class="mono">{{ dbLocalPath }}</div>
-                </div>
-                <div class="row"><label>Category</label>
-                    <div>{{ dbCategory }}</div>
+                <!-- Main Model Name -->
+                <div class="row">
+                    <label>Main Model Name</label>
+                    <div *ngIf="!editing">{{ dbMainModelName }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.mainModelName" />
+                    </div>
                 </div>
 
-                <!-- Version / model numbers -->
+                <!-- Category -->
+                <div class="row">
+                    <label>Category</label>
+                    <div *ngIf="!editing">{{ dbCategory }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.category" />
+                    </div>
+                </div>
+
+                <!-- Local Path -->
+                <div class="row">
+                    <label>Local Path</label>
+                    <div *ngIf="!editing" class="mono">{{ dbLocalPath }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.localPath" />
+                    </div>
+                </div>
+
+                <!-- Version / Model # (read-only) -->
                 <div class="row"><label>Version #</label>
                     <div>{{ dbVersionNumber }}</div>
                 </div>
@@ -339,44 +377,76 @@
                 <!-- Booleans -->
                 <div class="row">
                     <label>NSFW</label>
-                    <div>
+                    <div *ngIf="!editing">
                         <span class="bool-pill" [class.true]="dbNSFW === true" [class.false]="dbNSFW === false">
                             {{ dbNSFW === true ? 'Yes' : (dbNSFW === false ? 'No' : '—') }}
                         </span>
+                    </div>
+                    <div *ngIf="editing">
+                        <input type="checkbox" [(ngModel)]="editForm.nsfw" />
                     </div>
                 </div>
 
                 <div class="row">
                     <label>Flag</label>
-                    <div>
+                    <div *ngIf="!editing">
                         <span class="bool-pill" [class.true]="dbFlag === true" [class.false]="dbFlag === false">
                             {{ dbFlag === true ? 'Yes' : (dbFlag === false ? 'No' : '—') }}
                         </span>
+                    </div>
+                    <div *ngIf="editing">
+                        <input type="checkbox" [(ngModel)]="editForm.flag" />
                     </div>
                 </div>
 
                 <div class="row">
                     <label>URL Accessible</label>
-                    <div>
+                    <div *ngIf="!editing">
                         <span class="bool-pill" [class.true]="dbUrlAccessible === true"
                             [class.false]="dbUrlAccessible === false">
                             {{ dbUrlAccessible === true ? 'Yes' : (dbUrlAccessible === false ? 'No' : '—') }}
                         </span>
                     </div>
+                    <div *ngIf="editing">
+                        <input type="checkbox" [(ngModel)]="editForm.urlAccessable" />
+                    </div>
                 </div>
 
                 <!-- Details -->
-                <div class="row"><label>Type</label>
-                    <div>{{ dbType }}</div>
+                <!-- Type -->
+                <div class="row">
+                    <label>Type</label>
+                    <div *ngIf="!editing">{{ dbType }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.type" />
+                    </div>
                 </div>
-                <div class="row"><label>Base Model</label>
-                    <div>{{ dbBaseModelLocal }}</div>
+
+                <!-- Base Model -->
+                <div class="row">
+                    <label>Base Model</label>
+                    <div *ngIf="!editing">{{ dbBaseModelLocal }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.baseModel" />
+                    </div>
                 </div>
-                <div class="row"><label>Uploaded</label>
-                    <div>{{ dbUploaded }}</div>
+
+                <!-- Uploaded -->
+                <div class="row">
+                    <label>Uploaded</label>
+                    <div *ngIf="!editing">{{ dbUploaded }}</div>
+                    <div *ngIf="editing">
+                        <input type="date" [(ngModel)]="editForm.uploaded" />
+                    </div>
                 </div>
-                <div class="row"><label>Creator</label>
-                    <div>{{ dbCreator }}</div>
+
+                <!-- Creator -->
+                <div class="row">
+                    <label>Creator</label>
+                    <div *ngIf="!editing">{{ dbCreator }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.creatorName" />
+                    </div>
                 </div>
 
                 <!-- Dates -->
@@ -389,49 +459,63 @@
 
                 <!-- Tags / Aliases / Trigger Words -->
                 <div class="row">
-                    <label>Tags</label>
-                    <div>
+                    <label>Tags (JSON)</label>
+                    <div *ngIf="!editing">
                         <ng-container *ngIf="dbTags?.length; else noTagsFS">
                             <span class="chip" *ngFor="let t of dbTags">{{ t }}</span>
                         </ng-container>
                         <ng-template #noTagsFS>—</ng-template>
                     </div>
+                    <div *ngIf="editing">
+                        <textarea rows="3" [(ngModel)]="editForm.tags" class="json-input"></textarea>
+                    </div>
                 </div>
 
                 <div class="row">
-                    <label>Local Tags</label>
-                    <div>
+                    <label>Local Tags (JSON)</label>
+                    <div *ngIf="!editing">
                         <ng-container *ngIf="dbLocalTags?.length; else noLocalTagsFS">
                             <span class="chip" *ngFor="let t of dbLocalTags">{{ t }}</span>
                         </ng-container>
                         <ng-template #noLocalTagsFS>—</ng-template>
                     </div>
+                    <div *ngIf="editing">
+                        <textarea rows="3" [(ngModel)]="editForm.localTags" class="json-input"></textarea>
+                    </div>
                 </div>
 
+                <!-- Aliases JSON -->
                 <div class="row">
-                    <label>Aliases</label>
-                    <div>
+                    <label>Aliases (JSON)</label>
+                    <div *ngIf="!editing">
                         <ng-container *ngIf="dbAliases?.length; else noAliasesFS">
                             <span class="chip" *ngFor="let a of dbAliases">{{ a }}</span>
                         </ng-container>
                         <ng-template #noAliasesFS>—</ng-template>
                     </div>
+                    <div *ngIf="editing">
+                        <textarea rows="3" [(ngModel)]="editForm.aliases" class="json-input"></textarea>
+                    </div>
                 </div>
 
+                <!-- Trigger Words JSON -->
                 <div class="row">
-                    <label>Trigger Words</label>
-                    <div>
+                    <label>Trigger Words (JSON)</label>
+                    <div *ngIf="!editing">
                         <ng-container *ngIf="dbTriggerWords?.length; else noTrigFS">
                             <span class="chip" *ngFor="let w of dbTriggerWords">{{ w }}</span>
                         </ng-container>
                         <ng-template #noTrigFS>—</ng-template>
                     </div>
+                    <div *ngIf="editing">
+                        <textarea rows="2" [(ngModel)]="editForm.triggerWords" class="json-input"></textarea>
+                    </div>
                 </div>
 
-                <!-- Stats -->
+                <!-- Stats JSON -->
                 <div class="row">
-                    <label>Stats</label>
-                    <div class="mono">
+                    <label>Stats (JSON)</label>
+                    <div *ngIf="!editing" class="mono">
                         <ng-container *ngIf="dbStats; else noStatsFS">
                             Downloads: {{ dbStats.downloadCount ?? '—' }} |
                             Rating: {{ dbStats.rating ?? '—' }} ({{ dbStats.ratingCount ?? '—' }}) |
@@ -439,47 +523,80 @@
                         </ng-container>
                         <ng-template #noStatsFS>—</ng-template>
                     </div>
+                    <div *ngIf="editing">
+                        <textarea rows="3" [(ngModel)]="editForm.stats" class="json-input"></textarea>
+                    </div>
                 </div>
 
-                <!-- Hash (pretty list) -->
+                <!-- Hash JSON -->
                 <div class="row">
-                    <label>Hash</label>
-                    <div class="mono">
+                    <label>Hash (JSON)</label>
+                    <div *ngIf="!editing" class="mono">
                         <ng-container *ngIf="dbHash; else noHashFS">
                             <div *ngFor="let h of dbHash | keyvalue">{{ h.key }}: {{ h.value }}</div>
                         </ng-container>
                         <ng-template #noHashFS>—</ng-template>
+                    </div>
+                    <div *ngIf="editing">
+                        <textarea rows="3" [(ngModel)]="editForm.hash" class="json-input"></textarea>
                     </div>
                 </div>
 
                 <!-- Usage Tips -->
                 <div class="row">
                     <label>Usage Tips</label>
-                    <div>{{ dbUsageTips || '—' }}</div>
+                    <div *ngIf="!editing">{{ dbUsageTips || '-' }}</div>
+                    <div *ngIf="editing">
+                        <textarea rows="3" [(ngModel)]="editForm.usageTips"></textarea>
+                    </div>
                 </div>
 
-                <!-- URL (keep or remove as you like) -->
+                <!-- URL -->
                 <div class="row">
                     <label>URL</label>
-                    <div>{{ dbUrl || '—' }}</div>
+                    <div *ngIf="!editing">{{ dbUrl || '-' }}</div>
+                    <div *ngIf="editing">
+                        <input type="text" [(ngModel)]="editForm.url" placeholder="https://..." />
+                    </div>
                 </div>
 
-                <!-- Description (HTML) -->
+                <!-- Description HTML -->
                 <div class="row">
-                    <label>Description</label>
-                    <div *ngIf="dbDescriptionHtml; else noDescFS" [innerHTML]="dbDescriptionHtml"></div>
-                    <ng-template #noDescFS>—</ng-template>
+                    <label>Description (HTML)</label>
+                    <div *ngIf="!editing" [innerHTML]="dbDescriptionHtml"></div>
+                    <div *ngIf="editing">
+                        <textarea rows="6" [(ngModel)]="editForm.description"></textarea>
+                    </div>
                 </div>
+
+                <!-- Images JSON -->
+                <div class="row">
+                    <label>Images (JSON)</label>
+                    <div *ngIf="!editing" class="mono">
+                        <ng-container *ngIf="dbImages?.length; else noImgsFS">
+                            {{ dbImages.length }} image(s)
+                        </ng-container>
+                        <ng-template #noImgsFS>—</ng-template>
+                    </div>
+                    <div *ngIf="editing">
+                        <textarea rows="4" [(ngModel)]="editForm.imageUrls" class="json-input"
+                            placeholder='[{"url":"https://...","width":768,"height":1280,"nsfw":false}]'></textarea>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Controls -->
             <div class="overlay-grid" *ngIf="fullSource === 'live'">
                 <label>Raw JSON (Model)</label>
-                <div>
-                    <button (click)="showModelRaw = !showModelRaw">
+                <div class="btn-group">
+                    <button (click)="toggleModelRaw()" class="btn btn--ghost btn--sm">
                         {{ showModelRaw ? 'Hide' : 'Show' }}
                     </button>
-                    <button *ngIf="showModelRaw && modelRawJson" (click)="copyModelRaw()">Copy</button>
+                    <button *ngIf="showModelRaw && modelRawJson" (click)="copyModelRaw()"
+                        class="btn btn--outline btn--sm">
+                        Copy
+                    </button>
                 </div>
             </div>
 
@@ -493,11 +610,12 @@
                 <!-- Raw JSON controls -->
                 <div class="row">
                     <label>Raw JSON (Version API)</label>
-                    <div>
-                        <button (click)="toggleLiveRawJson()">
+                    <div class="btn-group">
+                        <button (click)="toggleLiveRawJson()" class="btn btn--ghost btn--sm">
                             {{ showLiveRaw ? 'Hide' : 'Show' }}
                         </button>
-                        <button *ngIf="showLiveRaw && liveRawJson" (click)="copyLiveRawJson()">
+                        <button *ngIf="showLiveRaw && liveRawJson" (click)="copyLiveRawJson()"
+                            class="btn btn--outline btn--sm">
                             Copy
                         </button>
                     </div>

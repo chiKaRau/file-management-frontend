@@ -570,3 +570,217 @@
     color: var(--text-muted);
     font-weight: 600;
 }
+
+/* --- Edit mode inputs --- */
+.overlay-grid input[type="text"],
+.overlay-grid input[type="date"],
+.overlay-grid input[type="number"],
+.overlay-grid textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    color: var(--text);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.overlay-grid textarea {
+    min-height: 96px;
+    /* default for non-JSON fields */
+    resize: vertical;
+}
+
+.overlay-grid input[type="checkbox"] {
+    transform: translateY(2px);
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}
+
+/* Focus/hover */
+.overlay-grid input:focus,
+.overlay-grid textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.overlay-grid input:hover,
+.overlay-grid textarea:hover {
+    border-color: var(--border-soft);
+}
+
+/* Disabled (while saving, etc.) */
+.overlay-grid input:disabled,
+.overlay-grid textarea:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+/* JSON-specific textarea: bigger, monospace, comfortable line-height */
+.overlay-grid .json-input {
+    min-height: 220px;
+    /* larger canvas for JSON */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12.5px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Subtle invalid hint (add `invalid` class from TS if you validate JSON on blur) */
+.overlay-grid .json-input.invalid {
+    border-color: rgba(248, 81, 73, .6);
+    box-shadow: 0 0 0 3px rgba(248, 81, 73, .25);
+}
+
+/* Small hint text under inputs (optional helper class) */
+.input-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Header button row layout */
+.btn-row {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-row>button {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.btn-row>button:hover {
+    background: var(--menu-hover);
+}
+
+.btn-row>button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* ===== Generic buttons ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+    /* safe for <a> */
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+
+    &:hover {
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    &:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+
+    .icon {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+}
+
+/* Variants */
+.btn--primary {
+    background: var(--accent);
+    color: #0b0f14;
+    border-color: transparent;
+
+    &:hover {
+        background: color-mix(in srgb, var(--accent) 92%, #fff 8%);
+    }
+}
+
+.btn--ghost {
+    background: transparent;
+    border-color: var(--border);
+
+    &:hover {
+        background: var(--row-hover);
+    }
+}
+
+.btn--outline {
+    background: var(--bg);
+    border-color: var(--border);
+
+    &:hover {
+        background: var(--bg-elevated);
+    }
+}
+
+.btn--danger {
+    background: rgba(248, 81, 73, .15);
+    border-color: rgba(248, 81, 73, .35);
+    color: var(--danger);
+
+    &:hover {
+        background: rgba(248, 81, 73, .25);
+    }
+}
+
+/* Sizes */
+.btn--sm {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.btn--lg {
+    height: 36px;
+    padding: 0 14px;
+}
+
+/* Icon-only */
+.btn--icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+}
+
+/* Button groups */
+.btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Style your existing db-button with .btn look */
+.db-button {
+    @extend .btn;
+    @extend .btn--outline;
+}
+
+/* Make link-btn match .btn visuals */
+.link-btn {
+    @extend .btn;
+    @extend .btn--outline;
+}

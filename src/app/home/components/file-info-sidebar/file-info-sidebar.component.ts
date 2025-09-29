@@ -3,6 +3,7 @@ import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { HttpClient } from '@angular/common/http';
 import { ExplorerStateService } from '../../services/explorer-state.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { firstValueFrom } from 'rxjs';
 
 type Source = 'live' | 'local';
 
@@ -58,6 +59,56 @@ export class FileInfoSidebarComponent implements OnChanges {
 
   ten = Array.from({ length: 10 });       // 10 stars
   hoverRating: number | null = null;      // 0..20 while hovering
+
+  // --- editing state ---
+  editing = false;
+  savingEdit = false;
+
+  // a simple form model; strings for JSON fields
+  editForm: any = {
+    name: '',
+    mainModelName: '',
+    category: '',
+    localPath: '',
+    nsfw: false,
+    flag: false,
+    urlAccessable: false,
+
+    // JSON-ish strings
+    tags: '',
+    localTags: '',
+    aliases: '',
+    triggerWords: '',
+
+    // details
+    type: '',
+    baseModel: '',
+    uploaded: '',        // yyyy-mm-dd
+    creatorName: '',
+    stats: '',
+    hash: '',
+    usageTips: '',
+
+    // url
+    url: '',
+
+    // description
+    description: '',
+
+    // images JSON
+    imageUrls: ''
+  };
+
+  // sync state
+  syncingFromAPI = false;
+
+  // only allow sync if we're in local view, have IDs, and are editing
+  get canSyncNow(): boolean {
+    if (this.fullSource !== 'local') return false;
+    if (!this.editing) return false;
+    const ids = this.resolveIdsFromItem(this.item);
+    return !!ids?.modelID;
+  }
 
 
   constructor(private http: HttpClient, private explorerState: ExplorerStateService, private sanitizer: DomSanitizer) { }
@@ -619,7 +670,256 @@ export class FileInfoSidebarComponent implements OnChanges {
     (this.dbData as any).model.myRating = n;
   }
 
+  startEdit() {
+    if (!this.dbData) return;
 
+    // model
+    this.editForm.name = this.dbData?.model?.name ?? '';
+    this.editForm.mainModelName = this.dbData?.model?.mainModelName ?? '';
+    this.editForm.category = this.dbData?.model?.category ?? '';
+    this.editForm.localPath = this.dbData?.model?.localPath ?? '';
+    this.editForm.nsfw = !!this.dbData?.model?.nsfw;
+    this.editForm.flag = !!this.dbData?.model?.flag;
+    this.editForm.urlAccessable = !!this.dbData?.model?.urlAccessable;
+
+    // JSON fields (use original strings to preserve formatting if present)
+    this.editForm.tags = typeof this.dbData?.model?.tags === 'string'
+      ? this.dbData.model.tags : (this.dbTags?.length ? JSON.stringify(this.dbTags) : '');
+    this.editForm.localTags = typeof this.dbData?.model?.localTags === 'string'
+      ? this.dbData.model.localTags : (this.dbLocalTags?.length ? JSON.stringify(this.dbLocalTags) : '');
+    this.editForm.aliases = typeof this.dbData?.model?.aliases === 'string'
+      ? this.dbData.model.aliases : (this.dbAliases?.length ? JSON.stringify(this.dbAliases) : '');
+    this.editForm.triggerWords = typeof this.dbData?.model?.triggerWords === 'string'
+      ? this.dbData.model.triggerWords : (this.dbTriggerWords?.length ? JSON.stringify(this.dbTriggerWords) : '');
+
+    // details
+    this.editForm.type = this.dbData?.details?.type ?? '';
+    this.editForm.baseModel = this.dbData?.details?.baseModel ?? '';
+    this.editForm.uploaded = this.dbData?.details?.uploaded ?? '';
+    this.editForm.creatorName = this.dbData?.details?.creatorName ?? '';
+    this.editForm.stats = typeof this.dbData?.details?.stats === 'string'
+      ? this.dbData.details.stats : (this.dbStats ? JSON.stringify(this.dbStats) : '');
+    this.editForm.hash = typeof this.dbData?.details?.hash === 'string'
+      ? this.dbData.details.hash : (this.dbHash ? JSON.stringify(this.dbHash) : '');
+    this.editForm.usageTips = this.dbData?.details?.usageTips ?? '';
+
+    // url
+    this.editForm.url = this.dbData?.url?.url ?? '';
+
+    // description
+    this.editForm.description = this.dbData?.description?.description ?? '';
+
+    // images
+    this.editForm.imageUrls = typeof this.dbData?.images?.imageUrls === 'string'
+      ? this.dbData.images.imageUrls : (this.dbImages?.length ? JSON.stringify(this.dbImages) : '');
+
+    this.editing = true;
+  }
+
+  cancelEdit() {
+    this.editing = false;
+    this.savingEdit = false;
+  }
+
+  private isBlank(v: any): boolean {
+    return v == null || String(v).trim() === '';
+  }
+
+  // return undefined to omit from payload if blank; else canonical JSON string
+  private jsonOrUndef(label: string, value: string): string | undefined {
+    if (this.isBlank(value)) return undefined;
+    try {
+      const parsed = JSON.parse(value.trim());
+      return JSON.stringify(parsed);
+    } catch {
+      throw new Error(`${label} must be valid JSON (or left empty).`);
+    }
+  }
+
+  saveEdit() {
+    if (!this.dbData) return;
+
+    const ids = this.resolveIdsFromItem(this.item);
+    if (!ids) { this.fullError = 'Cannot resolve model/version IDs.'; return; }
+
+    try {
+      this.savingEdit = true;
+
+      // JSON normalization (omit if blank)
+      const normTags = this.jsonOrUndef('Tags', this.editForm.tags);
+      const normLocalTags = this.jsonOrUndef('Local Tags', this.editForm.localTags);
+      const normAliases = this.jsonOrUndef('Aliases', this.editForm.aliases);
+      const normTrigger = this.jsonOrUndef('Trigger Words', this.editForm.triggerWords);
+      const normImageUrls = this.jsonOrUndef('Image URLs', this.editForm.imageUrls);
+
+      // base model payload; include myRating (from DB UI) as part of model
+      const modelPayload: any = {
+        modelNumber: ids.modelID,
+        versionNumber: ids.versionID,
+        name: this.editForm.name,
+        mainModelName: this.editForm.mainModelName,
+        localPath: this.editForm.localPath,
+        category: this.editForm.category,
+        nsfw: !!this.editForm.nsfw,
+        urlAccessable: !!this.editForm.urlAccessable,
+        flag: !!this.editForm.flag,
+        myRating: this.dbMyRating // include current rating value (0..20 or null)
+      };
+      if (normTags !== undefined) modelPayload.tags = normTags;
+      if (normLocalTags !== undefined) modelPayload.localTags = normLocalTags;
+      if (normAliases !== undefined) modelPayload.aliases = normAliases;
+      if (normTrigger !== undefined) modelPayload.triggerWords = normTrigger;
+
+      const dto: any = { model: modelPayload };
+
+      // optional sections, only if user provided something
+      if (!this.isBlank(this.editForm.description)) {
+        dto.description = { description: this.editForm.description };
+      }
+      if (!this.isBlank(this.editForm.url)) {
+        dto.url = { url: this.editForm.url };
+      }
+
+      const hasDetails =
+        !this.isBlank(this.editForm.type) ||
+        !this.isBlank(this.editForm.baseModel) ||
+        !this.isBlank(this.editForm.uploaded) ||
+        !this.isBlank(this.editForm.creatorName) ||
+        !this.isBlank(this.editForm.stats) ||
+        !this.isBlank(this.editForm.hash) ||
+        !this.isBlank(this.editForm.usageTips);
+
+      if (hasDetails) {
+        const details: any = {};
+        if (!this.isBlank(this.editForm.type)) details.type = this.editForm.type;
+        if (!this.isBlank(this.editForm.baseModel)) details.baseModel = this.editForm.baseModel;
+        if (!this.isBlank(this.editForm.uploaded)) details.uploaded = this.editForm.uploaded; // yyyy-mm-dd
+        if (!this.isBlank(this.editForm.creatorName)) details.creatorName = this.editForm.creatorName;
+        if (!this.isBlank(this.editForm.stats)) details.stats = this.editForm.stats;       // DB column is String
+        if (!this.isBlank(this.editForm.hash)) details.hash = this.editForm.hash;         // DB column is String
+        if (!this.isBlank(this.editForm.usageTips)) details.usageTips = this.editForm.usageTips;
+        dto.details = details;
+      }
+
+      if (normImageUrls !== undefined) {
+        dto.images = { imageUrls: normImageUrls };
+      }
+
+      const apiUrl = 'http://localhost:3000/api/update-full-record-by-modelID-and-version';
+      this.http.put<any>(apiUrl, dto).subscribe({
+        next: (res) => {
+          this.savingEdit = false;
+          this.editing = false;
+
+          // Refresh local data shown in overlay (or replace fields from res.payload)
+          this.fetchLocalRecord();
+        },
+        error: (err) => {
+          console.error('Save edit failed:', err);
+          this.savingEdit = false;
+          this.fullError = 'Failed to save changes.';
+        }
+      });
+    } catch (e: any) {
+      this.savingEdit = false;
+      this.fullError = e?.message || 'Invalid input.';
+    }
+  }
+
+  private toYYYYMMDD(iso?: string): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  }
+
+  private async fetchCivitaiModel(modelId: string): Promise<any> {
+    const url = `https://civitai.com/api/v1/models/${modelId}`;
+    return await firstValueFrom(this.http.get<any>(url));
+  }
+
+  private pickVersion(api: any, wantedVersionId?: string | null): any | null {
+    const versions: any[] = Array.isArray(api?.modelVersions) ? api.modelVersions : [];
+    if (!versions.length) return null;
+    if (wantedVersionId) {
+      const exact = versions.find(v => String(v.id) === String(wantedVersionId));
+      if (exact) return exact;
+    }
+    return versions[0];
+  }
+
+  /** If versionId is missing, return the first modelVersions[0].id from the API. */
+  private async ensureVersionId(modelId: string, currentVersionId?: string | null): Promise<string> {
+    if (currentVersionId && String(currentVersionId).trim() !== '') return String(currentVersionId);
+    const api = await this.fetchCivitaiModel(modelId);
+    const ver = this.pickVersion(api);
+    if (!ver?.id) throw new Error('No modelVersions found for this model.');
+    return String(ver.id);
+  }
+
+  async syncFromAPI() {
+    if (!this.item || !this.editing) return;  // require edit mode
+    const ids = this.resolveIdsFromItem(this.item);
+    if (!ids?.modelID) { this.fullError = 'Model ID not found.'; return; }
+
+    try {
+      this.syncingFromAPI = true;
+      this.fullError = null;
+
+      // make sure we have a version id
+      const versionId = await this.ensureVersionId(ids.modelID, ids.versionID);
+
+      // fetch full model json (contains modelVersions[])
+      const api = await this.fetchCivitaiModel(ids.modelID);
+      const ver = this.pickVersion(api, versionId);
+      if (!ver) throw new Error('No model version found in API response.');
+
+      // Map API -> editForm (don’t auto-save; user reviews then clicks Save)
+      // model
+      if (Array.isArray(api.tags)) this.editForm.tags = JSON.stringify(api.tags);
+      if (typeof api.description === 'string') this.editForm.description = api.description;
+      if (typeof api.type === 'string') this.editForm.type = api.type;
+      if (typeof api.nsfw === 'boolean') this.editForm.nsfw = api.nsfw;
+      const creatorUser = api?.creator?.username;
+      if (creatorUser) this.editForm.creatorName = creatorUser;
+
+      // version
+      if (Array.isArray(ver.trainedWords)) this.editForm.triggerWords = JSON.stringify(ver.trainedWords);
+      if (typeof ver.baseModel === 'string') this.editForm.baseModel = ver.baseModel;
+      this.editForm.uploaded = this.toYYYYMMDD(ver.publishedAt);
+      if (ver.stats) this.editForm.stats = JSON.stringify(ver.stats);
+
+      // hashes (primary file preferred)
+      const files: any[] = Array.isArray(ver.files) ? ver.files : [];
+      const primary = files.find(f => f.primary) || files[0];
+      if (primary?.hashes) this.editForm.hash = JSON.stringify(primary.hashes);
+
+      // images: map to {url, nsfw, width, height}
+      const imgs: any[] = Array.isArray(ver.images) ? ver.images : [];
+      const mappedImgs = imgs
+        .filter(i => i?.url)
+        .map(i => ({
+          url: i.url,
+          nsfw: typeof i.nsfwLevel === 'number' ? i.nsfwLevel > 1 : false,
+          width: typeof i.width === 'number' ? i.width : undefined,
+          height: typeof i.height === 'number' ? i.height : undefined
+        }));
+      if (mappedImgs.length) this.editForm.imageUrls = JSON.stringify(mappedImgs);
+
+      // If not already in edit mode, switch to edit so user can review/Save
+      if (!this.editing) this.startEdit(); // prefill from DB
+      // but keep the newly synced API values (overwrite the fields we just set)
+      this.editing = true; // ensure edit UI visible
+
+      console.log('Synced fields from Civitai API → edit form (review and Save).');
+    } catch (e: any) {
+      console.error(e);
+      this.fullError = e?.message || 'Sync failed.';
+    } finally {
+      this.syncingFromAPI = false;
+    }
+  }
 
   close() { this.closed.emit(); }
 }
