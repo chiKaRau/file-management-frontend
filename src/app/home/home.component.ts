@@ -112,7 +112,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   isUpdatingAllModels: boolean = false;
   currentUpdateModel: string = '';
 
-  sortKey: 'name' | 'size' | 'modified' | 'created' = 'name';
+  sortKey: 'name' | 'size' | 'modified' | 'created' | 'myRating' = 'name';
   sortDir: 'asc' | 'desc' = 'asc';
 
   // home.component.ts (top-level fields)
@@ -883,7 +883,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
 
-  setSort(key: 'name' | 'size' | 'modified' | 'created') {
+  setSort(key: 'name' | 'size' | 'modified' | 'created' | 'myRating') {
     if (this.sortKey === key) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -1540,6 +1540,17 @@ export class HomeComponent implements OnInit, AfterViewInit {
         cmp = at - bt;
         break;
       }
+      case 'myRating': {
+        const ar = this.getItemMyRating(a);
+        const br = this.getItemMyRating(b);
+
+        // Optional: always push unrated (-1) to the bottom regardless of direction
+        if (ar === -1 && br !== -1) return 1;
+        if (br === -1 && ar !== -1) return -1;
+
+        cmp = ar - br;
+        break;
+      }
     }
 
     return this.sortDir === 'asc' ? cmp : -cmp;
@@ -1606,6 +1617,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const list = this.renderItems ?? [];
     return list.reduce((n, it) => n + (it.isFile ? 1 : 0), 0);
   }
+
+  private getItemMyRating(it: DirectoryItem): number {
+    const anyIt: any = it as any;
+    const v = anyIt?.scanData?.myRating ?? anyIt?.model?.myRating ?? anyIt?.myRating;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : -1; // -1 = unrated
+  }
+
 
   @HostListener('window:resize')
   @HostListener('window:scroll')
@@ -1706,6 +1725,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
     return item;
   }
 
-
-
+  onMyRatingChanged() {
+    if (this.sortKey === 'myRating') {
+      this.recomputeRenderItems();   // re-sorts and updates the windowed list
+    }
+  }
 }

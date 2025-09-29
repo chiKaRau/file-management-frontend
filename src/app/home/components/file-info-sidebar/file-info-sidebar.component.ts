@@ -17,6 +17,7 @@ export class FileInfoSidebarComponent implements OnChanges {
   @Output() closed = new EventEmitter<void>();
   // kept for compatibility; not used to open Home modal anymore
   @Output() openModalEvent = new EventEmitter<any>();
+  @Output() myRatingChanged = new EventEmitter<number>();
 
   // LIVE (Civitai) state (sidebar mini view)
   modelVersion: any = null;
@@ -634,6 +635,7 @@ export class FileInfoSidebarComponent implements OnChanges {
         if (!this.dbData.model) this.dbData.model = {};
         this.dbData.model.myRating = rating;
         if ((this.item as any)?.scanData) (this.item as any).scanData.myRating = rating;
+        this.myRatingChanged.emit(rating);
 
         this.hoverRating = null;
         this.savingMyRating = false;
