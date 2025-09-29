@@ -64,11 +64,11 @@ export class FileInfoSidebarComponent implements OnChanges {
 
   // ===== Similar overlay state (top with other fields) =====
   simOverlayOpen = false;
-
-  // open/close
-  openSimOverlay(): void { this.simOverlayOpen = true; }
-  closeSimOverlay(): void { this.simOverlayOpen = false; }
-
+  simAvailableTokens: string[] = [];   // suggestions (single words, de-duped)
+  private simSelectedSet = new Set<string>(); // normalized tokens currently selected
+  simInput = '';                       // space-separated tokens user sees/edits
+  simLoading = false;
+  simError: string | null = null;
 
   // --- editing state ---
   editing = false;
@@ -111,6 +111,13 @@ export class FileInfoSidebarComponent implements OnChanges {
 
   // sync state
   syncingFromAPI = false;
+
+  simResults: any[] = [];
+
+  // ---- Search Similar filter state ----
+  simBaseModels = new Map<string, string>(); // key -> label
+  simSelectedBaseModels = new Set<string>();
+
 
   // only allow sync if we're in local view, have IDs, and are editing
   get canSyncNow(): boolean {
@@ -931,6 +938,248 @@ export class FileInfoSidebarComponent implements OnChanges {
       this.syncingFromAPI = false;
     }
   }
+
+  // Open/close
+  openSimOverlay() {
+    this.simError = null;
+    this.simInput = '';
+    this.simSelectedSet.clear();
+    this.buildSimilarSuggestions();   // fills simAvailableTokens
+    this.simOverlayOpen = true;
+    this.simBaseModels.clear();
+    this.simSelectedBaseModels.clear();
+  }
+  closeSimOverlay() { this.simOverlayOpen = false; }
+
+  // Suggestions builder
+  private buildSimilarSuggestions() {
+    const bag: string[] = [];
+
+    // From DB model (JSON strings)
+    const dbTags = this.parseJsonField<string[]>(this.dbData?.model?.tags, []);
+    const dbTrig = this.parseJsonField<string[]>(this.dbData?.model?.triggerWords, []);
+
+    // From scanData / item
+    const scanTags = (this.item as any)?.scanData?.tags ?? [];
+    const itemTags = (this.item as any)?.tags ?? [];
+
+    // Main model names
+    const mainFromDb = this.dbData?.model?.mainModelName;
+    const mainFromScan = (this.item as any)?.scanData?.mainModelName || (this.item as any)?.mainModelName;
+
+    // Collect raw strings
+    if (Array.isArray(dbTags)) bag.push(...dbTags);
+    if (Array.isArray(dbTrig)) bag.push(...dbTrig);
+    if (Array.isArray(scanTags)) bag.push(...scanTags);
+    if (Array.isArray(itemTags)) bag.push(...itemTags);
+    if (mainFromDb) bag.push(String(mainFromDb));
+    if (mainFromScan) bag.push(String(mainFromScan));
+
+    // Tokenize into single words, normalize and de-duplicate
+    const tokens = this.deDupePreserveCase(
+      bag.flatMap(s => this.tokenizeToWords(String(s)))
+    );
+
+    // Sort for stable UI
+    this.simAvailableTokens = tokens.sort((a, b) => a.localeCompare(b));
+  }
+
+  // Split a string into words (unicode letters/numbers), lower-level punctuation ignored
+  private tokenizeToWords(s: string): string[] {
+    // prefer Unicode-aware split; fallback for environments without u-flag support
+    try {
+      return s
+        .split(/[^\p{L}\p{N}]+/u)
+        .map(t => t.trim())
+        .filter(Boolean);
+    } catch {
+      return s
+        .split(/[^A-Za-z0-9]+/)
+        .map(t => t.trim())
+        .filter(Boolean);
+    }
+  }
+
+  // De-duplicate while preserving first-seen casing
+  private deDupePreserveCase(arr: string[]): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const t of arr) {
+      const k = t.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(t);
+      }
+    }
+    return out;
+  }
+
+  // Selection state
+  isTokenSelected(token: string): boolean {
+    return this.simSelectedSet.has(token.toLowerCase());
+  }
+  toggleToken(token: string) {
+    const k = token.toLowerCase();
+    if (this.simSelectedSet.has(k)) {
+      this.simSelectedSet.delete(k);
+    } else {
+      this.simSelectedSet.add(k);
+    }
+    this.reflectSelectionIntoInput();
+  }
+
+  // Keep input in sync with selection
+  private reflectSelectionIntoInput() {
+    const selected = this.simAvailableTokens
+      .filter(t => this.simSelectedSet.has(t.toLowerCase()));
+    this.simInput = selected.join(' ');
+  }
+
+  // When typing manually, update selection to match input
+  syncSelectionFromInput() {
+    const tokens = this.tokenizeToWords(this.simInput);
+    const wanted = new Set(tokens.map(t => t.toLowerCase()));
+    this.simSelectedSet.clear();
+    // Only select those that exist in suggestions
+    for (const t of this.simAvailableTokens) {
+      if (wanted.has(t.toLowerCase())) this.simSelectedSet.add(t.toLowerCase());
+    }
+  }
+
+  // Helpers for template
+  get hasAnyInputTokens(): boolean {
+    return this.tokenizeToWords(this.simInput).length > 0;
+  }
+
+  // Clear
+  clearSimilar() {
+    this.simInput = '';
+    this.simSelectedSet.clear();
+    this.simError = null;
+  }
+
+  // on submit, set results and log (you already log)
+  submitSimilar() {
+    const tagsList = this.tokenizeToWords(this.simInput);
+    if (!tagsList.length) return;
+
+    this.simLoading = true;
+    this.simError = null;
+
+    this.http.post<any>(
+      'http://localhost:3000/api/find-list-of-models-dto-from-all-table-by-tagsList-tampermonkey',
+      { tagsList }
+    ).subscribe({
+      next: (res) => {
+        console.log('searchSimilar response:', res);
+
+        const list: any[] = res?.payload?.modelsList ?? [];
+        this.simResults = list;
+
+        // (Re)build BaseModel options
+        this.simBaseModels.clear();
+        for (const m of list) {
+          const key = this.canonBaseModel(m?.baseModel);
+          const label = this.displayBaseModel(m?.baseModel);
+          if (!this.simBaseModels.has(key)) this.simBaseModels.set(key, label);
+        }
+        // Default: select all base models so nothing is hidden initially
+        this.selectAllBaseModels();
+
+        this.simLoading = false;
+      },
+      error: (err) => {
+        console.error('searchSimilar failed:', err);
+        this.simError = 'Search failed. Please try again.';
+        this.simLoading = false;
+      }
+    });
+  }
+
+  // ---- card helpers
+
+  simCardBgStyle(m: any): string {
+    const arr = this.simSafeImageArray(m?.imageUrls);
+    const url = arr?.[0]?.url || '';
+    return url ? `url("${url}")` : 'none';
+  }
+
+  private simSafeImageArray(input: any): Array<{ url: string }> {
+    if (Array.isArray(input)) return input as any[];
+    return this.parseJsonField<any[]>(input, []);
+  }
+
+  simGetParsedStats(m: any): any | null {
+    return this.parseJsonField<any>(m?.stats, null);
+  }
+
+  simGetMyRating(m: any): number {
+    const v = m?.myRating;
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.max(0, Math.min(20, Math.trunc(n))) : 0;
+  }
+
+  // ---------- BaseModel filter helpers ----------
+  private canonBaseModel(v: any): string {
+    const s = String(v ?? '').trim();
+    return s ? s.toLowerCase() : 'unknown';
+  }
+  private displayBaseModel(v: any): string {
+    const s = String(v ?? '').trim();
+    return s || 'Unknown';
+  }
+
+  isBaseModelSelected(key: string): boolean {
+    return this.simSelectedBaseModels.has(key);
+  }
+  toggleBaseModel(key: string, on: boolean) {
+    if (on) this.simSelectedBaseModels.add(key);
+    else this.simSelectedBaseModels.delete(key);
+  }
+  selectAllBaseModels() {
+    this.simSelectedBaseModels = new Set(this.simBaseModels.keys());
+  }
+  clearBaseModels() {
+    this.simSelectedBaseModels.clear();
+  }
+
+  // For *ngFor options (stable alphabetical order)
+  get simBaseModelLabels(): { key: string; label: string }[] {
+    return Array.from(this.simBaseModels.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  // ---------- Sort by uploaded DESC ----------
+  private uploadedTime(d: any): number {
+    if (!d) return 0;
+    const t = Date.parse(String(d));
+    return Number.isFinite(t) ? t : 0;
+  }
+
+  // Use this instead of simResults in the template
+  get filteredAndSortedSimResults(): any[] {
+    const selected = this.simSelectedBaseModels;
+    const filterOn = selected.size > 0;
+
+    const filtered = (this.simResults ?? []).filter(m => {
+      const key = this.canonBaseModel(m?.baseModel);
+      return filterOn ? selected.has(key) : true;
+    });
+
+    return filtered.sort(
+      (a, b) => this.uploadedTime(b?.uploaded) - this.uploadedTime(a?.uploaded)
+    );
+  }
+
+  trackByKey(_i: number, opt: { key: string; label: string }) { return opt.key; }
+
+  onBaseModelCheckboxChange(key: string, evt: Event) {
+    const checked = (evt.target as HTMLInputElement).checked;
+    this.toggleBaseModel(key, checked);
+  }
+
+
 
   close() { this.closed.emit(); }
 }

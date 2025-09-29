@@ -839,3 +839,283 @@
         box-shadow: 0 0 0 3px var(--accent-ring);
     }
 }
+
+.chip {
+    opacity: .85;
+}
+
+/* selectable chips */
+.chip--selectable {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-ring);
+    }
+}
+
+/* active (selected) look */
+.chip--active {
+    background: color-mix(in srgb, var(--accent) 20%, var(--row-hover));
+    border-color: var(--accent);
+    color: #fff;
+    opacity: 1;
+}
+
+/* ===== Search Similar (in-sidebar) ===== */
+
+/* Grid for result cards inside the db panel */
+.db-panel-body .sim-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    padding: 6px 0 2px;
+    align-items: start;
+}
+
+/* Keep card+caption overlay behavior consistent */
+.db-panel-body .sim-card-grid .card-slot {
+    position: relative;
+    isolation: isolate;
+}
+
+/* Grid for result cards inside the db panel */
+.db-panel-body .sim-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    padding: 6px 0 2px;
+    align-items: start;
+}
+
+.db-panel-body .sim-card-grid .card-slot {
+    position: relative;
+    isolation: isolate;
+}
+
+/* >>> KEY FIXES ARE HERE <<< */
+.db-panel-body .sim-card-grid .file-card {
+    position: relative;
+    /* anchor badges + footer */
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    height: auto;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow .2s ease, border-color .15s ease;
+
+    &:hover {
+        box-shadow: 0 8px 24px var(--shadow);
+        border-color: var(--border);
+    }
+
+    /* badges pinned to corners */
+    .badge.top-left,
+    .badge.top-right {
+        position: absolute;
+        /* <-- was missing */
+        top: 6px;
+        padding: 3px 6px;
+        font-size: 11px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, .55);
+        color: #fff;
+        font-weight: 700;
+        white-space: nowrap;
+        z-index: 2;
+    }
+
+    .badge.top-left {
+        left: 6px;
+    }
+
+    .badge.top-right {
+        right: 6px;
+    }
+
+    /* footer pinned to bottom */
+    .card-footer {
+        position: absolute;
+        /* <-- was missing */
+        bottom: 0;
+        /* <-- was missing */
+        width: 100%;
+        /* <-- was missing */
+        background: rgba(0, 0, 0, .6);
+        color: #fff;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 2;
+
+        .creator {
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .main-model {
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+
+            .material-icons {
+                font-size: 16px;
+                vertical-align: middle;
+            }
+        }
+
+        .size-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .material-icons {
+                font-size: 16px;
+            }
+        }
+    }
+}
+
+/* Corner rating star */
+/* Corner rating star */
+.db-panel-body .sim-card-grid .rating-star {
+    --star-size: 38px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--star-size);
+    height: var(--star-size);
+    transform: translate(35%, -35%) translateZ(0);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35));
+    z-index: 3;
+    pointer-events: none;
+    /* don't block clicks */
+
+    svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+        color: #f7c948;
+    }
+
+    /* <<< ensure the number shows and is perfectly centered >>> */
+    .star-number {
+        position: absolute;
+        inset: 0;
+        /* fill the star box */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        /* above the SVG */
+        font-weight: 700;
+        line-height: 1;
+        color: #111;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, .85);
+        font-size: clamp(11px, calc(var(--star-size) * 0.30), 18px);
+        user-select: none;
+    }
+}
+
+
+/* Icon colors */
+.db-panel-body .sim-card-grid .icon-download {
+    color: var(--info);
+}
+
+.db-panel-body .sim-card-grid .icon-rating {
+    color: #fbc02d;
+}
+
+.db-panel-body .sim-card-grid .icon-rating-count {
+    color: var(--accent);
+}
+
+.db-panel-body .sim-card-grid .icon-thumb-up {
+    color: var(--success);
+}
+
+@media (max-width: 640px) {
+    .db-panel-body .sim-card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .db-panel-body .sim-card-grid .rating-star {
+        --star-size: 32px;
+    }
+}
+
+/* optional states */
+.db-panel-body .sim-card-grid .file-card.selected {
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.db-panel-body .sim-card-grid .file-card.deleted {
+    filter: grayscale(50%) brightness(90%);
+    border: 2px dashed var(--danger);
+    box-shadow: 0 0 5px rgba(255, 77, 77, .5);
+}
+
+/* --- Search Similar filter bar --- */
+.sim-filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    padding: 6px 0 8px;
+    border-bottom: 1px dashed var(--border-soft);
+    margin-bottom: 8px;
+}
+
+.sim-filter-title {
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.sim-filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sim-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+
+    input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--accent);
+    }
+
+    &:hover {
+        background: var(--menu-hover);
+    }
+}

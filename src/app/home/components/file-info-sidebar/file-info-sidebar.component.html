@@ -257,14 +257,123 @@
         </div>
 
         <div class="db-panel-body">
-            <!-- Mirror local layout skeleton so spacing matches -->
             <div class="overlay-grid">
+                <!-- Input as source of truth -->
                 <div class="row">
-                    <label>Coming soon</label>
-                    <div class="overlay-loading">This panel will show similar items…</div>
+                    <label>Query</label>
+                    <div>
+                        <input type="text" [(ngModel)]="simInput" (ngModelChange)="syncSelectionFromInput()"
+                            placeholder="type or click tags… (space-separated)" />
+                        <div class="input-hint">Selected tags appear here. Press space to separate.</div>
+                    </div>
+                </div>
+
+                <!-- Suggestions (single-word, de-duplicated) -->
+                <div class="row">
+                    <label>Suggestions</label>
+                    <div>
+                        <ng-container *ngIf="simAvailableTokens?.length; else noSimTags">
+                            <span *ngFor="let t of simAvailableTokens" class="chip chip--selectable"
+                                [class.chip--active]="isTokenSelected(t)" (click)="toggleToken(t)">
+                                {{ t }}
+                            </span>
+                        </ng-container>
+                        <ng-template #noSimTags>—</ng-template>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="row">
+                    <label></label>
+                    <div class="btn-group">
+                        <button class="btn btn--primary btn--sm" (click)="submitSimilar()"
+                            [disabled]="!hasAnyInputTokens || simLoading">
+                            {{ simLoading ? 'Searching…' : 'Submit Tags' }}
+                        </button>
+                        <button class="btn btn--ghost btn--sm" (click)="clearSimilar()" [disabled]="simLoading">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Base Model filter bar -->
+                <div class="sim-filterbar" *ngIf="simBaseModelLabels.length">
+                    <div class="sim-filter-title">Filter by Base Model</div>
+
+                    <div class="sim-filter-group">
+                        <label class="sim-filter-chip" *ngFor="let opt of simBaseModelLabels; trackBy: trackByKey">
+                            <input type="checkbox" [checked]="isBaseModelSelected(opt.key)"
+                                (change)="onBaseModelCheckboxChange(opt.key, $event)" />
+                            <span>{{ opt.label }}</span>
+                        </label>
+                    </div>
+
+
+                    <div class="btn-group">
+                        <button class="btn btn--ghost btn--sm" (click)="selectAllBaseModels()">Select all</button>
+                        <button class="btn btn--ghost btn--sm" (click)="clearBaseModels()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Results list (now filtered + sorted) -->
+                <ng-container *ngIf="filteredAndSortedSimResults.length; else simNoResults">
+                    <div class="sim-card-grid">
+                        <div class="card-slot" *ngFor="let m of filteredAndSortedSimResults; let i = index">
+                            <div class="file-card" [ngStyle]="{ 'background-image': simCardBgStyle(m) }"
+                                [class.file]="true">
+                                <div class="badge top-left">ID: {{ m.modelNumber }} / {{ m.versionNumber }}</div>
+                                <div class="badge top-right">{{ m.baseModel || 'N/A' }}</div>
+
+                                <div class="card-footer">
+                                    <div class="creator">{{ m.creatorName || '—' }}</div>
+                                    <div class="main-model">{{ m.mainModelName || 'N/A' }}</div>
+
+                                    <ng-container *ngIf="simGetParsedStats(m) as stats">
+                                        <div class="stats">
+                                            <span><span class="material-icons icon-download">file_download</span>{{
+                                                stats?.downloadCount ?? 'N/A' }}</span>
+                                            <span><span class="material-icons icon-rating-count">rate_review</span>{{
+                                                stats?.ratingCount ?? 'N/A' }}</span>
+                                            <span><span class="material-icons icon-rating">star_rate</span>{{
+                                                stats?.rating ?? 'N/A' }}</span>
+                                            <span><span class="material-icons icon-thumb-up">thumb_up</span>{{
+                                                stats?.thumbsUpCount ?? 'N/A' }}</span>
+                                        </div>
+                                    </ng-container>
+
+                                    <div class="size-line">
+                                        <span class="material-icons">sd_storage</span>
+                                        <span class="size-text">N/A</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <ng-container *ngIf="simGetMyRating(m) as r">
+                                <div class="rating-star" *ngIf="r > 0" [attr.title]="r + ' / 20'">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path
+                                            d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                                    </svg>
+                                    <div class="star-number">{{ r }}</div>
+                                </div>
+                            </ng-container>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <ng-template #simNoResults>
+                    <div class="overlay-loading">No results yet — choose tags and Submit.</div>
+                </ng-template>
+
+
+                <!-- Result / error hint -->
+                <div class="row" *ngIf="simError">
+                    <label></label>
+                    <div class="overlay-error">{{ simError }}</div>
                 </div>
             </div>
         </div>
+
     </div>
 
 </div>
