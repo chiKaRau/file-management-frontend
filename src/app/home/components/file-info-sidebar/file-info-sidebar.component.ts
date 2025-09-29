@@ -61,6 +61,15 @@ export class FileInfoSidebarComponent implements OnChanges {
   ten = Array.from({ length: 10 });       // 10 stars
   hoverRating: number | null = null;      // 0..20 while hovering
 
+
+  // ===== Similar overlay state (top with other fields) =====
+  simOverlayOpen = false;
+
+  // open/close
+  openSimOverlay(): void { this.simOverlayOpen = true; }
+  closeSimOverlay(): void { this.simOverlayOpen = false; }
+
+
   // --- editing state ---
   editing = false;
   savingEdit = false;

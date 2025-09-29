@@ -784,3 +784,58 @@
     @extend .btn;
     @extend .btn--outline;
 }
+
+/* Similar overlay reuses the in-sidebar panel look */
+.sim-panel-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .35);
+    z-index: 2;
+}
+
+.sim-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 70%;
+    background: var(--panel);
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -10px 24px var(--shadow);
+    display: flex;
+    flex-direction: column;
+    z-index: 3;
+    animation: sidebarSlideUp .18s ease-out;
+}
+
+/* make the overlay close buttons use the generic .btn look */
+.db-close {
+    @extend .btn;
+    @extend .btn--icon;
+}
+
+/* If @extend isn't available, mimic it: */
+.db-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+
+    &:hover {
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+}

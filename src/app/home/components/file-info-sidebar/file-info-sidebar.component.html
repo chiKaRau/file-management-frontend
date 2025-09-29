@@ -95,9 +95,11 @@
         <hr />
 
         <!-- Button to open the IN-SIDEBAR local overlay (unchanged) -->
-        <div class="db-actions">
+        <div class="db-actions btn-group">
             <button class="db-button btn--sm" (click)="openDbOverlay()">View Local Record</button>
+            <button class="db-button btn--sm" (click)="openSimOverlay()">Search similar in DB</button>
         </div>
+
 
     </div>
 
@@ -239,7 +241,34 @@
             </ng-container>
         </div>
     </div>
+
+    <!-- ===== IN-SIDEBAR "Search Similar" overlay (same look as Local) ===== -->
+    <div class="db-panel-backdrop" *ngIf="simOverlayOpen" (click)="$event.stopPropagation(); closeSimOverlay()"></div>
+
+    <div class="db-panel" *ngIf="simOverlayOpen" (click)="$event.stopPropagation()">
+        <div class="db-panel-header">
+            <h3>Search Similar</h3>
+
+            <!-- modern close button, reusing .btn styles -->
+            <button class="db-close btn btn--icon" aria-label="Close"
+                (click)="$event.stopPropagation(); closeSimOverlay()">
+                ✕
+            </button>
+        </div>
+
+        <div class="db-panel-body">
+            <!-- Mirror local layout skeleton so spacing matches -->
+            <div class="overlay-grid">
+                <div class="row">
+                    <label>Coming soon</label>
+                    <div class="overlay-loading">This panel will show similar items…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
 
 <!-- ===== FULL-SCREEN bottom-sheet overlay (new) ===== -->
 <div class="full-overlay-backdrop" *ngIf="fullOverlayOpen" (click)="$event.stopPropagation(); closeFullOverlay()"></div>
