@@ -134,17 +134,25 @@
   </div>
 
   <!-- Fixed status bar sized to the middle column -->
-  <div class="list-status-bar fixed" #statusBar>
+  <!-- Fixed status bar sized to the middle column -->
+  <div class="list-status-bar fixed" #statusBar [class.stacked]="isReadOnly || searchTerm">
     <div class="left">
       {{ totalFilesCount | number }} file{{ totalFilesCount === 1 ? '' : 's' }}
       <span *ngIf="totalDirsCount">
         · {{ totalDirsCount | number }} folder{{ totalDirsCount === 1 ? '' : 's' }}
       </span>
     </div>
-    <div class="right" *ngIf="searchTerm">
-      showing {{ visibleFilesCount | number }}
+
+    <div class="right" *ngIf="isReadOnly || searchTerm">
+      <ng-container *ngIf="isReadOnly; else searchOnly">
+        showing {{ visibleFilesCount | number }} of {{ totalFilesCount | number }}
+      </ng-container>
+      <ng-template #searchOnly>
+        showing {{ visibleFilesCount | number }}
+      </ng-template>
     </div>
   </div>
+
 
   <!-- Empty-Area Context Menu -->
   <div class="context-menu" *ngIf="showEmptyAreaContextMenu" [style.left.px]="menuX" [style.top.px]="menuY"

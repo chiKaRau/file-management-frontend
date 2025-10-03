@@ -131,6 +131,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private vTotalPages = 0;
   private vLoading = false;
 
+  private vTotalElements = 0;   // total files in this virtual path (from server)
+  private vDirCount = 0;        // directories for this path (we fetch all on page 0)
+
+
   constructor(
     private electronService: ElectronService,
     private scrollState: ScrollStateService,
@@ -616,13 +620,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
         sortKey,
         sortDir: this.sortDir
       }).subscribe({
-        next: ({ items, selectedDirectory, page, totalPages }) => {
+        next: ({ items, selectedDirectory, page, totalPages, totalElements }) => {
           this.ngZone.run(() => {
             this.selectedDirectory = selectedDirectory;
             this.directoryContents = items;
             this.isLoading = false;
 
-            // build available drives
+            // drives (unchanged)
             const drives = new Set<string>();
             for (const it of items as any[]) {
               const d = this.normalizeDrive((it as any)?.drive);
@@ -632,10 +636,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
             this.vPage = page ?? 0;
             this.vTotalPages = totalPages ?? 0;
+            this.vTotalElements = totalElements ?? 0;
+
+            // count dirs from the list we put in page 0
+            this.vDirCount = (items ?? []).reduce((n, it) => n + (it.isDirectory ? 1 : 0), 0);
 
             this.recomputeRenderItems();
           });
-        },
+        }
+        ,
         error: (err) => {
           console.error('Virtual list() error:', err);
           this.ngZone.run(() => {
@@ -1655,13 +1664,21 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   get totalFilesCount(): number {
+    // Virtual: show true total from server when not filtering
+    if (this.isReadOnly && !this.searchTerm && !this.deepSearchActive && this.vTotalElements) {
+      return this.vTotalElements;
+    }
+    // Otherwise (FS or filtering), count what’s loaded
     const list = this.directoryContents ?? [];
     return list.reduce((n, it) => n + (it.isFile ? 1 : 0), 0);
   }
+
   get totalDirsCount(): number {
+    if (this.isReadOnly) return this.vDirCount;
     const list = this.directoryContents ?? [];
     return list.reduce((n, it) => n + (it.isDirectory ? 1 : 0), 0);
   }
+  
   /** visible (after your drive/search/sort filters) */
   get visibleFilesCount(): number {
     const list = this.renderItems ?? [];
@@ -1805,13 +1822,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
       sortKey,
       sortDir: this.sortDir
     }).subscribe({
-      next: ({ items, page, totalPages }) => {
+      next: ({ items, page, totalPages, totalElements }) => {
         const filesOnly = (items ?? []).filter(i => i.isFile);
         console.log('[Virtual] received page', page, 'files', filesOnly.length, 'totalPages', totalPages);
 
         this.directoryContents = [...this.directoryContents, ...filesOnly];
         this.vPage = page ?? (this.vPage + 1);
         this.vTotalPages = totalPages ?? this.vTotalPages;
+        if (typeof totalElements === 'number') this.vTotalElements = totalElements;
 
         this.vLoading = false;
         this.recomputeRenderItems();

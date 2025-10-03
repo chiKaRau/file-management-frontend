@@ -265,6 +265,7 @@
 /* the fixed bar itself (aligned via TS) */
 .list-status-bar.fixed {
     position: fixed;
+    display: flex;
     bottom: 0;
     z-index: 5;
     /* above thumbnails, below modals */
@@ -278,7 +279,19 @@
     align-items: center;
     justify-content: space-between;
     pointer-events: none;
+    line-height: 1.25;
     /* lets lasso/ctx-menu pass through */
+
+    &.stacked {
+        flex-direction: column; // put right block on a new line
+        align-items: flex-start; // left-align both lines
+        gap: 2px; // a little breathing room
+    }
+
+    .right {
+        opacity: 0.85; // optional: deemphasize the second line
+        font-size: 0.95em; // optional
+    }
 }
 
 /* Shared button look for banner actions */
