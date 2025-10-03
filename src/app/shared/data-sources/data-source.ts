@@ -4,7 +4,22 @@ import { DirectoryItem } from '../../home/components/file-list/model/directory-i
 
 export interface ExplorerDataSource {
     /** List items for a “path”. For virtual, path is your virtual path (e.g. "\\ACG\\...") */
-    list(path: string | null): Observable<{ items: DirectoryItem[], selectedDirectory: string | null }>;
+    list(
+        path: string | null,
+        opts?: {
+            page?: number;
+            size?: number;
+            sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size';
+            sortDir?: 'asc' | 'desc';
+        }
+    ): Observable<{
+        items: DirectoryItem[];
+        selectedDirectory: string | null;
+        page?: number;
+        size?: number;
+        totalPages?: number;
+        totalElements?: number;
+    }>;
 
     /** Optional: is this a read-only/virtual source? (to hide cut/paste/rename etc.) */
     readonly readOnly?: boolean;

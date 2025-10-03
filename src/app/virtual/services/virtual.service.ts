@@ -3,6 +3,17 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
 
+
+export interface PageResponse<T> {
+    content: T[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -19,8 +30,17 @@ export class VirtualService {
         return this.currentPath;
     }
 
-    getFiles(path: string): Observable<{ payload: any[] }> {
-        return this.http.post<{ payload: any[] }>('http://localhost:3000/api/find-virtual-files', { path });
+    getFiles(
+        path: string,
+        page: number,
+        size: number,
+        sortKey: 'name' | 'created' | 'modified' | 'myRating',
+        sortDir: 'asc' | 'desc'
+    ): Observable<{ payload: PageResponse<any> }> {
+        return this.http.post<{ payload: PageResponse<any> }>(
+            'http://localhost:3000/api/find-virtual-files',
+            { path, page, size, sortKey, sortDir }
+        );
     }
 
     getDirectories(path: string): Observable<{ payload: any[] }> {

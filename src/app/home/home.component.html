@@ -51,7 +51,7 @@
 
       <!-- File list panel -->
       <!-- Note: Added (contextmenu)="onEmptyAreaRightClick($event)" here -->
-      <div class="file-list-container">
+      <div class="file-list-container" #scrollRoot>
         <div *ngIf="isLoading" class="loading">
           Loading files...
         </div>
@@ -186,10 +186,6 @@
         <div class="submenu-item" (click)="setSort('created')">
           <span *ngIf="sortKey==='created'">✓</span> Date created
           <span *ngIf="sortKey==='created'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
-        </div>
-
-        <div class="submenu-item submenu-divider" (click)="toggleSortDirection()">
-          Reverse order
         </div>
 
       </div>

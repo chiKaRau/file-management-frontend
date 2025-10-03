@@ -1,8 +1,8 @@
 // src/app/explorer/virtual-data-source.service.ts
 import { Injectable } from '@angular/core';
 import { ExplorerDataSource } from './data-source';
-import { Observable, forkJoin, map } from 'rxjs';
-import { VirtualService } from '../../virtual/services/virtual.service';
+import { Observable, forkJoin, map, of } from 'rxjs';
+import { PageResponse, VirtualService } from '../../virtual/services/virtual.service';
 import { DirectoryItem } from '../../home/components/file-list/model/directory-item.model';
 
 
@@ -13,29 +13,76 @@ export class VirtualDbDataSource implements ExplorerDataSource {
 
     constructor(private virtualService: VirtualService) { }
 
-    list(path: string | null): Observable<{ items: DirectoryItem[], selectedDirectory: string | null }> {
+    list(
+        path: string | null,
+        opts?: {
+            page?: number;
+            size?: number;
+            sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size';
+            sortDir?: 'asc' | 'desc';
+        }
+    ): Observable<{
+        items: DirectoryItem[];
+        selectedDirectory: string | null;
+        page?: number;
+        size?: number;
+        totalPages?: number;
+        totalElements?: number;
+    }> {
         const p = path ?? this.initialPath ?? '\\';
+        const page = opts?.page ?? 0;
+        const size = opts?.size ?? 100;
 
-        return forkJoin({
-            dirs: this.virtualService.getDirectories(p),
-            files: this.virtualService.getFiles(p),
-        }).pipe(
-            map(({ dirs, files }) => {
-                const dirPayload = (dirs && (dirs as any).payload) ? (dirs as any).payload : dirs;
-                const filePayload = (files && (files as any).payload) ? (files as any).payload : files;
+        // map UI sort to server sort (Virtual doesn't support 'size')
+        const sortKey: 'name' | 'created' | 'modified' | 'myRating' =
+            opts?.sortKey === 'created' ? 'created'
+                : opts?.sortKey === 'modified' ? 'modified'
+                    : opts?.sortKey === 'myRating' ? 'myRating'
+                        : 'name';
+        const sortDir: 'asc' | 'desc' = opts?.sortDir === 'desc' ? 'desc' : 'asc';
 
-                const directories: DirectoryItem[] = Array.isArray(dirPayload)
-                    ? dirPayload.map((d: any) => ({
-                        isFile: false,
-                        isDirectory: true,
-                        name: d.directory,
-                        path: p + (p.endsWith('\\') ? '' : '\\') + d.directory + '\\',
-                        drive: d.drive
-                    }))
-                    : [];
+        // fetch directories only for the first page
+        const dirs$ = page === 0
+            ? this.virtualService.getDirectories(p).pipe(
+                map((res) => {
+                    const dirPayload = (res && (res as any).payload) ? (res as any).payload : res;
+                    return Array.isArray(dirPayload)
+                        ? dirPayload.map((d: any) => ({
+                            isFile: false,
+                            isDirectory: true,
+                            name: d.directory,
+                            path: p + (p.endsWith('\\') ? '' : '\\') + d.directory + '\\',
+                            drive: d.drive
+                        } as DirectoryItem))
+                        : [];
+                })
+            )
+            : of<DirectoryItem[]>([]);
 
-                const fileItems: DirectoryItem[] = Array.isArray(filePayload)
-                    ? filePayload.map((row: any) => {
+        const files$ = this.virtualService.getFiles(p, page, size, sortKey, sortDir).pipe(
+            map((res) => {
+                const pl = (res as any).payload;
+                if (pl && Array.isArray(pl)) {
+                    // fallback: server returned a plain array => synthesize 1-page response
+                    const content = pl;
+                    return {
+                        content,
+                        page: 0,
+                        size: content.length,
+                        totalElements: content.length,
+                        totalPages: 1,
+                        hasNext: false,
+                        hasPrevious: false
+                    } as PageResponse<any>;
+                }
+                return pl as PageResponse<any>;
+            })
+        );
+
+        return forkJoin({ dirs: dirs$, filesPr: files$ }).pipe(
+            map(({ dirs, filesPr }) => {
+                const fileItems: DirectoryItem[] = Array.isArray(filesPr?.content)
+                    ? filesPr.content.map((row: any) => {
                         const m = row.model;
                         return {
                             isFile: true,
@@ -50,7 +97,16 @@ export class VirtualDbDataSource implements ExplorerDataSource {
                     })
                     : [];
 
-                return { items: [...directories, ...fileItems], selectedDirectory: p };
+                const items = page === 0 ? [...dirs, ...fileItems] : fileItems;
+
+                return {
+                    items,
+                    selectedDirectory: p,
+                    page: filesPr?.page,
+                    size: filesPr?.size,
+                    totalPages: filesPr?.totalPages,
+                    totalElements: filesPr?.totalElements
+                };
             })
         );
     }

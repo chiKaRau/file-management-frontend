@@ -122,6 +122,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
   selectedDrive: string = 'all';
   groupingMode = false; // if you want the toggle wire-up
 
+  // add near other ViewChilds
+  @ViewChild('scrollRoot') scrollRootRef!: ElementRef<HTMLElement>;
+
+  private vPath: string | null = null;
+  private vPage = 0;
+  private vSize = 100;
+  private vTotalPages = 0;
+  private vLoading = false;
+
   constructor(
     private electronService: ElectronService,
     private scrollState: ScrollStateService,
@@ -181,10 +190,17 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   private resetWindow() {
+    if (this.isReadOnly) {
+      // Virtual (DB) mode: always show everything we’ve loaded so far
+      this.visibleCount = this.renderItems.length;
+      return;
+    }
+
+    // FS mode: keep client-side windowing
     this.visibleCount = this.PAGE_SIZE;
-    // If the sentinel is already on-screen (short lists), push one more page
     if (this.renderItems.length <= this.visibleCount) return;
   }
+
 
   private expandWindow() {
     if (this.visibleCount < this.renderItems.length) {
@@ -197,22 +213,31 @@ export class HomeComponent implements OnInit, AfterViewInit {
   @ViewChild('infiniteSentinel') infiniteSentinel!: ElementRef<HTMLElement>;
 
   ngAfterViewInit() {
-
     this.syncStatusBar();
-    // give it another tick after Angular settles
     setTimeout(() => this.syncStatusBar(), 0);
-
-    // Restore the scroll position after the view has initialized
     window.scrollTo(0, this.scrollState.homeScrollPosition);
-    console.log('Restored window.scrollY to', this.scrollState.homeScrollPosition);
+
+    const rootEl = this.scrollRootRef?.nativeElement ?? null;
 
     this.io = new IntersectionObserver(entries => {
       for (const e of entries) {
-        if (e.isIntersecting) this.expandWindow();
-      }
-    }, { root: null, rootMargin: '800px 0px', threshold: 0.01 }); // prefetch ahead
+        if (!e.isIntersecting) continue;
 
-    // Wait a tick so the sentinel exists
+        if (this.isReadOnly) {
+          const hasNext = this.vTotalPages === 0 || (this.vPage + 1) < this.vTotalPages;
+          if (hasNext && !this.vLoading && !this.deepSearchActive && !this.searchTerm) {
+            this.fetchNextVirtualPage();
+          }
+        } else {
+          this.expandWindow();
+        }
+      }
+    }, {
+      root: rootEl,          // ⬅️ key change
+      rootMargin: '400px 0px',
+      threshold: 0.01
+    });
+
     setTimeout(() => this.infiniteSentinel && this.io?.observe(this.infiniteSentinel.nativeElement), 0);
   }
 
@@ -580,50 +605,46 @@ export class HomeComponent implements OnInit, AfterViewInit {
       });
 
       const pathToLoad = directoryPath ?? this.dataSource.initialPath ?? '\\';
-      this.dataSource.list(pathToLoad).subscribe({
-        next: ({ items, selectedDirectory }) => {
+      this.vPath = pathToLoad;
+      this.vPage = 0;
+      this.vTotalPages = 0;
+      const sortKey = this.mapVirtualSortKey();
+
+      this.dataSource.list(pathToLoad, {
+        page: 0,
+        size: this.vSize,
+        sortKey,
+        sortDir: this.sortDir
+      }).subscribe({
+        next: ({ items, selectedDirectory, page, totalPages }) => {
           this.ngZone.run(() => {
             this.selectedDirectory = selectedDirectory;
+            this.directoryContents = items;
+            this.isLoading = false;
 
-            const withDrives = (items || []).map((it: any) => {
-              // Prefer any known localPath, then fall back to existing drive
-              const lp =
-                it?.scanData?.localPath ??
-                it?.model?.localPath ??
-                it?.localPath ?? // some APIs return it here
-                it?.path ??      // logical path (usually no drive, but harmless)
-                '';
-
-              const derived = this.extractDrive(lp);             // e.g. "F"
-              const existing = this.normalizeDrive(it?.drive);   // e.g. "F" from API if present
-              const drive = derived ?? existing;                 // keep existing if derived is null
-
-              return { ...it, drive };
-            });
-
-            // Build unique, normalized drives
+            // build available drives
             const drives = new Set<string>();
-            for (const it of withDrives) {
-              const d = this.normalizeDrive(it?.drive);
+            for (const it of items as any[]) {
+              const d = this.normalizeDrive((it as any)?.drive);
               if (d) drives.add(d);
             }
             this.availableDrives = Array.from(drives).sort();
 
-            this.directoryContents = withDrives;
-            this.isLoading = false;
+            this.vPage = page ?? 0;
+            this.vTotalPages = totalPages ?? 0;
+
             this.recomputeRenderItems();
           });
-
-
         },
         error: (err) => {
-          console.error('Virtual/DB list() error:', err);
+          console.error('Virtual list() error:', err);
           this.ngZone.run(() => {
             this.errorMessage = 'Failed to load contents.';
             this.isLoading = false;
           });
         }
       });
+
       return;
     }
 
@@ -892,8 +913,37 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
     this.sortSubmenuOpen = false;
     this.showEmptyAreaContextMenu = false;
+
+    if (this.isReadOnly && this.selectedDirectory) {
+      this.isLoading = true;
+      const dirs = this.directoryContents.filter(x => x.isDirectory);
+      this.directoryContents = [...dirs];
+      this.vPage = 0;
+      this.vTotalPages = 0;
+
+      this.dataSource.list(this.selectedDirectory, {
+        page: 0,
+        size: this.vSize,
+        sortKey: this.mapVirtualSortKey(),
+        sortDir: this.sortDir
+      }).subscribe({
+        next: ({ items, page, totalPages }) => {
+          const filesOnly = items.filter(i => i.isFile);
+          this.directoryContents = [...dirs, ...filesOnly];
+          this.vPage = page ?? 0;
+          this.vTotalPages = totalPages ?? 0;
+          this.isLoading = false;
+          this.recomputeRenderItems();
+        },
+        error: () => { this.isLoading = false; }
+      });
+      return;
+    }
+
+    // FS mode: local sort
     this.recomputeRenderItems();
   }
+
 
   toggleSortDirection() {
     this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
@@ -1730,4 +1780,48 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.recomputeRenderItems();   // re-sorts and updates the windowed list
     }
   }
+
+
+  private mapVirtualSortKey(): 'name' | 'created' | 'modified' | 'myRating' {
+    switch (this.sortKey) {
+      case 'created': return 'created';
+      case 'modified': return 'modified';
+      case 'myRating': return 'myRating';
+      default: return 'name'; // 'size' not supported in Virtual
+    }
+  }
+
+  private fetchNextVirtualPage() {
+    if (!this.vPath || this.vLoading) return;
+    if (this.vTotalPages && (this.vPage + 1) >= this.vTotalPages) return;
+
+    this.vLoading = true;
+    const sortKey = this.mapVirtualSortKey();
+    console.log('[Virtual] loading page', this.vPage + 1, 'size', this.vSize, 'sort', sortKey, this.sortDir);
+
+    this.dataSource.list(this.vPath, {
+      page: this.vPage + 1,
+      size: this.vSize,
+      sortKey,
+      sortDir: this.sortDir
+    }).subscribe({
+      next: ({ items, page, totalPages }) => {
+        const filesOnly = (items ?? []).filter(i => i.isFile);
+        console.log('[Virtual] received page', page, 'files', filesOnly.length, 'totalPages', totalPages);
+
+        this.directoryContents = [...this.directoryContents, ...filesOnly];
+        this.vPage = page ?? (this.vPage + 1);
+        this.vTotalPages = totalPages ?? this.vTotalPages;
+
+        this.vLoading = false;
+        this.recomputeRenderItems();
+      },
+      error: (err) => {
+        console.error('Virtual next page error:', err);
+        this.vLoading = false;
+      }
+    });
+  }
+
+
 }
