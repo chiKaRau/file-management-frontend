@@ -122,6 +122,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   selectedDrive: string = 'all';
   groupingMode = false; // if you want the toggle wire-up
 
+  private vQuery: string = ''; // 👈 remember current virtual search term
+
+
   // add near other ViewChilds
   @ViewChild('scrollRoot') scrollRootRef!: ElementRef<HTMLElement>;
 
@@ -398,11 +401,44 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   applySearch(newTerm: string) {
     this.searchTerm = newTerm;
+
+    if (this.isReadOnly && this.selectedDirectory) {
+      // Server-side search in Virtual mode
+      this.vQuery = (newTerm || '').trim();
+      this.vPage = 0;            // reset paging
+      this.vTotalPages = 0;
+      this.isLoading = true;
+
+      const sortKey = this.mapVirtualSortKey();
+      const keepDirs = this.directoryContents.filter(x => x.isDirectory); // keep dirs on top
+
+      this.dataSource.list(this.selectedDirectory, {
+        page: 0,
+        size: this.vSize,
+        sortKey,
+        sortDir: this.sortDir,
+        query: this.vQuery || undefined
+      }).subscribe({
+        next: ({ items, page, totalPages }) => {
+          const filesOnly = (items ?? []).filter(i => i.isFile);
+          this.directoryContents = [...keepDirs, ...filesOnly];
+          this.vPage = page ?? 0;
+          this.vTotalPages = totalPages ?? 0;
+          this.isLoading = false;
+          this.recomputeRenderItems();
+        },
+        error: () => { this.isLoading = false; }
+      });
+      return;
+    }
+
+    // Filesystem mode: local filter as before
     clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
-      this.recomputeRenderItems();     // ← resets window to first page
+      this.recomputeRenderItems();
     }, 250);
   }
+
 
   async openDirectory() {
     // If the current route is using the Virtual/DB data source, don't open OS picker.
@@ -610,6 +646,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
       const pathToLoad = directoryPath ?? this.dataSource.initialPath ?? '\\';
       this.vPath = pathToLoad;
+      this.vQuery = ''; // 👈 clear search when navigating
       this.vPage = 0;
       this.vTotalPages = 0;
       const sortKey = this.mapVirtualSortKey();
@@ -618,7 +655,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
         page: 0,
         size: this.vSize,
         sortKey,
-        sortDir: this.sortDir
+        sortDir: this.sortDir,
+        query: this.vQuery || undefined, // 👈
       }).subscribe({
         next: ({ items, selectedDirectory, page, totalPages, totalElements }) => {
           this.ngZone.run(() => {
@@ -1678,7 +1716,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const list = this.directoryContents ?? [];
     return list.reduce((n, it) => n + (it.isDirectory ? 1 : 0), 0);
   }
-  
+
   /** visible (after your drive/search/sort filters) */
   get visibleFilesCount(): number {
     const list = this.renderItems ?? [];
@@ -1820,7 +1858,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       page: this.vPage + 1,
       size: this.vSize,
       sortKey,
-      sortDir: this.sortDir
+      sortDir: this.sortDir,
+      query: this.vQuery || undefined   // 👈 keep passing search term
     }).subscribe({
       next: ({ items, page, totalPages, totalElements }) => {
         const filesOnly = (items ?? []).filter(i => i.isFile);

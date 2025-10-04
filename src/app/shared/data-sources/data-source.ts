@@ -11,6 +11,7 @@ export interface ExplorerDataSource {
             size?: number;
             sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size';
             sortDir?: 'asc' | 'desc';
+            query?: string; // 👈 add this
         }
     ): Observable<{
         items: DirectoryItem[];

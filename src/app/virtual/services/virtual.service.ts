@@ -30,18 +30,21 @@ export class VirtualService {
         return this.currentPath;
     }
 
+    // src/app/virtual/services/virtual.service.ts
     getFiles(
         path: string,
         page: number,
         size: number,
         sortKey: 'name' | 'created' | 'modified' | 'myRating',
-        sortDir: 'asc' | 'desc'
+        sortDir: 'asc' | 'desc',
+        q?: string
     ): Observable<{ payload: PageResponse<any> }> {
         return this.http.post<{ payload: PageResponse<any> }>(
             'http://localhost:3000/api/find-virtual-files',
-            { path, page, size, sortKey, sortDir }
+            { path, page, size, sortKey, sortDir, q }
         );
     }
+
 
     getDirectories(path: string): Observable<{ payload: any[] }> {
         return this.http.post<{ payload: any[] }>('http://localhost:3000/api/find-virtual-directories', { path });

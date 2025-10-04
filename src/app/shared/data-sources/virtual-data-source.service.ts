@@ -5,7 +5,6 @@ import { Observable, forkJoin, map, of } from 'rxjs';
 import { PageResponse, VirtualService } from '../../virtual/services/virtual.service';
 import { DirectoryItem } from '../../home/components/file-list/model/directory-item.model';
 
-
 @Injectable()
 export class VirtualDbDataSource implements ExplorerDataSource {
     readOnly = true;
@@ -20,6 +19,7 @@ export class VirtualDbDataSource implements ExplorerDataSource {
             size?: number;
             sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size';
             sortDir?: 'asc' | 'desc';
+            query?: string;                    // 👈 NEW: optional server-side search term
         }
     ): Observable<{
         items: DirectoryItem[];
@@ -41,8 +41,11 @@ export class VirtualDbDataSource implements ExplorerDataSource {
                         : 'name';
         const sortDir: 'asc' | 'desc' = opts?.sortDir === 'desc' ? 'desc' : 'asc';
 
-        // fetch directories only for the first page
-        const dirs$ = page === 0
+        // In search mode, we don't show directories (only files)
+        const inSearch = !!opts?.query && opts.query.trim().length > 0;
+
+        // fetch directories only for the first page AND not in search mode
+        const dirs$ = page === 0 && !inSearch
             ? this.virtualService.getDirectories(p).pipe(
                 map((res) => {
                     const dirPayload = (res && (res as any).payload) ? (res as any).payload : res;
@@ -59,25 +62,28 @@ export class VirtualDbDataSource implements ExplorerDataSource {
             )
             : of<DirectoryItem[]>([]);
 
-        const files$ = this.virtualService.getFiles(p, page, size, sortKey, sortDir).pipe(
-            map((res) => {
-                const pl = (res as any).payload;
-                if (pl && Array.isArray(pl)) {
-                    // fallback: server returned a plain array => synthesize 1-page response
-                    const content = pl;
-                    return {
-                        content,
-                        page: 0,
-                        size: content.length,
-                        totalElements: content.length,
-                        totalPages: 1,
-                        hasNext: false,
-                        hasPrevious: false
-                    } as PageResponse<any>;
-                }
-                return pl as PageResponse<any>;
-            })
-        );
+        // 👇 pass opts?.query through to the backend
+        const files$ = this.virtualService
+            .getFiles(p, page, size, sortKey, sortDir, opts?.query)
+            .pipe(
+                map((res) => {
+                    const pl = (res as any).payload;
+                    if (pl && Array.isArray(pl)) {
+                        // fallback: server returned a plain array => synthesize 1-page response
+                        const content = pl;
+                        return {
+                            content,
+                            page: 0,
+                            size: content.length,
+                            totalElements: content.length,
+                            totalPages: 1,
+                            hasNext: false,
+                            hasPrevious: false
+                        } as PageResponse<any>;
+                    }
+                    return pl as PageResponse<any>;
+                })
+            );
 
         return forkJoin({ dirs: dirs$, filesPr: files$ }).pipe(
             map(({ dirs, filesPr }) => {
@@ -97,7 +103,8 @@ export class VirtualDbDataSource implements ExplorerDataSource {
                     })
                     : [];
 
-                const items = page === 0 ? [...dirs, ...fileItems] : fileItems;
+                // if page=0 and not searching, prepend directories; otherwise only files
+                const items = page === 0 && !inSearch ? [...dirs, ...fileItems] : fileItems;
 
                 return {
                     items,
