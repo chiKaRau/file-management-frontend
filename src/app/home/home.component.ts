@@ -2064,16 +2064,29 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
 
   /** Normalize API DTO into the shape the file list expects in Virtual mode */
+  /** Normalize API DTO into the shape the file list expects in Virtual mode */
   private mapDeepDtoToDirectoryItem(dto: any): DirectoryItem {
+    console.log('dto keys', Object.keys(dto));
+    console.log('dto.localPath (raw):', JSON.stringify(dto?.localPath));
+
+    const firstNonBlank = (...candidates: any[]) =>
+      candidates.find(v => typeof v === 'string' && v.trim().length > 0) ?? '';
+
     const modelId = String(dto?.modelNumber ?? dto?.modelId ?? dto?.modelID ?? '');
     const versionId = String(dto?.versionNumber ?? dto?.versionId ?? dto?.versionID ?? '');
-    const baseModel = dto?.baseModel ?? dto?.modelBase ?? '';
-    const mainName = dto?.mainModelName ?? dto?.name ?? dto?.modelName ?? '';
+    const baseModel = firstNonBlank(dto?.baseModel, dto?.modelBase);
+    const mainName = firstNonBlank(dto?.mainModelName, dto?.name, dto?.modelName);
+
+    // Accept multiple possible keys and treat '' as missing
+    const localPath = firstNonBlank(dto?.localPath, dto?.path, dto?.virtualPath, dto?.logicalPath);
 
     const name = [modelId, versionId, baseModel, mainName].filter(Boolean).join('_');
-    const logicalPath = `\\DEEP\\${modelId || 'M'}_${versionId || 'V'}\\${(mainName || 'model')}`;
 
-    // Normalize image urls into scanData.imageUrls (array of strings)
+    // Use a stable synthetic prefix if localPath is missing
+    const logicalPath =
+      `\\${localPath || '@virtual'}\\${modelId || 'M'}_${versionId || 'V'}\\${mainName || 'model'}`;
+
+    // Normalize image urls
     let imageUrls: any = dto?.imageUrls ?? dto?.images?.imageUrls ?? dto?.images ?? null;
     if (typeof imageUrls === 'string') {
       try { imageUrls = JSON.parse(imageUrls); } catch { imageUrls = null; }
@@ -2084,24 +2097,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     const item: DirectoryItem = {
       name,
-      path: logicalPath,          // just needs to be unique/stable for trackBy and selection
+      path: logicalPath,
       isFile: true,
       isDirectory: false,
       isDeleted: false
     } as any;
 
-    // The file list already knows how to read thumbnails/stats/etc from scanData
     (item as any).scanData = {
       ...dto,
       modelNumber: modelId || dto?.modelNumber,
       versionNumber: versionId || dto?.versionNumber,
       baseModel,
       mainModelName: mainName,
+      localPath,    // <- ensure it’s present in scanData as well
       imageUrls
     };
 
     return item;
   }
+
 
   onMyRatingChanged() {
     if (this.sortKey === 'myRating') {
