@@ -382,32 +382,27 @@
     padding-left: 0;
 }
 
-/* Make label + example line up neatly */
+/* Keep code intact; wrap only the label */
 .examples li {
-    display: flex;
-    gap: .5rem;
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    /* label column fixed, code column flexible */
+    column-gap: .5rem;
+    align-items: start;
 }
 
+/* Override the earlier min-width and allow wrapping */
 .ex-title {
-    min-width: 9.5rem;
-    /* tweak width as you like */
-    font-weight: 600;
-    color: var(--text);
-    opacity: .9;
+    min-width: 0;
+    /* override previous 9.5rem min-width */
+    white-space: normal;
+    /* wrap label text */
+    word-break: break-word;
+    /* break long words if needed */
+    line-height: 1.25;
 }
 
-/* Add breathing room on the right */
-.search-help-popover {
-    padding: 12px 18px 12px 14px;
-    /* top right bottom left (right +4px) */
-}
-
-/* Better wrapping so long queries don't touch the edge */
-.examples li {
-    align-items: flex-start;
-    /* allow multi-line code to align nicely */
-}
-
+/* Ensure code never gets clipped; allow wrapping if long */
 .search-help-popover code {
     display: inline-block;
     max-width: 100%;
@@ -416,7 +411,12 @@
     overflow-wrap: anywhere;
     /* break long tokens if needed */
     word-break: break-word;
-    /* fallback for older engines */
-    padding: 2px 6px;
-    /* a bit more inner cushion */
+    /* fallback */
+}
+
+/* Small screens: stack label above code for readability */
+@media (max-width: 420px) {
+    .examples li {
+        grid-template-columns: 1fr;
+    }
 }
