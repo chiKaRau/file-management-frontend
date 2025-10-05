@@ -392,7 +392,7 @@
                 class="btn btn--primary btn--sm">Save</button>
             <button *ngIf="editing" (click)="cancelEdit()" [disabled]="savingEdit"
                 class="btn btn--ghost btn--sm">Cancel</button>
-            <button *ngIf="editing" (click)="syncFromAPI()" [disabled]="syncingFromAPI || !canSyncNow"
+            <button *ngIf="editing" (click)="syncFromAPI()" [disabled]="syncingFromAPI || !canSyncNow || !!error"
                 class="btn btn--outline btn--sm" [title]="!canSyncNow ? 'Open Local Record first' : ''">
                 {{ syncingFromAPI ? 'Syncing…' : 'Sync From Civitai API' }}
             </button>
