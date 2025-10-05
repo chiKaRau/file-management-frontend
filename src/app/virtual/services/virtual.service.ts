@@ -35,7 +35,7 @@ export class VirtualService {
         path: string,
         page: number,
         size: number,
-        sortKey: 'name' | 'created' | 'modified' | 'myRating',
+        sortKey: 'name' | 'created' | 'modified' | 'myRating' | 'modelNumber' | 'versionNumber',
         sortDir: 'asc' | 'desc',
         q?: string
     ): Observable<{ payload: PageResponse<any> }> {
@@ -44,6 +44,7 @@ export class VirtualService {
             { path, page, size, sortKey, sortDir, q }
         );
     }
+
 
 
     getDirectories(path: string, sortKey?: 'name' | 'created' | 'modified' | 'myRating', sortDir?: 'asc' | 'desc') {

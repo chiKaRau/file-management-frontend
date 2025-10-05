@@ -112,7 +112,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   isUpdatingAllModels: boolean = false;
   currentUpdateModel: string = '';
 
-  sortKey: 'name' | 'size' | 'modified' | 'created' | 'myRating' = 'name';
+  sortKey: 'name' | 'size' | 'modified' | 'created' | 'myRating' | 'modelNumber' | 'versionNumber' = 'name';
   sortDir: 'asc' | 'desc' = 'asc';
 
   // home.component.ts (top-level fields)
@@ -979,7 +979,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
 
-  setSort(key: 'name' | 'size' | 'modified' | 'created' | 'myRating') {
+  setSort(key: 'name' | 'size' | 'modified' | 'created' | 'myRating' | 'modelNumber' | 'versionNumber') {
     if (this.sortKey === key) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -1018,6 +1018,29 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // FS mode: local sort
     this.recomputeRenderItems();
   }
+
+  private getModelNumberN(it: DirectoryItem): number {
+    // Virtual → prefer scanData
+    const sd: any = (it as any).scanData;
+    const v1 = sd?.modelNumber ?? (it as any).modelNumber ?? null;
+    if (v1 != null && /^\d+$/.test(String(v1))) return Number(v1);
+
+    // FS → parse filename like "123_456_..."
+    const m = it.name?.match(/^(\d+)_/);
+    return m ? Number(m[1]) : Number.NaN;
+  }
+
+  private getVersionNumberN(it: DirectoryItem): number {
+    // Virtual → prefer scanData
+    const sd: any = (it as any).scanData;
+    const v2 = sd?.versionNumber ?? (it as any).versionNumber ?? null;
+    if (v2 != null && /^\d+$/.test(String(v2))) return Number(v2);
+
+    // FS → parse filename like "123_456_..."
+    const m = it.name?.match(/^\d+_(\d+)_/);
+    return m ? Number(m[1]) : Number.NaN;
+  }
+
 
 
   toggleSortDirection() {
@@ -1676,6 +1699,22 @@ export class HomeComponent implements OnInit, AfterViewInit {
         cmp = ar - br;
         break;
       }
+      case 'modelNumber': {
+        const an = this.getModelNumberN(a), bn = this.getModelNumberN(b);
+        const aBad = Number.isNaN(an), bBad = Number.isNaN(bn);
+        if (aBad && !bBad) return 1;     // push “unknown” to bottom
+        if (bBad && !aBad) return -1;
+        cmp = (aBad ? 0 : an) - (bBad ? 0 : bn);
+        break;
+      }
+      case 'versionNumber': {
+        const an = this.getVersionNumberN(a), bn = this.getVersionNumberN(b);
+        const aBad = Number.isNaN(an), bBad = Number.isNaN(bn);
+        if (aBad && !bBad) return 1;
+        if (bBad && !aBad) return -1;
+        cmp = (aBad ? 0 : an) - (bBad ? 0 : bn);
+        break;
+      }
     }
 
     return this.sortDir === 'asc' ? cmp : -cmp;
@@ -2071,14 +2110,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
 
-  private mapVirtualSortKey(): 'name' | 'created' | 'modified' | 'myRating' {
+  private mapVirtualSortKey():
+    'name' | 'created' | 'modified' | 'myRating' | 'modelNumber' | 'versionNumber' {
     switch (this.sortKey) {
       case 'created': return 'created';
       case 'modified': return 'modified';
       case 'myRating': return 'myRating';
-      default: return 'name'; // 'size' not supported in Virtual
+      case 'modelNumber': return 'modelNumber';
+      case 'versionNumber': return 'versionNumber';
+      default: return 'name';
     }
   }
+
 
   private fetchNextVirtualPage() {
     if (!this.vPath || this.vLoading) return;

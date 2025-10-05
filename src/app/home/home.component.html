@@ -178,6 +178,15 @@
           <span *ngIf="sortKey==='name'">✓</span> Name
           <span *ngIf="sortKey==='name'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
         </div>
+        <div class="submenu-item" (click)="setSort('modelNumber')">
+          <span *ngIf="sortKey==='modelNumber'">✓</span> Model #
+          <span *ngIf="sortKey==='modelNumber'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
+        </div>
+        <div class="submenu-item" (click)="setSort('versionNumber')">
+          <span *ngIf="sortKey==='versionNumber'">✓</span> Version #
+          <span *ngIf="sortKey==='versionNumber'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>
+        </div>
+
         <div class="submenu-item" (click)="setSort('size')">
           <span *ngIf="sortKey==='size'">✓</span> File size
           <span *ngIf="sortKey==='size'">{{ sortDir==='asc' ? '↑' : '↓' }}</span>

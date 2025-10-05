@@ -17,7 +17,7 @@ export class VirtualDbDataSource implements ExplorerDataSource {
         opts?: {
             page?: number;
             size?: number;
-            sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size';
+            sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size' | 'modelNumber' | 'versionNumber';
             sortDir?: 'asc' | 'desc';
             query?: string;                    // 👈 NEW: optional server-side search term
         }
@@ -34,11 +34,15 @@ export class VirtualDbDataSource implements ExplorerDataSource {
         const size = opts?.size ?? 100;
 
         // map UI sort to server sort (Virtual doesn't support 'size')
-        const sortKey: 'name' | 'created' | 'modified' | 'myRating' =
+        const sortKey:
+            'name' | 'created' | 'modified' | 'myRating' | 'modelNumber' | 'versionNumber' =
             opts?.sortKey === 'created' ? 'created'
                 : opts?.sortKey === 'modified' ? 'modified'
                     : opts?.sortKey === 'myRating' ? 'myRating'
-                        : 'name';
+                        : opts?.sortKey === 'modelNumber' ? 'modelNumber'
+                            : opts?.sortKey === 'versionNumber' ? 'versionNumber'
+                                : 'name';
+
         const sortDir: 'asc' | 'desc' = opts?.sortDir === 'desc' ? 'desc' : 'asc';
 
         // In search mode, we don't show directories (only files)

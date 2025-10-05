@@ -9,7 +9,7 @@ export interface ExplorerDataSource {
         opts?: {
             page?: number;
             size?: number;
-            sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size';
+            sortKey?: 'name' | 'created' | 'modified' | 'myRating' | 'size' | 'modelNumber' | 'versionNumber';
             sortDir?: 'asc' | 'desc';
             query?: string; // 👈 add this
         }
