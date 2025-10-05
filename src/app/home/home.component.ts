@@ -1789,27 +1789,233 @@ export class HomeComponent implements OnInit, AfterViewInit {
     return parts.length ? parts[parts.length - 1] : normalized;
   }
 
+  // put this near your component class
+  private readonly FIELD_SYNTAX =
+    /(^|\s)\w+\s*:\s*(?:"[^"]*"|'[^']*'|\S+)/;
+
+  // split: keep quoted phrases, split by comma or whitespace otherwise
+  private smartSplit(raw: string): string[] {
+    const out: string[] = [];
+    const re = /"([^"]+)"|'([^']+)'|([^,\s]+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(raw)) !== null) {
+      out.push((m[1] || m[2] || m[3]).trim());
+    }
+    return out;
+  }
+
+  // --- helpers (you already have parseMaybeJson; keep it) ---
+  private safeSlug(s: string): string {
+    return (s || '')
+      .replace(/[\\/:*?"<>|]/g, ' ')     // strip illegal FS chars
+      .replace(/\s+/g, ' ')              // collapse spaces
+      .trim();
+  }
+
+  /** Try to synthesize a local preview path if backend didn’t provide URLs */
+  private deriveFirstImageUrlFromLocal(row: any): string | null {
+    const local = row?.localPath;
+    if (!local) return null;
+
+    const model = String(row?.modelNumber ?? '');
+    const ver = String(row?.versionNumber ?? '');
+    const base = this.safeSlug(String(row?.baseModel ?? ''));
+    const main = this.safeSlug(String(row?.mainModelName ?? row?.name ?? ''));
+
+    if (!model || !ver || !main) return null;
+
+    // expected filename convention: 123_456_SDXL_My Model.preview.png
+    const filePath = `${local.replace(/\\/g, '/')}/${model}_${ver}${base ? '_' + base : ''}_${main}.preview.png`;
+    return `file:///${encodeURI(filePath)}`;
+  }
+
+  /** ✅ NEW: robust mapper for /find-virtual-files rows */
+  private mapVirtualRowToDirectoryItem(row: any): any {
+    const modelNumber = String(row.modelNumber ?? row.modelId ?? row.model_id ?? '');
+    const versionNumber = String(row.versionNumber ?? row.versionId ?? row.version_id ?? '');
+    const baseModel = row.baseModel ?? row.base_model ?? '';
+    const mainName = row.mainModelName ?? row.name ?? '';
+    const creatorName = row.creatorName ?? row.creator ?? row.details?.creatorName ?? '';
+
+    // Build a consistent display name like your other views
+    const name = [modelNumber, versionNumber, baseModel, mainName].filter(Boolean).join('_');
+
+    // Logical path for virtual items (unique/stable)
+    const logicalPath = `\\VIRTUAL\\${modelNumber || 'M'}_${versionNumber || 'V'}\\${this.safeSlug(mainName || 'model')}`;
+
+    // --- normalize media ---
+    let imageUrls = this.parseMaybeJson<string[]>(row.imageUrls ?? row.images ?? row.imagesJson);
+    if (!Array.isArray(imageUrls)) imageUrls = [];
+    const firstImageUrl =
+      row.firstImageUrl ??
+      (imageUrls.length ? imageUrls[0] : null) ??
+      this.deriveFirstImageUrlFromLocal(row); // last-resort: guess from localPath
+
+    // --- normalize list-y fields (may arrive as JSON strings) ---
+    const tags = this.parseMaybeJson<string[]>(row.tags) ?? [];
+    const aliases = this.parseMaybeJson<string[]>(row.aliases) ?? [];
+    const triggerWords = this.parseMaybeJson<string[]>(row.triggerWords) ?? [];
+
+    // --- normalize stats ---
+    const statsObj = this.parseMaybeJson<any>(row.stats ?? row.statsJson);
+    const statsParsed = (statsObj && typeof statsObj === 'object') ? statsObj : undefined;
+    const stats = statsParsed ? JSON.stringify(statsParsed) : undefined;
+
+    const item: any = {
+      id: row.id ?? row._id ?? `${modelNumber}_${versionNumber}`,
+      name,
+      path: logicalPath,
+      isFile: true,
+      isDirectory: false,
+      drive: row.drive ?? 'all',
+      localPath: row.localPath ?? '',
+      myRating: row.myRating ?? null, // surface for sort-by-rating if needed
+    };
+
+    // The sidebar & thumbnails read from scanData — mirror your deep DTO shape
+    item.scanData = {
+      modelNumber, versionNumber, baseModel,
+      mainModelName: mainName,
+      creatorName,
+      tags, aliases, triggerWords,
+      myRating: row.myRating ?? null,
+      imageUrls,
+      firstImageUrl,             // your FileList prefers this if present
+      statsParsed, stats,
+
+      // pass through useful raw bits for the sidebar
+      createdAt: row.createdAt ?? null,
+      updatedAt: row.updatedAt ?? null,
+      localPath: row.localPath ?? null,
+
+      // keep whole row in case sidebar needs extra fields later
+      ...row
+    };
+
+    return item;
+  }
+
+
   onDeepSearch(raw: string) {
-    const tagList = (raw || '').split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+    const q = (raw || '').trim();
+    if (!q) { this.clearDeepSearch(); return; }
+
+    // if it LOOKS like fielded query => use /find-virtual-files
+    if (this.FIELD_SYNTAX.test(q)) {
+      this.isLoading = true;
+      const body = {
+        path: "/",                // search ANYWHERE (your backend treats "/" as “no restriction”)
+        page: 0,
+        size: 99999,               // choose a sensible cap; increase if you like
+        sortKey: this.sortKey ?? 'relevance',
+        sortDir: this.sortDir ?? 'desc',
+        q
+      };
+
+      this.http.post<any>('http://localhost:3000/api/find-virtual-files', body)
+        .subscribe({
+          next: (res) => {
+            // Virtual returns: { payload: { content: [{ drive, model: {...} }, ...] } }
+            // Normalize to Tampermonkey's: modelsList: model[]
+            const list: any[] = Array.isArray(res?.payload?.content)
+              ? res.payload.content
+                .map((row: any) => row?.model)
+                .filter(Boolean)
+              : [];
+
+            this.deepSearchItems = list.map(dto => this.mapDeepDtoToDirectoryItem(dto));
+            this.deepSearchActive = true;
+            this.recomputeRenderItems();
+            this.isLoading = false;
+          },
+          error: (err) => {
+            console.error('Deep search (fielded) failed:', err);
+            this.isLoading = false;
+          }
+        });
+      return;
+    }
+
+    // otherwise: tag-mode – send to your existing deep-search endpoint
+    const tagList = this.smartSplit(q);
     if (!tagList.length) { this.clearDeepSearch(); return; }
 
     this.isLoading = true;
     this.http.post<any>(
       'http://localhost:3000/api/find-list-of-models-dto-from-all-table-by-tagsList-tampermonkey',
-      { tagsList: tagList }
+      {
+        tagsList: tagList,
+        // let the backend optionally use these for consistent UX
+        sortKey: this.sortKey ?? 'name',
+        sortDir: this.sortDir ?? 'asc',
+        // also include the raw query so backend could choose to branch too (optional)
+        q
+      }
     ).subscribe({
       next: (res) => {
+
+
+        console.log("res");
+        console.log(res);
+
         const list: any[] = res?.payload?.modelsList ?? [];
         this.deepSearchItems = list.map(dto => this.mapDeepDtoToDirectoryItem(dto));
         this.deepSearchActive = true;
-
-        // ✅ Feed the virtualization pipeline
-        this.recomputeRenderItems();     // this will set renderItems and reset window
+        this.recomputeRenderItems();
         this.isLoading = false;
       },
-      error: (err) => { console.error('Deep search failed:', err); this.isLoading = false; }
+      error: (err) => { console.error('Deep search (tags) failed:', err); this.isLoading = false; }
     });
   }
+
+  // small utils
+  private parseMaybeJson<T = any>(v: any): T {
+    if (v == null) return v as T;
+    if (typeof v !== 'string') return v as T;
+    try { return JSON.parse(v) as T; } catch { return v as T; }
+  }
+
+  private coalesceName(row: any): string {
+    return row?.name || row?.mainModelName ||
+      (row?.modelNumber && row?.versionNumber ? `${row.modelNumber}_${row.versionNumber}` : 'Unknown');
+  }
+
+  // ✅ adapt this to however you build thumbnails in deep search
+  private buildPreviewFromRow(row: any): string | null {
+    // 1) if backend already gives a preview url, use it
+    if (row?.previewUrl) return row.previewUrl;
+
+    // 2) else if your deep mapper has a util (recommended), call that:
+    // return this.buildPreviewFromLocalPath(row?.localPath);
+
+    // 3) else leave null and let UI fall back
+    return null;
+  }
+
+  /** Convert one /find-virtual-files row (Models_Table_Entity map) to your Deep DTO */
+  private virtualRowToDeepDTO(row: any) {
+    return {
+      id: row.id ?? row._id ?? null,
+      name: this.coalesceName(row),
+      mainModelName: row.mainModelName ?? null,
+      modelNumber: row.modelNumber ?? null,
+      versionNumber: row.versionNumber ?? null,
+      baseModel: row.baseModel ?? null,
+      localPath: row.localPath ?? null,
+      // these may be JSON strings in the DB; parse if needed
+      tags: this.parseMaybeJson<string[]>(row.tags) ?? [],
+      aliases: this.parseMaybeJson<string[]>(row.aliases) ?? [],
+      triggerWords: this.parseMaybeJson<string[]>(row.triggerWords) ?? [],
+      myRating: row.myRating ?? null,
+      // useful extras
+      createdAt: row.createdAt ?? null,
+      updatedAt: row.updatedAt ?? null,
+      // make sure images work exactly like your deep-search DTOs
+      previewUrl: this.buildPreviewFromRow(row),
+      // add anything else your mapDeepDtoToDirectoryItem expects
+    };
+  }
+
 
   clearDeepSearch() {
     this.deepSearchActive = false;
