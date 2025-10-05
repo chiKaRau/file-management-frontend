@@ -934,6 +934,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const prevPath = this.navigationService.goBack();
     if (prevPath) {
       this.ngZone.run(() => {
+        this.clearSearchState();
         this.selectedDirectory = prevPath;
         this.isLoading = true;
       });
@@ -945,6 +946,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const nextPath = this.navigationService.goForward();
     if (nextPath) {
       this.ngZone.run(() => {
+        this.clearSearchState();
         this.selectedDirectory = nextPath;
         this.isLoading = true;
       });
@@ -1060,6 +1062,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
 
   openSubDirectory(subDirPath: string) {
+    this.clearSearchState();
     this.ngZone.run(() => {
       this.isLoading = true;
       this.errorMessage = null;
@@ -1070,6 +1073,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   navigateByPath(newPath: string) {
+    this.clearSearchState();
     if (this.isReadOnly) {            // if somehow called in Virtual, just delegate
       this.onVirtualPathChange(newPath);
       return;
@@ -1729,6 +1733,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   onVirtualPathChange(newPath: string) {
     // No fs.existsSync checks here — DB path is a logical path
+    this.clearSearchState();
     if (!newPath.endsWith('\\')) newPath += '\\';
     this.navigationService.navigateTo(newPath);
     this.loadDirectoryContents(newPath);
@@ -2195,6 +2200,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // For other fielded queries (like mainModelName:"..."), directories don't match
     // unless free text remained or path/name was explicitly targeted.
     return !!free; // if there is leftover free text but didn't match name, treat as no-match
+  }
+
+  private clearSearchState() {
+    this.searchTerm = '';
+    this.vQuery = '';              // virtual mode server-side term
+    this.deepSearchActive = false; // turn off deep search mode
+    this.deepSearchItems = [];
   }
 
 
