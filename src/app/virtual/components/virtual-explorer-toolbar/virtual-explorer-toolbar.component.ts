@@ -135,4 +135,22 @@ export class VirtualExplorerToolbarComponent implements OnChanges {
     this.deepClear.emit();
   }
 
+  helpOpen = false;
+  private helpCloseTimer: any = null;
+
+  openHelp() {
+    if (this.helpCloseTimer) clearTimeout(this.helpCloseTimer);
+    this.helpOpen = true;
+  }
+
+  scheduleHelpClose() {
+    if (this.helpCloseTimer) clearTimeout(this.helpCloseTimer);
+    this.helpCloseTimer = setTimeout(() => this.helpOpen = false, 120);
+  }
+
+  onHelpKeydown(ev: KeyboardEvent) {
+    if (ev.key === 'Escape') this.helpOpen = false;
+  }
+
+
 }

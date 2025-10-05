@@ -3,6 +3,10 @@
     display: block;
     flex: 1 1 auto;
     min-width: 0;
+    --panel-bg: var(--panel);
+    --panel-fg: var(--text);
+    --panel-border: var(--border);
+    --code-bg: var(--menu-hover);
     /* enables truncation inside */
 }
 
@@ -276,4 +280,143 @@
     width: 36px;
     padding: 0;
     justify-content: center;
+}
+
+.help-icon svg {
+    fill: var(--icon);
+}
+
+.help-popover-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    outline: none;
+}
+
+.search-help-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    max-width: min(320px, 80vw);
+    padding: 12px 14px;
+    border-radius: 8px;
+    z-index: 1000;
+    background: var(--panel-bg, #ffffff);
+    color: var(--panel-fg, #222222);
+    border: 1px solid var(--panel-border, rgba(0, 0, 0, .08));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .20);
+}
+
+.search-help-popover .arrow {
+    position: absolute;
+    top: -6px;
+    right: 12px;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    background: inherit;
+    border-top: 1px solid var(--panel-border, rgba(0, 0, 0, .08));
+    border-left: 1px solid var(--panel-border, rgba(0, 0, 0, .08));
+}
+
+.search-help-popover h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    opacity: .85;
+}
+
+.search-help-popover .examples {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.search-help-popover .examples li {
+    margin: 6px 0;
+}
+
+.search-help-popover code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: var(--code-bg, rgba(0, 0, 0, .06));
+}
+
+/* DARK MODE: background dark, text white */
+/* DARK MODE: force dark bg + white text specifically for the popover */
+:host-context(.theme-dark),
+:host-context(.dark),
+:host-context([data-theme="dark"]),
+:host-context(.darkmode) {
+    .search-help-popover {
+        background: #0f0f10;
+        /* darker panel */
+        color: #ffffff;
+        /* white text */
+        border-color: rgba(255, 255, 255, .20);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .70);
+    }
+
+    .search-help-popover .arrow {
+        background: #0f0f10;
+        border-top-color: rgba(255, 255, 255, .20);
+        border-left-color: rgba(255, 255, 255, .20);
+    }
+
+    .search-help-popover code {
+        background: rgba(255, 255, 255, .12);
+        color: #ffffff;
+    }
+
+    .help-icon svg {
+        fill: #ffffff;
+    }
+}
+
+/* Optional: bulletless variant */
+.examples.examples--plain {
+    list-style: none;
+    padding-left: 0;
+}
+
+/* Make label + example line up neatly */
+.examples li {
+    display: flex;
+    gap: .5rem;
+}
+
+.ex-title {
+    min-width: 9.5rem;
+    /* tweak width as you like */
+    font-weight: 600;
+    color: var(--text);
+    opacity: .9;
+}
+
+/* Add breathing room on the right */
+.search-help-popover {
+    padding: 12px 18px 12px 14px;
+    /* top right bottom left (right +4px) */
+}
+
+/* Better wrapping so long queries don't touch the edge */
+.examples li {
+    align-items: flex-start;
+    /* allow multi-line code to align nicely */
+}
+
+.search-help-popover code {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    /* allow wrapping */
+    overflow-wrap: anywhere;
+    /* break long tokens if needed */
+    word-break: break-word;
+    /* fallback for older engines */
+    padding: 2px 6px;
+    /* a bit more inner cushion */
 }
