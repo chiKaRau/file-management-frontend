@@ -55,9 +55,14 @@ export class VirtualDbDataSource implements ExplorerDataSource {
                             isDirectory: true,
                             name: d.directory,
                             path: p + (p.endsWith('\\') ? '' : '\\') + d.directory + '\\',
-                            drive: d.drive
+                            drive: d.drive,
+                            // NEW: let HomeComponent.compareItems sort dirs meaningfully:
+                            createdAt: d.dirCreatedAt ? new Date(d.dirCreatedAt) : undefined,
+                            modifiedAt: d.dirModifiedAt ? new Date(d.dirModifiedAt) : undefined,
+                            myRating: Number.isFinite(d.dirRatingAvg) ? d.dirRatingAvg : undefined
                         } as DirectoryItem))
                         : [];
+
                 })
             )
             : of<DirectoryItem[]>([]);

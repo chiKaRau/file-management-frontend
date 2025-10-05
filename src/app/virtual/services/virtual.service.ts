@@ -46,9 +46,13 @@ export class VirtualService {
     }
 
 
-    getDirectories(path: string): Observable<{ payload: any[] }> {
-        return this.http.post<{ payload: any[] }>('http://localhost:3000/api/find-virtual-directories', { path });
+    getDirectories(path: string, sortKey?: 'name' | 'created' | 'modified' | 'myRating', sortDir?: 'asc' | 'desc') {
+        return this.http.post<{ payload: any[] }>(
+            'http://localhost:3000/api/find-virtual-directories',
+            { path, sortKey, sortDir }
+        );
     }
+
 
     compareCombinations(combinations: string[][]): Observable<string[][]> {
         return this.http
