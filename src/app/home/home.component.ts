@@ -256,20 +256,27 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private recomputeRenderItems(): void {
     const isVirtual = this.isReadOnly;
     const drive = this.selectedDrive;
-    const term = (this.searchTerm || '').toLowerCase();
 
-    // Use deep results as the source when active
+    const rawQ = this.searchTerm || '';
+    const hasField = this.hasFieldSyntax(rawQ);
+    const free = this.extractFreeText(rawQ).toLowerCase(); // <- only free text for client filtering
+
+    // source
     let contents = this.deepSearchActive ? (this.deepSearchItems ?? []) : (this.directoryContents ?? []);
 
     if (!this.deepSearchActive) {
-      // normal filters only in non-deep mode
+      // drive filter
       if (isVirtual && drive !== 'all') {
         contents = contents.filter((it: any) => this.normalizeDrive(it?.drive) === this.normalizeDrive(drive));
       }
 
-      contents = term
+      // only apply client-side filter when there IS free text
+      // (and not when it's purely fielded like mainModelName:"...")
+      const shouldClientFilter = !!free;
+
+      contents = shouldClientFilter
         ? contents.filter((item: any) => {
-          if (item._searchText) return item._searchText.includes(term);
+          if (item._searchText) return item._searchText.includes(free);
           const hay: string[] = [];
           if (item.name) hay.push(item.name);
           const sd = (item as any).scanData;
@@ -282,20 +289,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
             if (sd.modelNumber && sd.versionNumber) hay.push(`${sd.modelNumber}_${sd.versionNumber}`);
           }
           item._searchText = hay.join(' ').toLowerCase();
-          return item._searchText.includes(term);
+          return item._searchText.includes(free);
         })
         : contents;
+
+      // IMPORTANT: for Virtual + fielded queries, trust server for files
+      // but only keep directories that match by name/localPath/name field
+      if (isVirtual && hasField) {
+        contents = contents.filter((it: any) => !it?.isDirectory || this.directoryMatches(it, rawQ));
+      }
     }
 
     const dirs = contents.filter(i => i.isDirectory).sort(this.compareItems);
     const files = contents.filter(i => i.isFile).sort(this.compareItems);
 
     this.renderItems = [...dirs, ...files];
-
-    // ✅ reset virtualization window & notify
     this.resetWindow();
     this.cdr.markForCheck();
   }
+
 
 
   // handler wired from toolbar
@@ -407,10 +419,26 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.vQuery = (newTerm || '').trim();
       this.vPage = 0;            // reset paging
       this.vTotalPages = 0;
+
+      // 👇 if cleared, just reload the folder so dirs return
+      if (!this.vQuery) {
+        this.loadDirectoryContents(this.selectedDirectory);
+        return;
+      }
+
       this.isLoading = true;
 
       const sortKey = this.mapVirtualSortKey();
-      const keepDirs = this.directoryContents.filter(x => x.isDirectory); // keep dirs on top
+      const rawQ = this.vQuery || '';
+      const keepDirs = this.directoryContents
+        .filter(x => x.isDirectory)
+        .filter(d => {
+          // If no query: keep all dirs (browse mode)
+          if (!rawQ) return true;
+          // Fielded or plain: only keep directories that match the query rules
+          return this.directoryMatches(d, rawQ);
+        });
+
 
       this.dataSource.list(this.selectedDirectory, {
         page: 0,
@@ -1878,6 +1906,46 @@ export class HomeComponent implements OnInit, AfterViewInit {
         this.vLoading = false;
       }
     });
+  }
+
+  /** true if q contains fielded syntax like foo:"bar" or mainModelName:baz */
+  private hasFieldSyntax(q: string): boolean {
+    if (!q) return false;
+    return /(^|\s)\w+\s*:\s*(?:"[^"]*"|'[^']*'|\S+)/.test(q);
+  }
+
+  /** strip fielded parts; return leftover plain text (used for directory name matching) */
+  private extractFreeText(q: string): string {
+    if (!q) return '';
+    return q.replace(/(^|\s)\w+\s*:\s*(?:"[^"]*"|'[^']*'|\S+)/g, ' ').trim();
+  }
+
+  /** extract a specific field value from q, e.g. getFieldValue(q, 'localPath') */
+  private getFieldValue(q: string, field: string): string | null {
+    const re = new RegExp(`(?:^|\\s)${field}\\s*:\\s*(?:"([^"]*)"|'([^']*)'|(\\S+))`, 'i');
+    const m = re.exec(q || '');
+    return m ? (m[1] || m[2] || m[3] || '').trim() : null;
+  }
+
+  /** decide whether a DIRECTORY should be shown for a given query */
+  private directoryMatches(dir: any, rawQ: string): boolean {
+    const name = (dir?.name || '').toLowerCase();
+    const path = (dir?.path || '').toLowerCase();
+
+    // Plain text terms: match by directory name
+    const free = this.extractFreeText(rawQ).toLowerCase();
+    if (free && name.includes(free)) return true;
+
+    // Allow explicit matches if user targeted path or name
+    const lp = this.getFieldValue(rawQ, 'localPath');
+    if (lp && path.includes(lp.toLowerCase())) return true;
+
+    const nameField = this.getFieldValue(rawQ, 'name');
+    if (nameField && name.includes(nameField.toLowerCase())) return true;
+
+    // For other fielded queries (like mainModelName:"..."), directories don't match
+    // unless free text remained or path/name was explicitly targeted.
+    return !!free; // if there is leftover free text but didn't match name, treat as no-match
   }
 
 
