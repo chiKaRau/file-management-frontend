@@ -1071,19 +1071,26 @@ export class FileInfoSidebarComponent implements OnChanges {
       { tagsList }
     ).subscribe({
       next: (res) => {
-        console.log('searchSimilar response:', res);
-
         const list: any[] = res?.payload?.modelsList ?? [];
         this.simResults = list;
 
-        // (Re)build BaseModel options
+        // per-card carousel state
+        this.simCarouselIndex.clear();
+        for (const m of list) {
+          this.simCarouselIndex.set(this.simKey(m), 0);
+        }
+
+        // >>> build Base Model options <<<
         this.simBaseModels.clear();
         for (const m of list) {
-          const key = this.canonBaseModel(m?.baseModel);
-          const label = this.displayBaseModel(m?.baseModel);
-          if (!this.simBaseModels.has(key)) this.simBaseModels.set(key, label);
+          const key = this.canonBaseModel(m?.baseModel);      // e.g. "sdxl", "unknown"
+          const label = this.displayBaseModel(m?.baseModel);  // e.g. "SDXL", "Unknown"
+          if (!this.simBaseModels.has(key)) {
+            this.simBaseModels.set(key, label);
+          }
         }
-        // Default: select all base models so nothing is hidden initially
+
+        // select all after building options
         this.selectAllBaseModels();
 
         this.simLoading = false;
@@ -1095,6 +1102,7 @@ export class FileInfoSidebarComponent implements OnChanges {
       }
     });
   }
+
 
   // ---- card helpers
 
@@ -1137,8 +1145,9 @@ export class FileInfoSidebarComponent implements OnChanges {
     else this.simSelectedBaseModels.delete(key);
   }
   selectAllBaseModels() {
-    this.simSelectedBaseModels = new Set(this.simBaseModels.keys());
+    this.simSelectedBaseModels = new Set(Array.from(this.simBaseModels.keys()));
   }
+
   clearBaseModels() {
     this.simSelectedBaseModels.clear();
   }
@@ -1159,18 +1168,31 @@ export class FileInfoSidebarComponent implements OnChanges {
 
   // Use this instead of simResults in the template
   get filteredAndSortedSimResults(): any[] {
-    const selected = this.simSelectedBaseModels;
-    const filterOn = selected.size > 0;
+    const total = this.simBaseModels.size;
+    const selectedCount = this.simSelectedBaseModels.size;
 
-    const filtered = (this.simResults ?? []).filter(m => {
-      const key = this.canonBaseModel(m?.baseModel);
-      return filterOn ? selected.has(key) : true;
-    });
+    // If we have options and none are selected, show nothing
+    if (total > 0 && selectedCount === 0) return [];
 
-    return filtered.sort(
+    // Filter only when a strict subset is selected
+    const shouldFilter = selectedCount > 0 && selectedCount < total;
+
+    const base = shouldFilter
+      ? (this.simResults ?? []).filter(m =>
+        this.simSelectedBaseModels.has(this.canonBaseModel(m?.baseModel))
+      )
+      : (this.simResults ?? []);
+
+    // sort newest uploaded first
+    return base.slice().sort(
       (a, b) => this.uploadedTime(b?.uploaded) - this.uploadedTime(a?.uploaded)
     );
   }
+
+  get noBaseModelSelected(): boolean {
+    return this.simBaseModels.size > 0 && this.simSelectedBaseModels.size === 0;
+  }
+
 
   trackByKey(_i: number, opt: { key: string; label: string }) { return opt.key; }
 
@@ -1178,6 +1200,52 @@ export class FileInfoSidebarComponent implements OnChanges {
     const checked = (evt.target as HTMLInputElement).checked;
     this.toggleBaseModel(key, checked);
   }
+
+  // --- Similar results: per-card carousel state ---
+  private simCarouselIndex = new Map<string, number>();
+
+  private simKey(m: any): string {
+    // stable key for a result card
+    return `${m?.modelNumber ?? ''}_${m?.versionNumber ?? ''}`;
+  }
+
+  private simImages(m: any): Array<{ url: string }> {
+    return this.simSafeImageArray(m?.imageUrls);
+  }
+
+  simImageCount(m: any): number {
+    return this.simImages(m).length;
+  }
+
+  simCurrentImage(m: any): string {
+    const imgs = this.simImages(m);
+    if (!imgs.length) return '';
+    const key = this.simKey(m);
+    const i = this.simCarouselIndex.get(key) ?? 0;
+    const idx = ((i % imgs.length) + imgs.length) % imgs.length;
+    return imgs[idx]?.url || '';
+  }
+
+  prevSimImage(m: any, evt?: Event) {
+    evt?.stopPropagation();
+    const key = this.simKey(m);
+    const imgs = this.simImages(m);
+    if (imgs.length < 2) return;
+    const i = this.simCarouselIndex.get(key) ?? 0;
+    this.simCarouselIndex.set(key, (i - 1 + imgs.length) % imgs.length);
+  }
+
+  nextSimImage(m: any, evt?: Event) {
+    evt?.stopPropagation();
+    const key = this.simKey(m);
+    const imgs = this.simImages(m);
+    if (imgs.length < 2) return;
+    const i = this.simCarouselIndex.get(key) ?? 0;
+    this.simCarouselIndex.set(key, (i + 1) % imgs.length);
+  }
+
+  // trackBy for the result cards grid
+  simTrackBy = (_: number, m: any) => this.simKey(m);
 
 
 

@@ -1119,3 +1119,67 @@
         background: var(--menu-hover);
     }
 }
+
+/* Result-card mini carousel */
+.db-panel-body .sim-card-grid .file-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow .2s ease, border-color .15s ease;
+    background: var(--bg);
+    /* fallback */
+}
+
+.db-panel-body .sim-card-grid .file-card .mini-carousel {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    align-items: center;
+    z-index: 1;
+    /* image layer */
+}
+
+.db-panel-body .sim-card-grid .file-card .mini-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* show whole image */
+    background: var(--bg);
+    border: 0;
+    border-radius: 0;
+}
+
+.db-panel-body .sim-card-grid .file-card .carousel-btn.mini {
+    background: rgba(0, 0, 0, .35);
+    border: 1px solid var(--border);
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    cursor: pointer;
+    z-index: 3;
+    /* above image, below rating/star chip */
+    transition: background .15s ease;
+}
+
+.db-panel-body .sim-card-grid .file-card .carousel-btn.mini:hover {
+    background: rgba(0, 0, 0, .5);
+}
+
+/* keep badges and footer over image */
+.db-panel-body .sim-card-grid .file-card .badge.top-left,
+.db-panel-body .sim-card-grid .file-card .badge.top-right,
+.db-panel-body .sim-card-grid .file-card .card-footer {
+    z-index: 2;
+}
+
+/* rating star stays topmost */
+.db-panel-body .sim-card-grid .rating-star {
+    z-index: 4;
+}

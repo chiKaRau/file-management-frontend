@@ -319,15 +319,27 @@
                 <ng-container *ngIf="filteredAndSortedSimResults.length; else simNoResults">
                     <div class="sim-card-grid">
                         <div class="card-slot" *ngFor="let m of filteredAndSortedSimResults; let i = index">
-                            <div class="file-card" [ngStyle]="{ 'background-image': simCardBgStyle(m) }"
-                                [class.file]="true">
+                            <div class="file-card">
+                                <!-- Mini carousel per card -->
+                                <div class="mini-carousel" *ngIf="simImageCount(m) > 0">
+                                    <button class="carousel-btn mini" (click)="prevSimImage(m, $event)"
+                                        [disabled]="simImageCount(m) < 2">&#10094;</button>
+
+                                    <img class="mini-image" [src]="simCurrentImage(m)"
+                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy" decoding="async"
+                                        fetchpriority="low" />
+
+                                    <button class="carousel-btn mini" (click)="nextSimImage(m, $event)"
+                                        [disabled]="simImageCount(m) < 2">&#10095;</button>
+                                </div>
+
+                                <!-- badges + footer stay the same -->
                                 <div class="badge top-left">ID: {{ m.modelNumber }} / {{ m.versionNumber }}</div>
                                 <div class="badge top-right">{{ m.baseModel || 'N/A' }}</div>
 
                                 <div class="card-footer">
                                     <div class="creator">{{ m.creatorName || '—' }}</div>
                                     <div class="main-model">{{ m.mainModelName || 'N/A' }}</div>
-
                                     <ng-container *ngIf="simGetParsedStats(m) as stats">
                                         <div class="stats">
                                             <span><span class="material-icons icon-download">file_download</span>{{
@@ -340,13 +352,23 @@
                                                 stats?.thumbsUpCount ?? 'N/A' }}</span>
                                         </div>
                                     </ng-container>
-
                                     <div class="size-line">
                                         <span class="material-icons">sd_storage</span>
                                         <span class="size-text">N/A</span>
                                     </div>
                                 </div>
+
+                                <ng-container *ngIf="simGetMyRating(m) as r">
+                                    <div class="rating-star" *ngIf="r > 0" [attr.title]="r + ' / 20'">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path
+                                                d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                                        </svg>
+                                        <div class="star-number">{{ r }}</div>
+                                    </div>
+                                </ng-container>
                             </div>
+
 
                             <ng-container *ngIf="simGetMyRating(m) as r">
                                 <div class="rating-star" *ngIf="r > 0" [attr.title]="r + ' / 20'">
@@ -365,6 +387,14 @@
                     <div class="overlay-loading">No results yet — choose tags and Submit.</div>
                 </ng-template>
 
+                <ng-template #noSimBlock>
+                    <div class="overlay-loading" *ngIf="noBaseModelSelected">
+                        No base models selected — pick at least one.
+                    </div>
+                    <div class="overlay-loading" *ngIf="!noBaseModelSelected">
+                        No results yet — choose tags and Submit.
+                    </div>
+                </ng-template>
 
                 <!-- Result / error hint -->
                 <div class="row" *ngIf="simError">
