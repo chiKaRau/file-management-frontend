@@ -1180,6 +1180,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    // 👇 let copy/paste shortcuts through
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+
     // Process only single-character keys (letters/digits)
     if (event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key)) {
       // Append the key (in lowercase) to our type-ahead buffer.

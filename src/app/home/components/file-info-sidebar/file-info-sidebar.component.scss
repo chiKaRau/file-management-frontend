@@ -1183,3 +1183,27 @@
 .db-panel-body .sim-card-grid .rating-star {
     z-index: 4;
 }
+
+/* allow selecting/copying text in the sidebar */
+.sidebar,
+.sidebar .content,
+.sidebar .overlay-grid,
+.sidebar .overlay-grid .row>div,
+.sidebar .mono,
+.sidebar .json-pre,
+.db-panel-body,
+.sheet-body {
+    -webkit-user-select: text;
+    /* Chromium/Electron */
+    user-select: text;
+}
+
+/* keep interactive controls non-selectable (as you already do) */
+.sidebar .btn,
+.sidebar .chip,
+.sidebar .chip--selectable,
+.sidebar .star-btn,
+.sidebar .carousel-btn {
+    -webkit-user-select: none;
+    user-select: none;
+}
