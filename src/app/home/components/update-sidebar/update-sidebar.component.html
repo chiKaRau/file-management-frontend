@@ -25,6 +25,9 @@
 
                     <p><strong>Set:</strong> <span class="mono break-anywhere" title="{{ set.setId }}">{{ set.setId
                             }}</span></p>
+
+                    <p *ngIf="set.existsInDb" class="db-pill">Existed in DB</p>
+
                     <!-- Comparison lines -->
                     <p *ngIf="itemVersionId && versionFrom(set)">
                         <strong>VersionID:</strong>

@@ -7,6 +7,7 @@ import { DirectoryItem } from '../file-list/model/directory-item.model';
 import { SearchProgress, SearchService } from '../../services/search.service';
 import { RecycleService } from '../../../recycle/recycle.service';
 import { HomeRefreshService } from '../../services/home-refresh.service';
+import { HttpClient } from '@angular/common/http';
 
 interface CivitaiSet {
   setId: string;
@@ -16,8 +17,15 @@ interface CivitaiSet {
   folderPath?: string;
   isProcessing?: boolean;
   moveProgress?: number; // 0 to 100
+  existsInDb?: boolean;
 }
 
+interface FindModelsResponse {
+  success: boolean;
+  payload?: {
+    modelsList: Array<{ versionNumber: string; }>; // id == versionID
+  };
+}
 
 @Component({
   selector: 'app-update-sidebar',
@@ -43,9 +51,17 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   private timerSubscription: Subscription | null = null;
   private searchSubscription: Subscription | null = null;
 
+  private dbVersionNumbers = new Set<string>();
+  private dbSub: Subscription | null = null;
+
+  isDbLoaded = false;
+  isSearchComplete = false;
+
+
   constructor(private searchService: SearchService,
     private recycleService: RecycleService,
-    private homeRefreshService: HomeRefreshService) { }
+    private homeRefreshService: HomeRefreshService,
+    private http: HttpClient) { }
 
   ngOnInit() {
     if (this.item) {
@@ -65,6 +81,13 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
       this.progressMessage = '';
       this.elapsedTime = 0;
       this.finalElapsedTime = null;
+
+      this.dbVersionNumbers.clear();
+      this.isDbLoaded = false;
+      this.isSearchComplete = false;
+
+      if (this.dbSub) { this.dbSub.unsubscribe(); this.dbSub = null; }
+
       if (this.item) {
         this.startSearchForItem(this.item);
       }
@@ -77,6 +100,9 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     if (parts.length >= 2) {
       const modelId = parts[0];
       const versionId = parts[1];
+
+      this.loadDbVersions(modelId);
+
       let hintPath: string | undefined;
       const lowerPath = item.path.toLowerCase();
       const updateIndex = lowerPath.indexOf('\\update\\');
@@ -146,6 +172,8 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
           } else {
             this.groupedItems = groups;
           }
+          this.isSearchComplete = true;              // ⬅️ mark done
+          this.maybeAnnotateGroupsWithDbMatch();     // ⬅️ only annotate when both ready
           console.log(`Search completed in ${this.finalElapsedTime} seconds.`);
         }
       });
@@ -489,6 +517,7 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     if (this.timerSubscription) {
       this.timerSubscription.unsubscribe();
     }
+    if (this.dbSub) this.dbSub.unsubscribe()
   }
 
   getModelLink(setId: string): string {
@@ -565,6 +594,43 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     const a = (this.baseFrom(set) || '').trim().toLowerCase();
     const b = (this.itemBaseModel || '').trim().toLowerCase();
     return !!a && !!b && a === b;
+  }
+
+  // ⬇️ NEW: Fetch all versionIDs for this model from your API
+  private loadDbVersions(modelId: string) {
+    if (this.dbSub) { this.dbSub.unsubscribe(); this.dbSub = null; }
+    this.dbVersionNumbers.clear();
+    this.isDbLoaded = false;
+
+    this.dbSub = this.http.post<FindModelsResponse>(
+      'http://localhost:3000/api/find-list-of-models-dto-from-all-table-by-modelID',
+      { modelID: modelId }
+    ).subscribe({
+      next: (res) => {
+        if (res?.success && res.payload?.modelsList) {
+          for (const m of res.payload.modelsList) {
+            this.dbVersionNumbers.add(String(m.versionNumber));  // ⬅️ use versionNumber
+          }
+        }
+        this.isDbLoaded = true;                   // ⬅️ mark done
+        this.maybeAnnotateGroupsWithDbMatch();    // ⬅️ only annotate when both ready
+      },
+      error: (e) => {
+        console.error('Failed to load DB versions', e);
+        this.isDbLoaded = true;                   // avoid blocking forever
+        this.maybeAnnotateGroupsWithDbMatch();
+      }
+    });
+  }
+
+  // ⬇️ NEW: mark each set with existsInDb using the version extracted from its setId
+  private maybeAnnotateGroupsWithDbMatch() {
+    if (!this.isDbLoaded || !this.isSearchComplete || !this.groupedItems?.length) return;
+
+    this.groupedItems = this.groupedItems.map(set => {
+      const v = this.versionFrom(set) || '';
+      return { ...set, existsInDb: v ? this.dbVersionNumbers.has(v) : false };
+    });
   }
 
 }

@@ -211,3 +211,18 @@
         background: color-mix(in srgb, var(--accent) 18%, var(--bg-elevated));
     }
 }
+
+/* update-sidebar.component.scss */
+.db-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e6ffed;
+    /* or var(--success-bg) */
+    color: #087443;
+    /* or var(--success-fg) */
+    border: 1px solid #b7f5c9;
+    margin: 0 0 6px 0;
+}
