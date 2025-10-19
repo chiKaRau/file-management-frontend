@@ -1,25 +1,29 @@
-<!-- update-sidebar.component.html -->
-<div class="update-sidebar">
-    <div class="header">
-        <h3>Upgrade Details</h3>
-        <button (click)="close()">X</button>
-    </div>
-    <div class="content">
+<div class="content">
+    <!-- Sticky/top area (doesn't scroll) -->
+    <div class="summary">
         <p><strong>Name:</strong> <span class="mono break-anywhere" title="{{ item?.name }}">{{ item?.name }}</span></p>
-
         <p><strong>Path:</strong> {{ item?.path }}</p>
 
         <!-- While searching -->
-        <div *ngIf="searching">
+        <ng-container *ngIf="searching">
             <p>Searching... <span class="spinner"></span></p>
             <p>{{ progressMessage }}</p>
             <p>Matches found so far: {{ foundItems.length }}</p>
             <p>Elapsed time: {{ elapsedTime | number:'1.3-3' }} seconds</p>
-        </div>
+        </ng-container>
 
-        <!-- After search completes -->
-        <div *ngIf="!searching">
-            <p *ngIf="groupedItems.length > 0">Found Sets:</p>
+        <!-- Short meta after search -->
+        <ng-container *ngIf="!searching">
+            <p *ngIf="groupedItems.length > 0">Found Sets: <b>{{ groupedItems.length }}</b></p>
+            <p *ngIf="finalElapsedTime !== null">
+                Search completed in {{ finalElapsedTime | number:'1.3-3' }} seconds.
+            </p>
+        </ng-container>
+    </div>
+
+    <!-- Scrollable results area -->
+    <div class="results">
+        <ng-container *ngIf="!searching">
             <ul *ngIf="groupedItems.length > 0">
                 <li *ngFor="let set of groupedItems" style="margin-bottom: 1rem;">
 
@@ -28,11 +32,11 @@
 
                     <p *ngIf="set.existsInDb" class="db-pill">Existed in DB</p>
 
-                    <!-- Comparison lines -->
                     <p *ngIf="itemVersionId && versionFrom(set)">
                         <strong>VersionID:</strong>
                         <b>{{ versionFrom(set) }}</b> -> <b>{{ itemVersionId }}</b>
                     </p>
+
                     <p *ngIf="itemBaseModel && baseFrom(set)">
                         <strong>BaseModel:</strong>
                         <span class="match-pill" [class.ok]="baseModelMatches(set)"
@@ -42,6 +46,7 @@
                     </p>
 
                     <p><strong>ZIP:</strong> {{ set.isZip ? 'Yes' : 'No' }}</p>
+
                     <p *ngIf="set.folderPath">
                         <strong>Folder:</strong>
                         <span class="mono linklike" (click)="$event.stopPropagation(); revealFolder(set.folderPath!)"
@@ -49,9 +54,7 @@
                             {{ set.folderPath }}
                         </span>
                         <button class="btn btn--ghost btn--sm"
-                            (click)="$event.stopPropagation(); copyText(set.folderPath!)">
-                            Copy
-                        </button>
+                            (click)="$event.stopPropagation(); copyText(set.folderPath!)">Copy</button>
                     </p>
 
                     <div *ngIf="set.previewPath">
@@ -61,38 +64,26 @@
                     <p *ngIf="!set.previewPath">No preview available.</p>
 
                     <p *ngIf="getModelLink(set.setId)">
-                        <a [href]="getModelLink(set.setId)" target="_blank" rel="noopener noreferrer">
-                            Go to Model
-                        </a>
+                        <a [href]="getModelLink(set.setId)" target="_blank" rel="noopener noreferrer">Go to Model</a>
                     </p>
 
-                    <!-- Action buttons -->
                     <div class="actions">
-                        <button class="action-btn upgrade" (click)="upgradeSet(set)" [disabled]="set.isProcessing">
-                            Upgrade
-                        </button>
-
-                        <button class="action-btn add" (click)="addToLocation(set)" [disabled]="set.isProcessing">
-                            Add to location
-                        </button>
-
-                        <button class="action-btn delete" (click)="deleteSet(set)" [disabled]="set.isProcessing">
-                            Delete
-                        </button>
+                        <button class="action-btn upgrade" (click)="upgradeSet(set)"
+                            [disabled]="set.isProcessing">Upgrade</button>
+                        <button class="action-btn add" (click)="addToLocation(set)" [disabled]="set.isProcessing">Add to
+                            location</button>
+                        <button class="action-btn delete" (click)="deleteSet(set)"
+                            [disabled]="set.isProcessing">Delete</button>
                     </div>
 
-
-                    <!-- Progress bar -->
                     <div *ngIf="set.isProcessing">
                         <progress [value]="set.moveProgress" max="100"></progress>
                         <span>{{ set.moveProgress }}%</span>
                     </div>
                 </li>
             </ul>
+
             <p *ngIf="groupedItems.length === 0">No matches found.</p>
-            <p *ngIf="finalElapsedTime !== null">
-                Search completed in {{ finalElapsedTime | number:'1.3-3' }} seconds.
-            </p>
-        </div>
+        </ng-container>
     </div>
 </div>
