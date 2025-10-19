@@ -106,3 +106,26 @@
 .update-sidebar .content p {
     margin: 0.25rem 0;
 }
+
+.match-pill {
+    margin-left: .5rem;
+    padding: 0 .35rem;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.5;
+    border: 1px solid currentColor;
+}
+
+.match-pill.ok {
+    /* Match = green */
+    color: #22c55e;
+    /* tailwind green-500 */
+    background: rgba(34, 197, 94, .12);
+}
+
+.match-pill.bad {
+    /* Not Match = red */
+    color: #ef4444;
+    /* tailwind red-500 */
+    background: rgba(239, 68, 68, .12);
+}

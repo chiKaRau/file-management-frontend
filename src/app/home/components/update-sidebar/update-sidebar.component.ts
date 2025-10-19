@@ -468,6 +468,12 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     return this.parseBaseModel(set?.setId);
   }
 
+  baseModelMatches(set: CivitaiSet): boolean {
+    const a = (this.baseFrom(set) || '').trim().toLowerCase();
+    const b = (this.itemBaseModel || '').trim().toLowerCase();
+    return !!a && !!b && a === b;
+  }
+
 
 
 }

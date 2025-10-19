@@ -31,7 +31,10 @@
                     </p>
                     <p *ngIf="itemBaseModel && baseFrom(set)">
                         <strong>BaseModel:</strong>
-                        <b>{{ baseFrom(set) }}</b> -> <b>{{ itemBaseModel }}</b>
+                        <span class="match-pill" [class.ok]="baseModelMatches(set)"
+                            [class.bad]="!baseModelMatches(set)">
+                            {{ baseModelMatches(set) ? 'Match' : 'Not Match' }}
+                        </span>
                     </p>
 
                     <p><strong>ZIP:</strong> {{ set.isZip ? 'Yes' : 'No' }}</p>
