@@ -108,6 +108,7 @@
         <div class="db-actions btn-group">
             <button class="db-button btn--sm" (click)="openDbOverlay()">View Local Record</button>
             <button class="db-button btn--sm" (click)="openSibOverlay()">View DB Siblings</button>
+            <button class="db-button btn--sm" (click)="openLiveSibOverlay()">View Live Siblings</button>
             <button class="db-button btn--sm" (click)="openSimOverlay()">Search similar in DB</button>
         </div>
 
@@ -528,6 +529,107 @@
             </ng-container>
         </div>
     </div>
+
+    <!-- ===== IN-SIDEBAR "Live Siblings" overlay ===== -->
+    <div class="db-panel-backdrop" *ngIf="liveSibOverlayOpen" (click)="$event.stopPropagation(); closeLiveSibOverlay()">
+    </div>
+
+    <div class="db-panel" *ngIf="liveSibOverlayOpen" (click)="$event.stopPropagation()">
+        <div class="db-panel-header">
+            <h3>Live Siblings</h3>
+            <button class="db-close btn btn--icon" aria-label="Close"
+                (click)="$event.stopPropagation(); closeLiveSibOverlay()">✕</button>
+        </div>
+
+        <div class="db-panel-body">
+            <div *ngIf="liveSibLoading" class="overlay-loading">Loading versions…</div>
+            <div *ngIf="liveSibError" class="overlay-error">{{ liveSibError }}</div>
+
+            <ng-container *ngIf="!liveSibLoading && !liveSibError">
+
+                <!-- Base Model filter bar -->
+                <div class="sim-filterbar" *ngIf="liveBaseModelLabels.length">
+                    <div class="sim-filter-title">Filter by Base Model</div>
+
+                    <div class="sim-filter-group">
+                        <label class="sim-filter-chip" *ngFor="let opt of liveBaseModelLabels; trackBy: trackByKey">
+                            <input type="checkbox" [checked]="isLiveBaseModelSelected(opt.key)"
+                                (change)="onLiveBaseModelCheckboxChange(opt.key, $event)" />
+                            <span>{{ opt.label }}</span>
+                        </label>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn--ghost btn--sm" (click)="selectAllLiveBaseModels()">Select all</button>
+                        <button class="btn btn--ghost btn--sm" (click)="clearLiveBaseModels()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <ng-container *ngIf="filteredAndSortedLiveResults.length; else liveSibNoResults">
+                    <div class="sim-card-grid">
+                        <div class="card-slot"
+                            *ngFor="let m of filteredAndSortedLiveResults; let i = index; trackBy: liveTrackBy">
+                            <div class="file-card">
+
+                                <!-- Mini carousel -->
+                                <div class="mini-carousel" *ngIf="liveImageCount(m) > 0">
+                                    <button class="carousel-btn mini" (click)="prevLiveImage(m, $event)"
+                                        [disabled]="liveImageCount(m) < 2">&#10094;</button>
+
+                                    <img class="mini-image" [src]="liveCurrentImage(m)"
+                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy" decoding="async"
+                                        fetchpriority="low" />
+
+                                    <button class="carousel-btn mini" (click)="nextLiveImage(m, $event)"
+                                        [disabled]="liveImageCount(m) < 2">&#10095;</button>
+                                </div>
+
+                                <!-- badges + footer -->
+                                <div class="badge top-left">ID: {{ m.modelNumber }} / {{ m.versionNumber }}</div>
+                                <div class="badge top-right">{{ m.baseModel || 'N/A' }}</div>
+
+                                <div class="card-footer">
+                                    <div class="creator">{{ m.creatorName || '—' }}</div>
+                                    <!-- model name on card -->
+                                    <div class="main-model">{{ m.mainModelName || 'N/A' }}</div>
+
+                                    <div class="stats" *ngIf="simGetParsedStats(m) as stats">
+                                        <span><span class="material-icons icon-download">file_download</span>{{
+                                            stats?.downloadCount ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating-count">rate_review</span>{{
+                                            stats?.ratingCount ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating">star_rate</span>{{ stats?.rating
+                                            ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-thumb-up">thumb_up</span>{{
+                                            stats?.thumbsUpCount ?? 'N/A' }}</span>
+                                    </div>
+
+                                    <div class="size-line">
+                                        <span class="material-icons">event</span>
+                                        <span class="size-text">{{ m.uploaded ? (m.uploaded | date:'mediumDate') : '—'
+                                            }}</span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <ng-template #liveSibNoResults>
+                    <div class="overlay-loading" *ngIf="liveNoBaseModelSelected">
+                        No base models selected — pick at least one.
+                    </div>
+                    <div class="overlay-loading" *ngIf="!liveNoBaseModelSelected">
+                        No versions found for this model.
+                    </div>
+                </ng-template>
+
+            </ng-container>
+        </div>
+    </div>
+
 
 </div>
 

@@ -131,6 +131,19 @@ export class FileInfoSidebarComponent implements OnChanges {
   // Per-card carousel index (siblings)
   private sibCarouselIndex = new Map<string, number>();
 
+  // --- Live Siblings (modelVersions) state ---
+  liveSibOverlayOpen = false;
+  liveSibLoading = false;
+  liveSibError: string | null = null;
+  liveSibResults: any[] = []; // normalized version DTOs (similar shape to DB siblings)
+
+  // Base-model filters
+  liveBaseModels = new Map<string, string>();      // key -> label (e.g., "sd 1.5" -> "SD 1.5")
+  liveSelectedBaseModels = new Set<string>();
+
+  // Per-card carousel index
+  private liveCarouselIndex = new Map<string, number>();
+
 
   // only allow sync if we're in local view, have IDs, and are editing
   get canSyncNow(): boolean {
@@ -1433,6 +1446,176 @@ export class FileInfoSidebarComponent implements OnChanges {
     const i = this.sibCarouselIndex.get(key) ?? 0;
     this.sibCarouselIndex.set(key, (i + 1) % imgs.length);
   }
+
+  // === Open/Close ===
+  openLiveSibOverlay() {
+    this.liveSibError = null;
+    this.liveSibResults = [];
+    this.liveBaseModels.clear();
+    this.liveSelectedBaseModels.clear();
+    this.liveCarouselIndex.clear();
+
+    // figure out modelId from item or from the already-fetched modelVersion
+    const ids = this.resolveIdsFromItem(this.item);
+    const modelId = String(
+      ids?.modelID ??
+      this.modelVersion?.modelId ??
+      this.linkModelId ?? ''
+    );
+
+    this.liveSibOverlayOpen = true;
+
+    if (!modelId) {
+      this.liveSibError = 'Unable to resolve model ID.';
+      return;
+    }
+
+    this.fetchLiveSiblings(modelId);
+  }
+
+  closeLiveSibOverlay() { this.liveSibOverlayOpen = false; }
+
+  // === Fetch from https://civitai.com/api/v1/models/${modelId} ===
+  private fetchLiveSiblings(modelId: string) {
+    this.liveSibLoading = true;
+    this.http.get<any>(`https://civitai.com/api/v1/models/${modelId}`).subscribe({
+      next: (api) => {
+        // Normalize each version to a DTO compatible with your card grid
+        const modelName = api?.name ?? '—';
+        const creatorName = api?.creator?.username ?? '—';
+        const versions: any[] = Array.isArray(api?.modelVersions) ? api.modelVersions : [];
+
+        const mapped = versions.map(v => {
+          // images -> [{url,width,height,nsfw}]
+          const imgs = (Array.isArray(v?.images) ? v.images : [])
+            .filter((i: { url: any; }) => i?.url)
+            .map((i: { url: any; nsfwLevel: number; width: any; height: any; }) => ({
+              url: i.url,
+              nsfw: typeof i.nsfwLevel === 'number' ? i.nsfwLevel > 1 : false,
+              width: typeof i.width === 'number' ? i.width : undefined,
+              height: typeof i.height === 'number' ? i.height : undefined
+            }));
+
+          const stats = v?.stats ? JSON.stringify(v.stats) : null;
+
+          return {
+            // match your DB siblings DTO keys so existing helpers/CSS work
+            modelNumber: String(api?.id ?? modelId),
+            versionNumber: String(v?.id ?? ''),
+            mainModelName: modelName,      // the model name on the card (as requested)
+            creatorName,                   // from top-level creator.username
+            baseModel: v?.baseModel ?? '',
+            uploaded: v?.publishedAt ?? v?.createdAt ?? null,
+            stats,                         // JSON string for simGetParsedStats()
+            imageUrls: JSON.stringify(imgs) // JSON string so simSafeImageArray() works
+          };
+        });
+
+        // init results + carousels
+        this.liveSibResults = mapped;
+        this.liveCarouselIndex.clear();
+        for (const m of mapped) this.liveCarouselIndex.set(this.liveKey(m), 0);
+
+        // build Base Model options
+        this.liveBaseModels.clear();
+        for (const m of mapped) {
+          const key = this.canonBaseModel(m?.baseModel);
+          const label = this.displayBaseModel(m?.baseModel);
+          if (!this.liveBaseModels.has(key)) this.liveBaseModels.set(key, label);
+        }
+        this.selectAllLiveBaseModels();
+
+        this.liveSibLoading = false;
+      },
+      error: (err) => {
+        console.error('fetchLiveSiblings failed:', err);
+        this.liveSibError = 'Failed to load versions from Civitai.';
+        this.liveSibLoading = false;
+      }
+    });
+  }
+
+  // === Base-model filter helpers (Live) ===
+  isLiveBaseModelSelected(key: string): boolean {
+    return this.liveSelectedBaseModels.has(key);
+  }
+  toggleLiveBaseModel(key: string, on: boolean) {
+    if (on) this.liveSelectedBaseModels.add(key);
+    else this.liveSelectedBaseModels.delete(key);
+  }
+  selectAllLiveBaseModels() {
+    this.liveSelectedBaseModels = new Set(Array.from(this.liveBaseModels.keys()));
+  }
+  clearLiveBaseModels() {
+    this.liveSelectedBaseModels.clear();
+  }
+  get liveBaseModelLabels(): { key: string; label: string }[] {
+    return Array.from(this.liveBaseModels.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+  get liveNoBaseModelSelected(): boolean {
+    return this.liveBaseModels.size > 0 && this.liveSelectedBaseModels.size === 0;
+  }
+  onLiveBaseModelCheckboxChange(key: string, evt: Event) {
+    const checked = (evt.target as HTMLInputElement).checked;
+    this.toggleLiveBaseModel(key, checked);
+  }
+
+  // === Sorting/filtering (Live) ===
+  get filteredAndSortedLiveResults(): any[] {
+    const total = this.liveBaseModels.size;
+    const selected = this.liveSelectedBaseModels.size;
+    if (total > 0 && selected === 0) return [];
+
+    const shouldFilter = selected > 0 && selected < total;
+    const base = shouldFilter
+      ? (this.liveSibResults ?? []).filter(m =>
+        this.liveSelectedBaseModels.has(this.canonBaseModel(m?.baseModel)))
+      : (this.liveSibResults ?? []);
+
+    // newest uploaded first (reuse uploadedTime())
+    return base.slice().sort(
+      (a, b) => this.uploadedTime(b?.uploaded) - this.uploadedTime(a?.uploaded)
+    );
+  }
+
+  // === Mini carousel helpers (Live) ===
+  private liveKey(m: any): string {
+    return `${m?.modelNumber ?? ''}_${m?.versionNumber ?? ''}`;
+  }
+  private liveImages(m: any): Array<{ url: string }> {
+    // reuse your existing helper that accepts JSON string or array
+    return this.simSafeImageArray(m?.imageUrls);
+  }
+  liveImageCount(m: any): number {
+    return this.liveImages(m).length;
+  }
+  liveCurrentImage(m: any): string {
+    const imgs = this.liveImages(m);
+    if (!imgs.length) return '';
+    const key = this.liveKey(m);
+    const i = this.liveCarouselIndex.get(key) ?? 0;
+    const idx = ((i % imgs.length) + imgs.length) % imgs.length;
+    return imgs[idx]?.url || '';
+  }
+  prevLiveImage(m: any, evt?: Event) {
+    evt?.stopPropagation();
+    const imgs = this.liveImages(m);
+    if (imgs.length < 2) return;
+    const key = this.liveKey(m);
+    const i = this.liveCarouselIndex.get(key) ?? 0;
+    this.liveCarouselIndex.set(key, (i - 1 + imgs.length) % imgs.length);
+  }
+  nextLiveImage(m: any, evt?: Event) {
+    evt?.stopPropagation();
+    const imgs = this.liveImages(m);
+    if (imgs.length < 2) return;
+    const key = this.liveKey(m);
+    const i = this.liveCarouselIndex.get(key) ?? 0;
+    this.liveCarouselIndex.set(key, (i + 1) % imgs.length);
+  }
+  liveTrackBy = (_: number, m: any) => this.liveKey(m);
 
 
   close() { this.closed.emit(); }
