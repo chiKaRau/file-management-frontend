@@ -129,3 +129,80 @@
     /* tailwind red-500 */
     background: rgba(239, 68, 68, .12);
 }
+
+/* allow very long strings (no spaces) to wrap */
+.break-anywhere {
+    overflow-wrap: anywhere;
+    /* modern */
+    word-wrap: break-word;
+    /* legacy fallback */
+    white-space: normal;
+    /* ensure wrapping is allowed */
+}
+
+/* Stack buttons and make them full-width */
+.actions {
+    margin: .75rem 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    /* one per line */
+    gap: .5rem;
+}
+
+/* Theme-aware buttons */
+.action-btn {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s ease, border-color .15s ease, filter .15s ease;
+
+    &:hover:not(:disabled) {
+        background: var(--menu-hover);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--accent-ring);
+    }
+
+    &:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+}
+
+/* Primary: uses your accent colors */
+.action-btn.upgrade {
+    background: var(--accent);
+    border-color: transparent;
+    color: var(--accent-contrast);
+
+    &:hover:not(:disabled) {
+        /* subtle brighten (Chromium/Electron supports color-mix) */
+        background: color-mix(in srgb, var(--accent) 92%, #fff 8%);
+    }
+}
+
+/* Danger: derived from --danger so it adapts to theme */
+.action-btn.delete {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 15%, var(--panel));
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+
+    &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--danger) 25%, var(--panel));
+    }
+}
+
+/* Optional: on wider sidebars you can place them side-by-side
+  @media (min-width: 560px) {
+    .actions { grid-template-columns: 1fr 1fr; }
+  }
+  */

@@ -5,7 +5,8 @@
         <button (click)="close()">X</button>
     </div>
     <div class="content">
-        <p><strong>Name:</strong> {{ item?.name }}</p>
+        <p><strong>Name:</strong> <span class="mono break-anywhere" title="{{ item?.name }}">{{ item?.name }}</span></p>
+
         <p><strong>Path:</strong> {{ item?.path }}</p>
 
         <!-- While searching -->
@@ -22,8 +23,8 @@
             <ul *ngIf="groupedItems.length > 0">
                 <li *ngFor="let set of groupedItems" style="margin-bottom: 1rem;">
 
-                    <p><strong>Set:</strong> {{ set.setId }}</p>
-
+                    <p><strong>Set:</strong> <span class="mono break-anywhere" title="{{ set.setId }}">{{ set.setId
+                            }}</span></p>
                     <!-- Comparison lines -->
                     <p *ngIf="itemVersionId && versionFrom(set)">
                         <strong>VersionID:</strong>
@@ -63,10 +64,17 @@
                     </p>
 
                     <!-- Action buttons -->
-                    <div>
-                        <button (click)="upgradeSet(set)" [disabled]="set.isProcessing">Upgrade</button>
-                        <button (click)="deleteSet(set)" [disabled]="set.isProcessing">Delete</button>
+                    <div class="actions">
+                        <button class="action-btn upgrade" (click)="upgradeSet(set)" [disabled]="set.isProcessing">
+                            Upgrade
+                        </button>
+
+                        <button class="action-btn delete" (click)="deleteSet(set)" [disabled]="set.isProcessing">
+                            Delete
+                        </button>
                     </div>
+
+
                     <!-- Progress bar -->
                     <div *ngIf="set.isProcessing">
                         <progress [value]="set.moveProgress" max="100"></progress>
