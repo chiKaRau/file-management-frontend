@@ -21,9 +21,32 @@
             <p *ngIf="groupedItems.length > 0">Found Sets:</p>
             <ul *ngIf="groupedItems.length > 0">
                 <li *ngFor="let set of groupedItems" style="margin-bottom: 1rem;">
+
                     <p><strong>Set:</strong> {{ set.setId }}</p>
+
+                    <!-- Comparison lines -->
+                    <p *ngIf="itemVersionId && versionFrom(set)">
+                        <strong>VersionID:</strong>
+                        Replacing <b>{{ itemVersionId }}</b> to <b>{{ versionFrom(set) }}</b>
+                    </p>
+                    <p *ngIf="itemBaseModel && baseFrom(set)">
+                        <strong>BaseModel:</strong>
+                        Replacing <b>{{ itemBaseModel }}</b> to <b>{{ baseFrom(set) }}</b>
+                    </p>
+
                     <p><strong>ZIP:</strong> {{ set.isZip ? 'Yes' : 'No' }}</p>
-                    <p *ngIf="set.folderPath"><strong>Folder:</strong> {{ set.folderPath }}</p>
+                    <p *ngIf="set.folderPath">
+                        <strong>Folder:</strong>
+                        <span class="mono linklike" (click)="$event.stopPropagation(); revealFolder(set.folderPath!)"
+                            title="Open in file explorer">
+                            {{ set.folderPath }}
+                        </span>
+                        <button class="btn btn--ghost btn--sm"
+                            (click)="$event.stopPropagation(); copyText(set.folderPath!)">
+                            Copy
+                        </button>
+                    </p>
+
                     <div *ngIf="set.previewPath">
                         <img [src]="set.previewPath" alt="{{ set.setId }}"
                             style="max-width:200px; max-height:200px; display:block; margin: 0.5rem 0;">

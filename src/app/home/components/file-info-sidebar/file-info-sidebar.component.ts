@@ -1247,6 +1247,43 @@ export class FileInfoSidebarComponent implements OnChanges {
   // trackBy for the result cards grid
   simTrackBy = (_: number, m: any) => this.simKey(m);
 
+  revealLocalPath() {
+    const p = this.dbLocalPath as unknown as string;
+    if (!p || p === '—') return;
+
+    // Try Electron (works if nodeIntegration is enabled in your Electron window)
+    try {
+      const w: any = window as any;
+      const shell = w?.require?.('electron')?.shell;
+      if (shell) {
+        // openPath returns '' on success, or an error string on failure
+        shell.openPath(p).then((err: string) => {
+          if (err) {
+            // If opening the dir fails (or p is a file), reveal it in Explorer/Finder
+            shell.showItemInFolder(p);
+          }
+        });
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // Fallback for plain browser (often blocked, but harmless):
+    try {
+      window.open(this.pathToFileUrl(p), '_blank');
+    } catch { /* ignore */ }
+  }
+
+  pathToFileUrl(p: string): string {
+    // Convert local path to a file:// URL (handles Windows)
+    let norm = String(p).replace(/\\/g, '/');           // backslashes → slashes
+    if (/^[a-zA-Z]:\//.test(norm)) norm = '/' + norm;   // ensure leading slash on Windows: /C:/...
+    return 'file://' + encodeURI(norm);
+  }
+
+  copyText(text: string | null | undefined) {
+    if (!text || text === '—') return;
+    navigator.clipboard?.writeText(String(text)).catch(() => { });
+  }
 
 
   close() { this.closed.emit(); }

@@ -96,3 +96,13 @@
         transform: rotate(360deg);
     }
 }
+
+.linklike {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.update-sidebar .content p {
+    margin: 0.25rem 0;
+}

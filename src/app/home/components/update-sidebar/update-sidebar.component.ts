@@ -408,5 +408,66 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     return '';
   }
 
+  revealFolder(folderPath: string) {
+    if (!folderPath) return;
+
+    // Electron path (works if nodeIntegration is enabled)
+    try {
+      const shell = (window as any)?.require?.('electron')?.shell;
+      if (shell) {
+        shell.openPath(folderPath).then((err: string) => {
+          if (err) {
+            // if folder open failed or it's actually a file, reveal it instead
+            shell.showItemInFolder(folderPath);
+          }
+        });
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // Web fallback (often blocked, but harmless)
+    try { window.open(this.pathToFileUrl(folderPath), '_blank'); } catch { /* ignore */ }
+  }
+
+  pathToFileUrl(p: string): string {
+    let norm = String(p).replace(/\\/g, '/');         // Windows backslashes → slashes
+    if (/^[a-zA-Z]:\//.test(norm)) norm = '/' + norm; // ensure /C:/...
+    return 'file://' + encodeURI(norm);
+  }
+
+  copyText(text: string | null | undefined) {
+    if (!text || text === '—') return;
+    navigator.clipboard?.writeText(String(text)).catch(() => { });
+  }
+
+  // --- parse helpers (format: {modelId}_{versionId}_{baseModel}_{name...})
+  private parseVersionId(s: string | undefined | null): string | null {
+    if (!s) return null;
+    const parts = s.split('_');
+    return parts.length >= 2 ? parts[1] : null;
+  }
+  private parseBaseModel(s: string | undefined | null): string | null {
+    if (!s) return null;
+    const parts = s.split('_');
+    return parts.length >= 3 ? parts[2] : null;
+  }
+
+  // getters for the currently selected "Name:"
+  get itemVersionId(): string | null {
+    return this.item ? this.parseVersionId(this.item.name) : null;
+  }
+  get itemBaseModel(): string | null {
+    return this.item ? this.parseBaseModel(this.item.name) : null;
+  }
+
+  // per-set readers (for "Set:")
+  versionFrom(set: CivitaiSet): string | null {
+    return this.parseVersionId(set?.setId);
+  }
+  baseFrom(set: CivitaiSet): string | null {
+    return this.parseBaseModel(set?.setId);
+  }
+
+
 
 }

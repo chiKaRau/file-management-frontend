@@ -174,9 +174,18 @@
                     <div class="row"><label>Version #</label>
                         <div>{{ dbData?.model?.versionNumber }}</div>
                     </div>
-                    <div class="row"><label>Local Path</label>
-                        <div class="mono">{{ dbData?.model?.localPath }}</div>
+                    <div class="row">
+                        <label>Local Path</label>
+                        <div class="mono linklike" (click)="$event.stopPropagation(); revealLocalPath()"
+                            title="Open in file explorer">
+                            {{ dbLocalPath }}
+                        </div>
+                        <button class="btn btn--ghost btn--sm"
+                            (click)="$event.stopPropagation(); copyText(dbLocalPath)">
+                            Copy
+                        </button>
                     </div>
+
                     <div class="row"><label>Name</label>
                         <div>{{ dbData?.model?.name }}</div>
                     </div>

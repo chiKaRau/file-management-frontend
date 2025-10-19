@@ -1207,3 +1207,9 @@
     -webkit-user-select: none;
     user-select: none;
 }
+
+.linklike {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
