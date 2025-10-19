@@ -74,18 +74,16 @@
         <span style="margin-left:8px;">Current: {{ theme | titlecase }}</span>
     </div>
 
-
-    <!-- Update Directory Input with Verify Button -->
-    <!-- <div class="form-group">
-        <label for="updateDir">Update Directory:</label>
-        <div class="input-group">
-            <input type="text" id="updateDir" [(ngModel)]="updateDir"
-                placeholder="F:\Coding Projects\Java\CivitaiSQL Server\server\files\download\@scan@" />
-            <button (click)="verifyPath('update')" [disabled]="updateVerified">
-                {{ updateVerified ? 'Verified' : 'Verify' }}
-            </button>
+    <!-- Search levels: how many parent levels (from the hint path) to try -->
+    <div class="form-group">
+        <label for="searchLevels">Upgrade Sidebar Search levels (from hint):</label>
+        <input id="searchLevels" type="number" min="1" [(ngModel)]="searchLevels" placeholder="999"
+            style="width:120px" />
+        <div style="font-size:12px;opacity:.8;margin-top:4px;">
+            1 = only the exact hint folder; 2 = hint + parent; 999 = climb to the scan root.
         </div>
-    </div> -->
+    </div>
+
 
     <br />
 

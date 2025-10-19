@@ -227,7 +227,7 @@
     </div>
     <div class="menu-item"
       *ngIf="!dataSource.readOnly && preferencesService.scanVerified && recycleService.arePathsSet && ((selectedFiles.length === 1 && selectedFiles[0].isFile) || (!selectedFiles.length && contextFile?.isFile))"
-      (click)="openUpdateSidebar()">Update</div>
+      (click)="openUpdateSidebar()">Upgrade</div>
     <div class="menu-item" *ngIf="!dataSource.readOnly" (click)="renameFile()">Rename</div>
     <div class="menu-item" *ngIf="!dataSource.readOnly" (click)="showProperties()">Properties</div>
   </div>

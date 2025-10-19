@@ -65,21 +65,27 @@ export class SearchService {
         ignorePath?: string
     ): Observable<SearchProgress> {
         return new Observable((observer: Observer<SearchProgress>) => {
+
+            // NEW: read user-configured level cap (default 999; clamp to >= 1)
+            const maxLevelsRaw = Number(this.preferencesService.searchLevels);
+            const maxLevels = (!isNaN(maxLevelsRaw) && maxLevelsRaw > 0) ? maxLevelsRaw : 999;
+
             // Build candidate search roots based on the hint (if provided)
             let candidateRoots: string[] = [];
             if (hintPath) {
                 let candidate = path.join(this.scanDir, hintPath);
-                console.log("hintpath: ");
-                console.log(candidate);
+                let levels = 0;
 
-                while (candidate && candidate.startsWith(this.scanDir)) {
+                console.log('hintpath: ', candidate);
+
+                while (candidate && candidate.startsWith(this.scanDir) && levels < maxLevels) {
                     candidateRoots.push(candidate);
+                    levels++;
+
                     if (candidate === this.scanDir) break;
                     candidate = path.dirname(candidate);
                 }
-                if (candidateRoots[candidateRoots.length - 1] !== this.scanDir) {
-                    candidateRoots.push(this.scanDir);
-                }
+
             } else {
                 candidateRoots = [this.scanDir];
             }

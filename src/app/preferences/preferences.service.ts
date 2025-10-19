@@ -17,5 +17,18 @@ export class PreferencesService {
     deleteVerified: boolean = false;
     updateVerified: boolean = false;
 
+    // NEW: persist searchLevels like theme
+    private _searchLevels = Number(localStorage.getItem('search-levels') ?? '999');
+
+    get searchLevels(): number {
+        const n = Number(this._searchLevels);
+        return Number.isFinite(n) && n > 0 ? n : 999;
+    }
+    set searchLevels(val: number) {
+        const n = Number(val);
+        this._searchLevels = Number.isFinite(n) && n > 0 ? n : 999;
+        localStorage.setItem('search-levels', String(this._searchLevels));
+    }
+
     constructor() { }
 }

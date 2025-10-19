@@ -23,6 +23,7 @@ export class PreferencesComponent {
   enableCivitaiMode = false;
   viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
   theme: Theme = 'dark';
+  searchLevels: number = 999; // NEW
 
   // Directory inputs start empty.
   storageDir: string = '';
@@ -65,6 +66,8 @@ export class PreferencesComponent {
     this.storageVerified = this.preferencesService.storageVerified;
     this.deleteVerified = this.preferencesService.deleteVerified;
     this.updateVerified = this.preferencesService.updateVerified;
+
+    this.searchLevels = this.preferencesService.searchLevels || 999; // NEW
   }
 
   /**
@@ -226,6 +229,8 @@ export class PreferencesComponent {
     this.preferencesService.deleteVerified = this.deleteVerified;
     this.preferencesService.updateVerified = this.updateVerified;
     this.preferencesService.scanVerified = this.scanVerified;
+    this.preferencesService.searchLevels = this.searchLevels; // NEW
+
   }
 
   onThemeToggle() {
@@ -243,6 +248,7 @@ export class PreferencesComponent {
     this.preferencesService.theme = this.theme;
     this.explorerState.enableCivitaiMode = this.enableCivitaiMode;
     this.explorerState.saveViewMode(this.viewMode);
+    this.preferencesService.searchLevels = this.searchLevels;
 
     // (Optional) Save these values to localStorage or another settings service.
     console.log('Saved preferences:', {
@@ -250,7 +256,8 @@ export class PreferencesComponent {
       viewMode: this.viewMode,
       storageDir: this.storageDir,
       deleteDir: this.deleteDir,
-      updateDir: this.updateDir
+      updateDir: this.updateDir,
+      searchLevels: this.searchLevels // NEW
     });
     alert('Preferences saved.');
   }
