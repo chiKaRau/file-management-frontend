@@ -118,6 +118,19 @@ export class FileInfoSidebarComponent implements OnChanges {
   simBaseModels = new Map<string, string>(); // key -> label
   simSelectedBaseModels = new Set<string>();
 
+  // ===== DB Siblings overlay state =====
+  sibOverlayOpen = false;
+  sibLoading = false;
+  sibError: string | null = null;
+  sibResults: any[] = [];
+
+  // Base-model filter for siblings
+  sibBaseModels = new Map<string, string>();      // key -> label
+  sibSelectedBaseModels = new Set<string>();
+
+  // Per-card carousel index (siblings)
+  private sibCarouselIndex = new Map<string, number>();
+
 
   // only allow sync if we're in local view, have IDs, and are editing
   get canSyncNow(): boolean {
@@ -1290,6 +1303,135 @@ export class FileInfoSidebarComponent implements OnChanges {
     const vId = this.modelVersion?.id;
     if (!mId || !vId) return null;
     return `https://civitai.com/models/${mId}?modelVersionId=${vId}`;
+  }
+
+  openSibOverlay() {
+    this.sibError = null;
+    this.sibResults = [];
+    this.sibBaseModels.clear();
+    this.sibSelectedBaseModels.clear();
+    this.sibCarouselIndex.clear();
+
+    const ids = this.resolveIdsFromItem(this.item);
+    if (!ids?.modelID) {
+      this.sibError = 'Unable to resolve model ID from item.';
+      this.sibOverlayOpen = true; // still open to show error
+      return;
+    }
+
+    this.sibOverlayOpen = true;
+    this.sibLoading = true;
+
+    this.http.post<any>(
+      'http://localhost:3000/api/find-list-of-models-dto-from-all-table-by-modelID',
+      { modelID: ids.modelID }
+    ).subscribe({
+      next: (res) => {
+        const list: any[] = res?.payload?.modelsList ?? [];
+        this.sibResults = list;
+
+        // init carousels
+        this.sibCarouselIndex.clear();
+        for (const m of list) {
+          this.sibCarouselIndex.set(this.simKey(m), 0);
+        }
+
+        // build Base Model options
+        this.sibBaseModels.clear();
+        for (const m of list) {
+          const key = this.canonBaseModel(m?.baseModel);
+          const label = this.displayBaseModel(m?.baseModel);
+          if (!this.sibBaseModels.has(key)) {
+            this.sibBaseModels.set(key, label);
+          }
+        }
+
+        // select all by default
+        this.selectAllSibBaseModels();
+        this.sibLoading = false;
+      },
+      error: (err) => {
+        console.error('fetch siblings failed:', err);
+        this.sibError = 'Failed to load siblings.';
+        this.sibLoading = false;
+      }
+    });
+  }
+
+  closeSibOverlay() { this.sibOverlayOpen = false; }
+
+  // ---- Base-model filter helpers (siblings) ----
+  isSibBaseModelSelected(key: string): boolean {
+    return this.sibSelectedBaseModels.has(key);
+  }
+  toggleSibBaseModel(key: string, on: boolean) {
+    if (on) this.sibSelectedBaseModels.add(key);
+    else this.sibSelectedBaseModels.delete(key);
+  }
+  selectAllSibBaseModels() {
+    this.sibSelectedBaseModels = new Set(Array.from(this.sibBaseModels.keys()));
+  }
+  clearSibBaseModels() {
+    this.sibSelectedBaseModels.clear();
+  }
+  get sibBaseModelLabels(): { key: string; label: string }[] {
+    return Array.from(this.sibBaseModels.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+  get sibNoBaseModelSelected(): boolean {
+    return this.sibBaseModels.size > 0 && this.sibSelectedBaseModels.size === 0;
+  }
+  onSibBaseModelCheckboxChange(key: string, evt: Event) {
+    const checked = (evt.target as HTMLInputElement).checked;
+    this.toggleSibBaseModel(key, checked);
+  }
+
+  // ---- Results view for siblings ----
+  get filteredAndSortedSibResults(): any[] {
+    const total = this.sibBaseModels.size;
+    const selected = this.sibSelectedBaseModels.size;
+    if (total > 0 && selected === 0) return [];
+
+    const shouldFilter = selected > 0 && selected < total;
+    const base = shouldFilter
+      ? (this.sibResults ?? []).filter(m =>
+        this.sibSelectedBaseModels.has(this.canonBaseModel(m?.baseModel)))
+      : (this.sibResults ?? []);
+
+    // newest uploaded first (reuse uploadedTime())
+    return base.slice().sort(
+      (a, b) => this.uploadedTime(b?.uploaded) - this.uploadedTime(a?.uploaded)
+    );
+  }
+
+  // ---- Mini carousel (siblings) ----
+  sibImageCount(m: any): number {
+    return this.simImages(m).length; // reuse simImages()
+  }
+  sibCurrentImage(m: any): string {
+    const imgs = this.simImages(m);
+    if (!imgs.length) return '';
+    const key = this.simKey(m);
+    const i = this.sibCarouselIndex.get(key) ?? 0;
+    const idx = ((i % imgs.length) + imgs.length) % imgs.length;
+    return imgs[idx]?.url || '';
+  }
+  prevSibImage(m: any, evt?: Event) {
+    evt?.stopPropagation();
+    const imgs = this.simImages(m);
+    if (imgs.length < 2) return;
+    const key = this.simKey(m);
+    const i = this.sibCarouselIndex.get(key) ?? 0;
+    this.sibCarouselIndex.set(key, (i - 1 + imgs.length) % imgs.length);
+  }
+  nextSibImage(m: any, evt?: Event) {
+    evt?.stopPropagation();
+    const imgs = this.simImages(m);
+    if (imgs.length < 2) return;
+    const key = this.simKey(m);
+    const i = this.sibCarouselIndex.get(key) ?? 0;
+    this.sibCarouselIndex.set(key, (i + 1) % imgs.length);
   }
 
 

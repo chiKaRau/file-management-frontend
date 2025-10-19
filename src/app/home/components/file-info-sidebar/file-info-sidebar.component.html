@@ -107,6 +107,7 @@
         <!-- Button to open the IN-SIDEBAR local overlay (unchanged) -->
         <div class="db-actions btn-group">
             <button class="db-button btn--sm" (click)="openDbOverlay()">View Local Record</button>
+            <button class="db-button btn--sm" (click)="openSibOverlay()">View DB Siblings</button>
             <button class="db-button btn--sm" (click)="openSimOverlay()">Search similar in DB</button>
         </div>
 
@@ -425,7 +426,112 @@
 
     </div>
 
+    <!-- ===== IN-SIDEBAR "DB Siblings" overlay ===== -->
+    <div class="db-panel-backdrop" *ngIf="sibOverlayOpen" (click)="$event.stopPropagation(); closeSibOverlay()"></div>
+
+    <div class="db-panel" *ngIf="sibOverlayOpen" (click)="$event.stopPropagation()">
+        <div class="db-panel-header">
+            <h3>DB Siblings</h3>
+            <button class="db-close btn btn--icon" aria-label="Close"
+                (click)="$event.stopPropagation(); closeSibOverlay()">✕</button>
+        </div>
+
+        <div class="db-panel-body">
+            <div *ngIf="sibLoading" class="overlay-loading">Loading siblings…</div>
+            <div *ngIf="sibError" class="overlay-error">{{ sibError }}</div>
+
+            <ng-container *ngIf="!sibLoading && !sibError">
+                <!-- Base Model filter bar -->
+                <div class="sim-filterbar" *ngIf="sibBaseModelLabels.length">
+                    <div class="sim-filter-title">Filter by Base Model</div>
+
+                    <div class="sim-filter-group">
+                        <label class="sim-filter-chip" *ngFor="let opt of sibBaseModelLabels; trackBy: trackByKey">
+                            <input type="checkbox" [checked]="isSibBaseModelSelected(opt.key)"
+                                (change)="onSibBaseModelCheckboxChange(opt.key, $event)" />
+                            <span>{{ opt.label }}</span>
+                        </label>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn--ghost btn--sm" (click)="selectAllSibBaseModels()">Select all</button>
+                        <button class="btn btn--ghost btn--sm" (click)="clearSibBaseModels()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <ng-container *ngIf="filteredAndSortedSibResults.length; else sibNoResults">
+                    <div class="sim-card-grid">
+                        <div class="card-slot"
+                            *ngFor="let m of filteredAndSortedSibResults; let i = index; trackBy: simTrackBy">
+                            <div class="file-card">
+                                <!-- Mini carousel per card -->
+                                <div class="mini-carousel" *ngIf="sibImageCount(m) > 0">
+                                    <button class="carousel-btn mini" (click)="prevSibImage(m, $event)"
+                                        [disabled]="sibImageCount(m) < 2">&#10094;</button>
+
+                                    <img class="mini-image" [src]="sibCurrentImage(m)"
+                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy" decoding="async"
+                                        fetchpriority="low" />
+
+                                    <button class="carousel-btn mini" (click)="nextSibImage(m, $event)"
+                                        [disabled]="sibImageCount(m) < 2">&#10095;</button>
+                                </div>
+
+                                <!-- badges + footer consistent with sim cards -->
+                                <div class="badge top-left">ID: {{ m.modelNumber }} / {{ m.versionNumber }}</div>
+                                <div class="badge top-right">{{ m.baseModel || 'N/A' }}</div>
+
+                                <div class="card-footer">
+                                    <div class="creator">{{ m.creatorName || '—' }}</div>
+                                    <div class="main-model">{{ m.mainModelName || 'N/A' }}</div>
+                                    <ng-container *ngIf="simGetParsedStats(m) as stats">
+                                        <div class="stats">
+                                            <span><span class="material-icons icon-download">file_download</span>{{
+                                                stats?.downloadCount ?? 'N/A' }}</span>
+                                            <span><span class="material-icons icon-rating-count">rate_review</span>{{
+                                                stats?.ratingCount ?? 'N/A' }}</span>
+                                            <span><span class="material-icons icon-rating">star_rate</span>{{
+                                                stats?.rating ?? 'N/A' }}</span>
+                                            <span><span class="material-icons icon-thumb-up">thumb_up</span>{{
+                                                stats?.thumbsUpCount ?? 'N/A' }}</span>
+                                        </div>
+                                    </ng-container>
+                                    <div class="size-line">
+                                        <span class="material-icons">sd_storage</span>
+                                        <span class="size-text">N/A</span>
+                                    </div>
+                                </div>
+
+                                <ng-container *ngIf="simGetMyRating(m) as r">
+                                    <div class="rating-star" *ngIf="r > 0" [attr.title]="r + ' / 20'">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path
+                                                d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                                        </svg>
+                                        <div class="star-number">{{ r }}</div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <ng-template #sibNoResults>
+                    <div class="overlay-loading" *ngIf="sibNoBaseModelSelected">
+                        No base models selected — pick at least one.
+                    </div>
+                    <div class="overlay-loading" *ngIf="!sibNoBaseModelSelected">
+                        No results found for this model.
+                    </div>
+                </ng-template>
+            </ng-container>
+        </div>
+    </div>
+
 </div>
+
+
 
 
 <!-- ===== FULL-SCREEN bottom-sheet overlay (new) ===== -->
