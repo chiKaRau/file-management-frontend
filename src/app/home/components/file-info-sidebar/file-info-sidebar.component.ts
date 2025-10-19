@@ -1285,6 +1285,13 @@ export class FileInfoSidebarComponent implements OnChanges {
     navigator.clipboard?.writeText(String(text)).catch(() => { });
   }
 
+  get modelUrl(): string | null {
+    const mId = this.modelVersion?.modelId;
+    const vId = this.modelVersion?.id;
+    if (!mId || !vId) return null;
+    return `https://civitai.com/models/${mId}?modelVersionId=${vId}`;
+  }
+
 
   close() { this.closed.emit(); }
 }

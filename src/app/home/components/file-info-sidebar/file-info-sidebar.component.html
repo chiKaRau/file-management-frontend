@@ -52,6 +52,16 @@
         </div>
 
         <p><strong>Path:</strong> {{ item.path }}</p>
+
+        <!-- URL (click to copy) -->
+        <p *ngIf="modelUrl as url">
+            <strong>URL:</strong>
+            <span class="mono linklike" title="Click to copy" (click)="copyText(url)">
+                {{ url }}
+            </span>
+            <button class="btn btn--ghost btn--sm" (click)="copyText(url)">Copy</button>
+        </p>
+
         <p><strong>Type:</strong> {{ item.isDirectory ? 'Folder' : 'File' }}</p>
 
         <!-- Spinner when loading LIVE -->
