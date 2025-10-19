@@ -65,117 +65,146 @@ export class SearchService {
         ignorePath?: string
     ): Observable<SearchProgress> {
         return new Observable((observer: Observer<SearchProgress>) => {
-
-            // NEW: read user-configured level cap (default 999; clamp to >= 1)
+            // --- Config: levels ---
             const maxLevelsRaw = Number(this.preferencesService.searchLevels);
             const maxLevels = (!isNaN(maxLevelsRaw) && maxLevelsRaw > 0) ? maxLevelsRaw : 999;
 
-            // Build candidate search roots based on the hint (if provided)
+            // --- Build candidate roots (deep → shallow), capped by levels ---
             let candidateRoots: string[] = [];
             if (hintPath) {
                 let candidate = path.join(this.scanDir, hintPath);
                 let levels = 0;
-
-                console.log('hintpath: ', candidate);
-
                 while (candidate && candidate.startsWith(this.scanDir) && levels < maxLevels) {
                     candidateRoots.push(candidate);
                     levels++;
-
                     if (candidate === this.scanDir) break;
                     candidate = path.dirname(candidate);
                 }
-
             } else {
                 candidateRoots = [this.scanDir];
             }
 
-            console.log("Candidate roots:", candidateRoots);
+            // --- Helpers ---
+            const exists = (p: string) => {
+                try { return fs.existsSync(p); } catch { return false; }
+            };
+            const SEP = path.sep;
+            const norm = (p: string) => path.resolve(p).toLowerCase().replace(/[\\/]+/g, SEP);
+            const startsWithin = (dir: string, root: string) => {
+                // true if dir === root OR dir is inside root
+                const d = norm(dir), r = norm(root);
+                return d === r || d.startsWith(r + SEP);
+            };
 
-            // Prepare the ignore base name if ignorePath is provided.
-            const ignoreBase = ignorePath ? this.normalizeBaseName(ignorePath) : null;
+            // Keep only existing, de-duped candidate roots
+            const seen = new Set<string>();
+            candidateRoots = candidateRoots
+                .map(p => path.resolve(p))
+                .filter(p => {
+                    const n = norm(p);
+                    if (seen.has(n)) return false;
+                    seen.add(n);
+                    return exists(p);
+                });
 
-            // Helper: search the given root recursively and return a Promise that resolves with the matches.
-            const searchCandidate = (root: string): Promise<string[]> => {
-                return new Promise((resolve, reject) => {
-                    const results: string[] = [];
+            console.log('Candidate roots (existing):', candidateRoots);
+
+            // Prepare ignore (exact path equality)
+            const ignoreAbs = ignorePath ? path.resolve(ignorePath) : null;
+
+            // --- Aggregated (cross-level) results ---
+            const aggregatedSet = new Set<string>();
+            const aggregatedArr = () => Array.from(aggregatedSet);
+
+            // Previously scanned roots (to prune when scanning a parent)
+            const scannedRootsNorm: string[] = [];
+
+            const emit = (progress: string) => {
+                this.zone.run(() => {
+                    observer.next({ progress, results: aggregatedArr() });
+                });
+            };
+
+            // Recursive walker that skips excluded subtrees and aggregates matches
+            const searchCandidate = (root: string, excludeRootsNorm: string[]): Promise<void> => {
+                return new Promise((resolve) => {
                     let pending = 0;
 
+                    const shouldSkipDir = (dir: string) =>
+                        excludeRootsNorm.some(ex => startsWithin(dir, ex));
+
                     const searchDirectory = (dir: string) => {
+                        // Prune directories that are inside already-scanned roots
+                        if (shouldSkipDir(dir)) return;
+
                         pending++;
-                        this.zone.run(() => {
-                            observer.next({ progress: `Scanning directory: ${dir}`, results: [...results] });
-                        });
+                        emit(`Scanning directory: ${dir}`);
+
                         fs.readdir(dir, { withFileTypes: true }, (err, entries) => {
                             if (err) {
-                                console.error('Error reading directory:', dir, err);
-                                pending--;
-                                if (pending === 0) {
-                                    resolve(results);
+                                // Soft-ignore common transient/permission errors
+                                if (err.code !== 'ENOENT' && err.code !== 'EACCES' && err.code !== 'EPERM') {
+                                    console.error('Error reading directory:', dir, err);
                                 }
+                                pending--;
+                                if (pending === 0) resolve();
                                 return;
                             }
-                            entries.forEach(entry => {
+
+                            for (const entry of entries) {
                                 const fullPath = path.join(dir, entry.name);
 
-                                // Normalize paths to ensure accurate comparison.
-                                if (ignorePath && path.resolve(fullPath) === path.resolve(ignorePath)) {
-                                    return;
+                                if (ignoreAbs && path.resolve(fullPath) === ignoreAbs) {
+                                    continue;
                                 }
 
                                 if (entry.isDirectory()) {
-                                    searchDirectory(fullPath);
+                                    // Skip excluded subtrees
+                                    if (!shouldSkipDir(fullPath)) {
+                                        searchDirectory(fullPath);
+                                    }
                                 } else {
-                                    this.zone.run(() => {
-                                        observer.next({ progress: `Processing file: ${fullPath}`, results: [...results] });
-                                    });
-                                    // Check if file name starts with the modelId (or modelId_ if desired)
+                                    emit(`Processing file: ${fullPath}`);
                                     const prefix = `${modelId}_`;
                                     if (entry.name.startsWith(prefix)) {
-                                        results.push(fullPath);
-                                        this.zone.run(() => {
-                                            observer.next({ progress: `Matched file: ${fullPath}`, results: [...results] });
-                                        });
+                                        const abs = path.resolve(fullPath);
+                                        if (!aggregatedSet.has(abs)) {
+                                            aggregatedSet.add(abs);
+                                            emit(`Matched file: ${fullPath}`);
+                                        }
                                     }
                                 }
-                            });
-
+                            }
 
                             pending--;
-                            if (pending === 0) {
-                                resolve(results);
-                            }
+                            if (pending === 0) resolve();
                         });
                     };
 
+                    // Kick off
                     searchDirectory(root);
                 });
             };
 
-            // Sequentially search the candidate roots.
-            const runSequentialSearch = async () => {
+            // --- Run: scan every candidate (up to cap), aggregate results, then complete ---
+            const run = async () => {
                 for (const root of candidateRoots) {
-                    this.zone.run(() => {
-                        observer.next({ progress: `Searching in ${root}`, results: [] });
-                    });
-                    const candidateResults = await searchCandidate(root);
-                    if (candidateResults.length > 0) {
-                        this.zone.run(() => {
-                            observer.next({ progress: `Matches found in ${root}`, results: candidateResults });
-                            observer.complete();
-                        });
-                        return;
-                    }
+                    if (!exists(root)) { emit(`Skipping missing: ${root}`); continue; }
+                    emit(`Searching in ${root}`);
+                    await searchCandidate(root, scannedRootsNorm);
+                    // Mark this root as scanned, so parents skip it as a subtree
+                    scannedRootsNorm.push(norm(root));
                 }
                 this.zone.run(() => {
-                    observer.next({ progress: 'No matches found.', results: [] });
+                    observer.next({ progress: 'Search finished for all levels.', results: aggregatedArr() });
                     observer.complete();
                 });
             };
 
-            runSequentialSearch().catch(err => observer.error(err));
+            run().catch(err => observer.error(err));
         });
     }
+
 
     updateScanDir(newDir: string): void {
         this.scanDir = newDir;
