@@ -542,13 +542,37 @@ export class HomeComponent implements OnInit, AfterViewInit {
             const fullPath = path.join(directoryPath, file);
             try {
               const stats = await fs.promises.stat(fullPath);
+
+              if (stats.isDirectory()) {
+                // 🔽 NEW: compute children count
+                let count = 0;
+                try {
+                  const kids = await fs.promises.readdir(fullPath);
+                  count = kids.length; // (or filter hidden/system if you want)
+                } catch { /* ignore */ }
+
+                return {
+                  name: file,
+                  path: fullPath,
+                  isFile: false,
+                  isDirectory: true,
+                  isDeleted: isFileDeleted(fullPath),
+                  size: undefined,
+                  createdAt: this.getCreatedTime(stats),
+                  modifiedAt: stats.mtime,
+                  childCount: count,
+                  isEmpty: count === 0,
+                } as DirectoryItem;
+              }
+
+              // files unchanged
               return {
                 name: file,
                 path: fullPath,
-                isFile: stats.isFile(),
-                isDirectory: stats.isDirectory(),
+                isFile: true,
+                isDirectory: false,
                 isDeleted: isFileDeleted(fullPath),
-                size: stats.isFile() ? stats.size : undefined,
+                size: stats.size,
                 createdAt: this.getCreatedTime(stats),
                 modifiedAt: stats.mtime
               } as DirectoryItem;
@@ -583,6 +607,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
             try {
               const stats = await fs.promises.stat(fullPath);
               if (stats.isDirectory()) {
+                let count = 0;
+                try {
+                  const kids = await fs.promises.readdir(fullPath);
+                  count = kids.length;
+                } catch { }
+
                 directories.push({
                   name: file,
                   path: fullPath,
@@ -591,7 +621,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
                   isDeleted: isFileDeleted(fullPath),
                   size: undefined,
                   createdAt: this.getCreatedTime(stats),
-                  modifiedAt: stats.mtime
+                  modifiedAt: stats.mtime,
+                  childCount: count,
+                  isEmpty: count === 0,
                 });
               } else {
                 // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")

@@ -17,4 +17,7 @@ export interface DirectoryItem {
 
     drive?: string;          // optional (virtual)
     imageUrl?: string;       // optional (virtual)
+
+    childCount?: number;   // immediate children (files+dirs)
+    isEmpty?: boolean;     // convenience flag (childCount === 0)
 }

@@ -15,10 +15,33 @@
 
 
                     <!-- Directory Icon -->
-                    <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                     c-1.1 0-2-.9-2-2V9z" />
-                    </svg>
+                    <ng-container *ngIf="item.isDirectory">
+                        <!-- if empty -->
+                        <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                            <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                                <path fill="currentColor"
+                                    d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                                    opacity="0.5" />
+                                <path class="folder-empty-outline" fill="none" stroke="currentColor"
+                                    stroke-dasharray="2 2" d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                            </svg>
+                        </ng-container>
+
+                        <!-- else non-empty -->
+                        <ng-template #nonEmptyFolder>
+                            <div class="folder-with-badge">
+                                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                                    <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                                    <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                                </svg>
+                                <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                                    {{ item.childCount }}
+                                </span>
+                            </div>
+                        </ng-template>
+                    </ng-container>
+
+
 
                     <!-- File content -->
                     <ng-container *ngIf="item.isFile">
@@ -89,7 +112,7 @@
                     <div class="star-number">{{ r }}</div>
                 </div>
             </ng-container>
-            
+
         </div>
 
     </ng-container>
@@ -104,10 +127,33 @@
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
 
         <!-- Directory Icon -->
-        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                   c-1.1 0-2-.9-2-2V9z" />
-        </svg>
+        <ng-container *ngIf="item.isDirectory">
+            <!-- if empty -->
+            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                    <path fill="currentColor"
+                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                        opacity="0.5" />
+                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                </svg>
+            </ng-container>
+
+            <!-- else non-empty -->
+            <ng-template #nonEmptyFolder>
+                <div class="folder-with-badge">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                        {{ item.childCount }}
+                    </span>
+                </div>
+            </ng-template>
+        </ng-container>
+
+
 
         <div class="icon">
             <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
@@ -139,10 +185,33 @@
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
 
         <!-- Directory Icon -->
-        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                   c-1.1 0-2-.9-2-2V9z" />
-        </svg>
+        <ng-container *ngIf="item.isDirectory">
+            <!-- if empty -->
+            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                    <path fill="currentColor"
+                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                        opacity="0.5" />
+                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                </svg>
+            </ng-container>
+
+            <!-- else non-empty -->
+            <ng-template #nonEmptyFolder>
+                <div class="folder-with-badge">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                        {{ item.childCount }}
+                    </span>
+                </div>
+            </ng-template>
+        </ng-container>
+
+
 
 
         <div class="icon">
@@ -175,10 +244,31 @@
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
 
         <!-- Directory Icon -->
-        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                   c-1.1 0-2-.9-2-2V9z" />
-        </svg>
+        <ng-container *ngIf="item.isDirectory">
+            <!-- if empty -->
+            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                    <path fill="currentColor"
+                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                        opacity="0.5" />
+                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                </svg>
+            </ng-container>
+
+            <!-- else non-empty -->
+            <ng-template #nonEmptyFolder>
+                <div class="folder-with-badge">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                        {{ item.childCount }}
+                    </span>
+                </div>
+            </ng-template>
+        </ng-container>
 
 
         <div class="icon">
@@ -211,10 +301,32 @@
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
 
         <!-- Directory Icon -->
-        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                   c-1.1 0-2-.9-2-2V9z" />
-        </svg>
+        <ng-container *ngIf="item.isDirectory">
+            <!-- if empty -->
+            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                    <path fill="currentColor"
+                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                        opacity="0.5" />
+                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                </svg>
+            </ng-container>
+
+            <!-- else non-empty -->
+            <ng-template #nonEmptyFolder>
+                <div class="folder-with-badge">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                        {{ item.childCount }}
+                    </span>
+                </div>
+            </ng-template>
+        </ng-container>
+
 
 
         <div class="icon">
@@ -247,10 +359,32 @@
         [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
 
         <!-- Directory Icon -->
-        <svg *ngIf="item.isDirectory" width="60" height="60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4l2 2h8c1.1 0 2 .9 2 2v1H2V6c0-1.1.9-2 2-2h6zM2 9h20v9c0 1.1-.9 2-2 2H4
-                   c-1.1 0-2-.9-2-2V9z" />
-        </svg>
+        <ng-container *ngIf="item.isDirectory">
+            <!-- if empty -->
+            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                    <path fill="currentColor"
+                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                        opacity="0.5" />
+                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                </svg>
+            </ng-container>
+
+            <!-- else non-empty -->
+            <ng-template #nonEmptyFolder>
+                <div class="folder-with-badge">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                        {{ item.childCount }}
+                    </span>
+                </div>
+            </ng-template>
+        </ng-container>
+
 
 
         <div class="icon">

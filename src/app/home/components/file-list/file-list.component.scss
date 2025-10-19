@@ -558,3 +558,25 @@
         transform: translateY(1px);
     }
 }
+
+.folder-with-badge {
+    position: relative;
+    display: inline-block;
+
+    .dir-count-badge {
+        position: absolute;
+        right: -6px;
+        top: -6px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border-radius: 9px;
+        font-size: 11px;
+        line-height: 18px;
+        text-align: center;
+        background: var(--accent, #6aa0ff);
+        color: #fff;
+        box-shadow: 0 0 0 2px var(--panel, #222);
+        user-select: none;
+    }
+}
