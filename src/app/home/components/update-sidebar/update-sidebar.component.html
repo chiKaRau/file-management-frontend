@@ -27,11 +27,11 @@
                     <!-- Comparison lines -->
                     <p *ngIf="itemVersionId && versionFrom(set)">
                         <strong>VersionID:</strong>
-                        Replacing <b>{{ itemVersionId }}</b> to <b>{{ versionFrom(set) }}</b>
+                        <b>{{ versionFrom(set) }}</b> -> <b>{{ itemVersionId }}</b>
                     </p>
                     <p *ngIf="itemBaseModel && baseFrom(set)">
                         <strong>BaseModel:</strong>
-                        Replacing <b>{{ itemBaseModel }}</b> to <b>{{ baseFrom(set) }}</b>
+                        <b>{{ baseFrom(set) }}</b> -> <b>{{ itemBaseModel }}</b>
                     </p>
 
                     <p><strong>ZIP:</strong> {{ set.isZip ? 'Yes' : 'No' }}</p>
