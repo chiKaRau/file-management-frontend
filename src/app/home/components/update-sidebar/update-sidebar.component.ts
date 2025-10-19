@@ -377,6 +377,99 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     this.homeRefreshService.triggerRefresh();
   }
 
+  async addToLocation(set: CivitaiSet): Promise<void> {
+    if (
+      !window.confirm(
+        "Add this update set to the destination folder?\n\nNote: Existing files with the same name will be left in place (no overwrite)."
+      )
+    ) {
+      return;
+    }
+
+    set.isProcessing = true;
+    set.moveProgress = 0;
+
+    const updateDir = this.item ? path.dirname(this.item.path) : "";
+    const setId = this.item ? this.normalizeSetId(this.item.name) : "";
+    if (!updateDir || !setId) {
+      alert("Invalid update file.");
+      set.isProcessing = false;
+      return;
+    }
+
+    const productionDir = set.folderPath;
+    if (!productionDir) {
+      alert("Destination (production) folder not determined.");
+      set.isProcessing = false;
+      return;
+    }
+
+    // Collect all files from the update folder that belong to this setId
+    let updateFiles: string[] = [];
+    try {
+      const files = await fs.promises.readdir(updateDir);
+      updateFiles = files
+        .filter((f) => this.normalizeSetId(f) === setId)
+        .map((f) => path.join(updateDir, f));
+    } catch (err) {
+      console.error("Error reading update directory", err);
+      alert("Error reading update directory.");
+      set.isProcessing = false;
+      return;
+    }
+
+    if (updateFiles.length === 0) {
+      alert("No files found in the update folder for this set.");
+      set.isProcessing = false;
+      return;
+    }
+
+    const total = updateFiles.length;
+    let movedCount = 0;
+    const skippedExisting: string[] = [];
+    const errors: string[] = [];
+
+    // Ensure destination exists
+    try {
+      await fs.promises.mkdir(productionDir, { recursive: true });
+    } catch (e) {
+      console.error("Failed ensuring destination folder", e);
+    }
+
+    for (const src of updateFiles) {
+      const target = path.join(productionDir, path.basename(src));
+
+      if (fs.existsSync(target)) {
+        // Do NOT overwrite — skip
+        skippedExisting.push(path.basename(src));
+      } else {
+        try {
+          await this.moveFileAsync(src, target);
+          movedCount++;
+        } catch (err) {
+          errors.push(path.basename(src));
+          console.error("Error moving file", src, "->", target, err);
+        }
+      }
+
+      set.moveProgress = Math.round(((movedCount + skippedExisting.length + errors.length) / total) * 100);
+    }
+
+    let msg = `Added ${movedCount} file(s) to the destination.`;
+    if (skippedExisting.length) {
+      msg += `\nSkipped (already existed):\n- ${skippedExisting.join("\n- ")}`;
+    }
+    if (errors.length) {
+      msg += `\nErrors:\n- ${errors.join("\n- ")}`;
+    }
+    alert(msg);
+
+    set.isProcessing = false;
+    set.moveProgress = 0;
+
+    // Refresh the home view so the new files appear
+    this.homeRefreshService.triggerRefresh();
+  }
 
   isImage(item: DirectoryItem): boolean {
     return /\.(png|jpe?g|gif|webp)$/i.test(item.name);
@@ -473,7 +566,5 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     const b = (this.itemBaseModel || '').trim().toLowerCase();
     return !!a && !!b && a === b;
   }
-
-
 
 }

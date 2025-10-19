@@ -69,6 +69,10 @@
                             Upgrade
                         </button>
 
+                        <button class="action-btn add" (click)="addToLocation(set)" [disabled]="set.isProcessing">
+                            Add to location
+                        </button>
+
                         <button class="action-btn delete" (click)="deleteSet(set)" [disabled]="set.isProcessing">
                             Delete
                         </button>

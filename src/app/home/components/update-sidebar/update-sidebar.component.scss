@@ -201,8 +201,13 @@
     }
 }
 
-/* Optional: on wider sidebars you can place them side-by-side
-  @media (min-width: 560px) {
-    .actions { grid-template-columns: 1fr 1fr; }
-  }
-  */
+/* optional, otherwise it inherits .action-btn defaults */
+.action-btn.add {
+    color: var(--text);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+
+    &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--accent) 18%, var(--bg-elevated));
+    }
+}
