@@ -1,410 +1,389 @@
-<!--file-list.component.html-->
-<!-- Extra Large View Mode -->
-<div *ngIf="viewMode === 'extraLarge'" class="file-card-container">
-    <ng-container *ngFor="let item of combinedItems; let i = index; trackBy: trackByPath">
+<!-- ===================== FOLDERS (use foldersViewMode) ===================== -->
+<ng-container [ngSwitch]="foldersViewMode">
 
-        <div class="card-slot">
+    <!-- FOLDERS: Extra Large -->
+    <div *ngSwitchCase="'extraLarge'" class="file-card-container">
+        <ng-container *ngFor="let item of directoryItems; let i = index; trackBy: trackByPath">
+            <div class="card-slot">
+                <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
+                    <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
+                        (dblclick)="onItemDblClick(item)"
+                        [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
+                        [appLazyBg]="getCardBgUrl(item)">
 
-            <!-- NEW wrapper so the card + caption stay together in one grid cell -->
-            <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
-
-                <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
-                    (dblclick)="onItemDblClick(item)"
-                    [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
-                    [appLazyBg]="getCardBgUrl(item)">
-
-
-                    <!-- Directory Icon -->
-                    <ng-container *ngIf="item.isDirectory">
-                        <!-- if empty -->
-                        <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
-                            <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
-                                <path fill="currentColor"
-                                    d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
-                                    opacity="0.5" />
-                                <path class="folder-empty-outline" fill="none" stroke="currentColor"
-                                    stroke-dasharray="2 2" d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
-                            </svg>
-                        </ng-container>
-
-                        <!-- else non-empty -->
-                        <ng-template #nonEmptyFolder>
-                            <div class="folder-with-badge">
-                                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
-                                    <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
-                                    <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                        <!-- Directory Icon -->
+                        <ng-container *ngIf="item.isDirectory">
+                            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
+                                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                                    <path fill="currentColor"
+                                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                                        opacity="0.5" />
+                                    <path class="folder-empty-outline" fill="none" stroke="currentColor"
+                                        stroke-dasharray="2 2" d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
                                 </svg>
-                                <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
-                                    {{ item.childCount }}
-                                </span>
-                            </div>
-                        </ng-template>
-                    </ng-container>
-
-
-
-                    <!-- File content -->
-                    <ng-container *ngIf="item.isFile">
-                        <div class="badge top-left">
-                            ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
-                        </div>
-                        <div class="badge top-right">
-                            {{ item.scanData?.baseModel }}
-                        </div>
-
-                        <div class="card-footer">
-                            <div class="creator">{{ item.scanData?.creatorName }}</div>
-                            <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
-
-                            <ng-container *ngIf="getParsedStats(item) as stats">
-                                <div class="stats">
-                                    <span>
-                                        <span class="material-icons icon-download">file_download</span>
-                                        {{ stats.downloadCount ?? 'N/A' }}
-                                    </span>
-                                    <span>
-                                        <span class="material-icons icon-rating-count">rate_review</span>
-                                        {{ stats.ratingCount ?? 'N/A' }}
-                                    </span>
-                                    <span>
-                                        <span class="material-icons icon-rating">star_rate</span>
-                                        {{ stats.rating ?? 'N/A' }}
-                                    </span>
-                                    <span>
-                                        <span class="material-icons icon-thumb-up">thumb_up</span>
-                                        {{ stats.thumbsUpCount ?? 'N/A' }}
+                            </ng-container>
+                            <ng-template #nonEmptyFolder>
+                                <div class="folder-with-badge">
+                                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                                        <path fill="currentColor"
+                                            d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                                    </svg>
+                                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                                        {{ item.childCount }}
                                     </span>
                                 </div>
-                            </ng-container>
+                            </ng-template>
+                        </ng-container>
 
+                        <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+    </div>
 
-                            <div class="size-line" *ngIf="item.size != null">
-                                <span class="material-icons">sd_storage</span>
-                                <span class="size-text" [ngClass]="sizeClass(item.size)">
-                                    {{ formatBytes(item.size) }}
-                                </span>
+    <!-- FOLDERS: Large -->
+    <div *ngSwitchCase="'large'" class="file-list" [ngClass]="'large'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of directoryItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+
+            <ng-container *ngIf="item.isDirectory">
+                <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolderL">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                        <path fill="currentColor"
+                            d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                            opacity="0.5" />
+                        <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                            d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                </ng-container>
+                <ng-template #nonEmptyFolderL>
+                    <div class="folder-with-badge">
+                        <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                            <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                            <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                        </svg>
+                        <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                            {{ item.childCount }}
+                        </span>
+                    </div>
+                </ng-template>
+            </ng-container>
+
+            <div class="icon"><!-- folders don’t show file thumbnails here --></div>
+            <div class="filename">{{ item.name }}</div>
+        </div>
+    </div>
+
+    <!-- FOLDERS: Medium -->
+    <div *ngSwitchCase="'medium'" class="file-list" [ngClass]="'medium'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of directoryItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <!-- (same folder block as in Large) -->
+            <ng-container *ngIf="item.isDirectory">
+                <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolderM">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                        <path fill="currentColor"
+                            d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                            opacity="0.5" />
+                        <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                            d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                </ng-container>
+                <ng-template #nonEmptyFolderM>
+                    <div class="folder-with-badge">
+                        <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                            <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                            <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                        </svg>
+                        <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                            {{ item.childCount }}
+                        </span>
+                    </div>
+                </ng-template>
+            </ng-container>
+            <div class="icon"></div>
+            <div class="filename">{{ item.name }}</div>
+        </div>
+    </div>
+
+    <!-- FOLDERS: Small -->
+    <div *ngSwitchCase="'small'" class="file-list" [ngClass]="'small'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of directoryItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <!-- same folder block as above -->
+            <ng-container *ngIf="item.isDirectory">
+                <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolderS">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                        <path fill="currentColor"
+                            d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                            opacity="0.5" />
+                        <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                            d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                </ng-container>
+                <ng-template #nonEmptyFolderS>
+                    <div class="folder-with-badge">
+                        <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                            <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                            <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                        </svg>
+                        <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                            {{ item.childCount }}
+                        </span>
+                    </div>
+                </ng-template>
+            </ng-container>
+            <div class="icon"></div>
+            <div class="filename">{{ item.name }}</div>
+        </div>
+    </div>
+
+    <!-- FOLDERS: List -->
+    <div *ngSwitchCase="'list'" class="file-list" [ngClass]="'list'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of directoryItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <!-- same folder icon block as above -->
+            <ng-container *ngIf="item.isDirectory">
+                <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolderList">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                        <path fill="currentColor"
+                            d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                            opacity="0.5" />
+                        <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                            d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                </ng-container>
+                <ng-template #nonEmptyFolderList>
+                    <div class="folder-with-badge">
+                        <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                            <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                            <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                        </svg>
+                        <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                            {{ item.childCount }}
+                        </span>
+                    </div>
+                </ng-template>
+            </ng-container>
+            <div class="icon"></div>
+            <div class="filename">{{ item.name }}</div>
+        </div>
+    </div>
+
+    <!-- FOLDERS: Details -->
+    <div *ngSwitchCase="'details'" class="file-list" [ngClass]="'details'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of directoryItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <!-- same folder block as above -->
+            <ng-container *ngIf="item.isDirectory">
+                <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolderDetails">
+                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
+                        <path fill="currentColor"
+                            d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
+                            opacity="0.5" />
+                        <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
+                            d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
+                    </svg>
+                </ng-container>
+                <ng-template #nonEmptyFolderDetails>
+                    <div class="folder-with-badge">
+                        <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
+                            <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
+                            <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+                        </svg>
+                        <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
+                            {{ item.childCount }}
+                        </span>
+                    </div>
+                </ng-template>
+            </ng-container>
+            <div class="icon"></div>
+            <div class="filename">{{ item.name }}</div>
+        </div>
+    </div>
+
+</ng-container>
+
+<!-- ===================== FILES (use filesViewMode) ===================== -->
+<ng-container [ngSwitch]="filesViewMode">
+
+    <!-- FILES: Extra Large -->
+    <div *ngSwitchCase="'extraLarge'" class="file-card-container">
+        <ng-container *ngFor="let item of fileItems; let i = index; trackBy: trackByPath">
+            <div class="card-slot">
+                <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
+                    <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
+                        (dblclick)="onItemDblClick(item)"
+                        [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
+                        [appLazyBg]="getCardBgUrl(item)">
+                        <!-- File content -->
+                        <ng-container *ngIf="item.isFile">
+                            <div class="badge top-left">ID: {{ item.scanData?.modelNumber }} / {{
+                                item.scanData?.versionNumber }}</div>
+                            <div class="badge top-right">{{ item.scanData?.baseModel }}</div>
+                            <div class="card-footer">
+                                <div class="creator">{{ item.scanData?.creatorName }}</div>
+                                <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+                                <ng-container *ngIf="getParsedStats(item) as stats">
+                                    <div class="stats">
+                                        <span><span class="material-icons icon-download">file_download</span>{{
+                                            stats.downloadCount ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating-count">rate_review</span>{{
+                                            stats.ratingCount ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating">star_rate</span>{{ stats.rating
+                                            ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-thumb-up">thumb_up</span>{{
+                                            stats.thumbsUpCount ?? 'N/A' }}</span>
+                                    </div>
+                                </ng-container>
+                                <div class="size-line" *ngIf="item.size != null">
+                                    <span class="material-icons">sd_storage</span>
+                                    <span class="size-text" [ngClass]="sizeClass(item.size)">{{ formatBytes(item.size)
+                                        }}</span>
+                                </div>
                             </div>
+                        </ng-container>
+                        <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
+                    </div>
 
+                    <!-- ⭐ rating star -->
+                    <ng-container *ngIf="getMyRating(item) as r">
+                        <div class="rating-star" *ngIf="r > 0" [style.--star-size.px]="starSize(r)"
+                            [attr.title]="r + ' / 20'">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                            <div class="star-number">{{ r }}</div>
                         </div>
                     </ng-container>
 
-                    <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
-                </div>
-
-                <div class="deleted-info-below" *ngIf="showDeletedInfo && item.deletedDate">
-                    <span class="material-icons">delete</span>
-                    Deleted: {{ item.deletedDate | date:'medium' }}
-                </div>
-                <div class="deleted-path-below" *ngIf="showDeletedInfo && item.deletedFromPath">
-                    <span class="material-icons">folder_open</span>
-                    <span class="path-text" [title]="item.deletedFromPath">{{ item.deletedFromPath }}</span>
                 </div>
             </div>
+        </ng-container>
+    </div>
 
+    <!-- FILES: Large -->
+    <div *ngSwitchCase="'large'" class="file-list" [ngClass]="'large'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of fileItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
 
-            <!-- ⭐ Corner star overlay (only if rating > 0) -->
-            <ng-container *ngIf="getMyRating(item) as r">
-                <div class="rating-star" *ngIf="r > 0" [style.--star-size.px]="starSize(r)" [attr.title]="r + ' / 20'">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
+            <div class="icon">
+                <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileL">
+                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                        style="object-fit: cover" />
+                </ng-container>
+                <ng-template #fallbackIconFileL>
+                    <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
                         <path
-                            d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                            d="M14 2H6C4.9 2 4 2.9 4 4v16 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
                     </svg>
-                    <div class="star-number">{{ r }}</div>
-                </div>
-            </ng-container>
-
-        </div>
-
-    </ng-container>
-</div>
-
-
-<!-- Large View Mode-->
-<div *ngIf="viewMode === 'large'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
-        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-        (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
-
-        <!-- Directory Icon -->
-        <ng-container *ngIf="item.isDirectory">
-            <!-- if empty -->
-            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
-                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
-                    <path fill="currentColor"
-                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
-                        opacity="0.5" />
-                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
-                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
-                </svg>
-            </ng-container>
-
-            <!-- else non-empty -->
-            <ng-template #nonEmptyFolder>
-                <div class="folder-with-badge">
-                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
-                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
-                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
-                    </svg>
-                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
-                        {{ item.childCount }}
-                    </span>
-                </div>
-            </ng-template>
-        </ng-container>
-
-
-
-        <div class="icon">
-            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                    style="object-fit: cover" />
-
-            </ng-container>
-
-            <ng-template #fallbackIcon>
-                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                </svg>
-            </ng-template>
-        </div>
-
-
-        <div class="filename">
-            {{ item.name }}
+                </ng-template>
+            </div>
+            <div class="filename">{{ item.name }}</div>
         </div>
     </div>
-</div>
 
-<!-- medium View Mode-->
-<div *ngIf="viewMode === 'medium'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
-        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-        (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
-
-        <!-- Directory Icon -->
-        <ng-container *ngIf="item.isDirectory">
-            <!-- if empty -->
-            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
-                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
-                    <path fill="currentColor"
-                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
-                        opacity="0.5" />
-                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
-                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
-                </svg>
-            </ng-container>
-
-            <!-- else non-empty -->
-            <ng-template #nonEmptyFolder>
-                <div class="folder-with-badge">
-                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
-                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
-                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+    <!-- FILES: Medium -->
+    <div *ngSwitchCase="'medium'" class="file-list" [ngClass]="'medium'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of fileItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <div class="icon">
+                <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileM">
+                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                        style="object-fit: cover" />
+                </ng-container>
+                <ng-template #fallbackIconFileM>
+                    <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14 2H6C4.9 2 4 2.9 4 4v16 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
                     </svg>
-                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
-                        {{ item.childCount }}
-                    </span>
-                </div>
-            </ng-template>
-        </ng-container>
-
-
-
-
-        <div class="icon">
-            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                    style="object-fit: cover" />
-
-            </ng-container>
-
-            <ng-template #fallbackIcon>
-                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                </svg>
-            </ng-template>
-        </div>
-
-
-        <div class="filename">
-            {{ item.name }}
+                </ng-template>
+            </div>
+            <div class="filename">{{ item.name }}</div>
         </div>
     </div>
-</div>
 
-<!-- small View Mode-->
-<div *ngIf="viewMode === 'small'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
-        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-        (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
-
-        <!-- Directory Icon -->
-        <ng-container *ngIf="item.isDirectory">
-            <!-- if empty -->
-            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
-                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
-                    <path fill="currentColor"
-                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
-                        opacity="0.5" />
-                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
-                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
-                </svg>
-            </ng-container>
-
-            <!-- else non-empty -->
-            <ng-template #nonEmptyFolder>
-                <div class="folder-with-badge">
-                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
-                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
-                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+    <!-- FILES: Small -->
+    <div *ngSwitchCase="'small'" class="file-list" [ngClass]="'small'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of fileItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <div class="icon">
+                <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileS">
+                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                        style="object-fit: cover" />
+                </ng-container>
+                <ng-template #fallbackIconFileS>
+                    <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14 2H6C4.9 2 4 2.9 4 4v16 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
                     </svg>
-                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
-                        {{ item.childCount }}
-                    </span>
-                </div>
-            </ng-template>
-        </ng-container>
-
-
-        <div class="icon">
-            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                    style="object-fit: cover" />
-
-            </ng-container>
-
-            <ng-template #fallbackIcon>
-                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                </svg>
-            </ng-template>
-        </div>
-
-
-        <div class="filename">
-            {{ item.name }}
+                </ng-template>
+            </div>
+            <div class="filename">{{ item.name }}</div>
         </div>
     </div>
-</div>
 
-<!-- list View Mode-->
-<div *ngIf="viewMode === 'list'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
-        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-        (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
-
-        <!-- Directory Icon -->
-        <ng-container *ngIf="item.isDirectory">
-            <!-- if empty -->
-            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
-                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
-                    <path fill="currentColor"
-                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
-                        opacity="0.5" />
-                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
-                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
-                </svg>
-            </ng-container>
-
-            <!-- else non-empty -->
-            <ng-template #nonEmptyFolder>
-                <div class="folder-with-badge">
-                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
-                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
-                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+    <!-- FILES: List -->
+    <div *ngSwitchCase="'list'" class="file-list" [ngClass]="'list'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of fileItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <div class="icon">
+                <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileList">
+                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                        style="object-fit: cover" />
+                </ng-container>
+                <ng-template #fallbackIconFileList>
+                    <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14 2H6C4.9 2 4 2.9 4 4v16 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
                     </svg>
-                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
-                        {{ item.childCount }}
-                    </span>
-                </div>
-            </ng-template>
-        </ng-container>
-
-
-
-        <div class="icon">
-            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                    style="object-fit: cover" />
-
-            </ng-container>
-
-            <ng-template #fallbackIcon>
-                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                </svg>
-            </ng-template>
-        </div>
-
-
-        <div class="filename">
-            {{ item.name }}
+                </ng-template>
+            </div>
+            <div class="filename">{{ item.name }}</div>
         </div>
     </div>
-</div>
 
-<!-- details View Mode-->
-<div *ngIf="viewMode === 'details'" class="file-list" [ngClass]="viewMode" (click)="onContainerClick($event)">
-    <div class="file-item" #fileCard *ngFor="let item of combinedItems; let i = index"
-        (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
-        (contextmenu)="onFileRightClick(item, $event)"
-        [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
-
-        <!-- Directory Icon -->
-        <ng-container *ngIf="item.isDirectory">
-            <!-- if empty -->
-            <ng-container *ngIf="item.isEmpty === true; else nonEmptyFolder">
-                <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Empty folder">
-                    <path fill="currentColor"
-                        d="M10 4l2 2h7a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4z"
-                        opacity="0.5" />
-                    <path class="folder-empty-outline" fill="none" stroke="currentColor" stroke-dasharray="2 2"
-                        d="M4 9h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9z" />
-                </svg>
-            </ng-container>
-
-            <!-- else non-empty -->
-            <ng-template #nonEmptyFolder>
-                <div class="folder-with-badge">
-                    <svg width="60" height="60" viewBox="0 0 24 24" aria-label="Folder">
-                        <path fill="currentColor" d="M10 4l2 2h8a2 2 0 0 1 2 2v1H2V6a2 2 0 0 1 2-2h6z" />
-                        <path fill="currentColor" d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9z" />
+    <!-- FILES: Details -->
+    <div *ngSwitchCase="'details'" class="file-list" [ngClass]="'details'" (click)="onContainerClick($event)">
+        <div class="file-item" #fileCard *ngFor="let item of fileItems; let i = index"
+            (click)="onItemClick(item, $event, i)" (dblclick)="onItemDblClick(item)"
+            (contextmenu)="onFileRightClick(item, $event)"
+            [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
+            <div class="icon">
+                <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileDetails">
+                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
+                        style="object-fit: cover" />
+                </ng-container>
+                <ng-template #fallbackIconFileDetails>
+                    <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14 2H6C4.9 2 4 2.9 4 4v16 c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
                     </svg>
-                    <span class="dir-count-badge" *ngIf="(item.childCount ?? 0) > 0">
-                        {{ item.childCount }}
-                    </span>
-                </div>
-            </ng-template>
-        </ng-container>
-
-
-
-        <div class="icon">
-            <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIcon">
-                <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                    style="object-fit: cover" />
-
-            </ng-container>
-
-            <ng-template #fallbackIcon>
-                <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6C4.9 2 4 2.9 4 4v16 
-                     c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                </svg>
-            </ng-template>
-        </div>
-
-
-        <div class="filename">
-            {{ item.name }}
+                </ng-template>
+            </div>
+            <div class="filename">{{ item.name }}</div>
         </div>
     </div>
-</div>
+
+</ng-container>

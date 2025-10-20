@@ -30,6 +30,7 @@ import { DATA_SOURCE } from '../shared/data-sources/DATA_SOURCE';
 import { ExplorerDataSource } from '../shared/data-sources/data-source';
 import { ActivatedRoute } from '@angular/router';
 
+type ViewMode = 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details';
 
 @Component({
   selector: 'app-home',
@@ -136,6 +137,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   private vTotalElements = 0;   // total files in this virtual path (from server)
   private vDirCount = 0;        // directories for this path (we fetch all on page 0)
+
+  filesViewMode: ViewMode = this.explorerState.filesViewMode ?? this.explorerState.viewMode ?? 'large';
+  foldersViewMode: ViewMode = this.explorerState.foldersViewMode ?? 'large';
+
+  // context-menu submenus (if you split into "View files as >" / "View folders as >")
+  fileViewSubmenuOpen = false;
+  fileViewSubmenuShouldFlip = false;
+  dirViewSubmenuOpen = false;
+  dirViewSubmenuShouldFlip = false;
+
+  @ViewChild('fileViewSubmenu') fileViewSubmenuRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('dirViewSubmenu') dirViewSubmenuRef!: ElementRef<HTMLDivElement>;
 
 
   constructor(
@@ -1191,6 +1204,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.showFileContextMenu = false;
     this.viewSubmenuOpen = false;
     this.sortSubmenuOpen = false;
+    this.fileViewSubmenuOpen = false;
+    this.dirViewSubmenuOpen = false;
 
     const target = event.target as HTMLElement;
     // Only clear the selection if the click is NOT on a file item, the left sidebar (.sidebar), 
@@ -1271,18 +1286,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   switchView(mode: string) {
-    this.showEmptyAreaContextMenu = false;
-    this.viewSubmenuOpen = false;
-
-    // If you store viewMode in ExplorerStateService:
-    this.explorerState.viewMode = mode as any;
-
-    // Or if you have a set method
-    // this.explorerState.saveViewMode(mode);
-
-    console.log('Switched view to:', mode);
+    this.switchFilesView(mode as ViewMode);
   }
-
 
   sortBy(type: string) {
     this.showEmptyAreaContextMenu = false;
@@ -2244,6 +2249,41 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // For other fielded queries (like mainModelName:"..."), directories don't match
     // unless free text remained or path/name was explicitly targeted.
     return !!free; // if there is leftover free text but didn't match name, treat as no-match
+  }
+
+  // --- submenu hover helpers (optional; only if your template shows submenus) ---
+  onMouseEnterFileViewSubmenu(_: MouseEvent) {
+    this.fileViewSubmenuOpen = true;
+    setTimeout(() => {
+      const el = this.fileViewSubmenuRef?.nativeElement;
+      if (!el) return;
+      this.fileViewSubmenuShouldFlip = el.getBoundingClientRect().right > window.innerWidth;
+    });
+  }
+  onMouseEnterDirViewSubmenu(_: MouseEvent) {
+    this.dirViewSubmenuOpen = true;
+    setTimeout(() => {
+      const el = this.dirViewSubmenuRef?.nativeElement;
+      if (!el) return;
+      this.dirViewSubmenuShouldFlip = el.getBoundingClientRect().right > window.innerWidth;
+    });
+  }
+
+  // --- setters called by your context menu items ---
+  switchFilesView(mode: ViewMode) {
+    this.filesViewMode = mode;
+    this.explorerState.saveFilesViewMode(mode);
+    this.fileViewSubmenuOpen = false;
+    this.showEmptyAreaContextMenu = false;
+    this.cdr.markForCheck();
+  }
+
+  switchFoldersView(mode: ViewMode) {
+    this.foldersViewMode = mode;
+    this.explorerState.saveFoldersViewMode(mode);
+    this.dirViewSubmenuOpen = false;
+    this.showEmptyAreaContextMenu = false;
+    this.cdr.markForCheck();
   }
 
 }

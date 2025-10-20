@@ -87,11 +87,12 @@
           </div>
 
 
-          <app-file-list #fileList [items]="visibleItems" [viewMode]="explorerState.viewMode" [isReadOnly]="isReadOnly"
-            [combined]="true" (openFolder)="openSubDirectory($event)"
-            (fileRightClick)="onFileRightClick($event.file, $event.event)"
+          <app-file-list #fileList [items]="visibleItems" [filesViewMode]="filesViewMode"
+            [foldersViewMode]="foldersViewMode" [isReadOnly]="isReadOnly" [combined]="true"
+            (openFolder)="openSubDirectory($event)" (fileRightClick)="onFileRightClick($event.file, $event.event)"
             (selectionChanged)="onSelectionChanged($event)">
           </app-file-list>
+
 
         </div>
 
@@ -157,19 +158,60 @@
   <!-- Empty-Area Context Menu -->
   <div class="context-menu" *ngIf="showEmptyAreaContextMenu" [style.left.px]="menuX" [style.top.px]="menuY"
     (click)="onMenuClick($event)" (contextmenu)="$event.preventDefault()">
-    <div class="menu-item" (mouseenter)="onMouseEnterViewSubmenu($event)"
-      (mouseleave)="viewSubmenuOpen = false; viewSubmenuShouldFlip = false;">
-      View >
-      <div class="submenu" #viewSubmenu id="view-submenu" *ngIf="viewSubmenuOpen"
-        [ngClass]="{ 'flip-submenu': viewSubmenuShouldFlip }">
-        <div class="submenu-item" (click)="switchView('extraLarge')">Extra large icons</div>
-        <div class="submenu-item" (click)="switchView('large')">Large icons</div>
-        <div class="submenu-item" (click)="switchView('medium')">Medium icons</div>
-        <div class="submenu-item" (click)="switchView('small')">Small icons</div>
-        <div class="submenu-item" (click)="switchView('list')">List</div>
-        <div class="submenu-item" (click)="switchView('details')">Details</div>
+    <!-- View files as > -->
+    <div class="menu-item" (mouseenter)="onMouseEnterFileViewSubmenu($event)"
+      (mouseleave)="fileViewSubmenuOpen = false; fileViewSubmenuShouldFlip = false;">
+      View files as >
+      <div class="submenu" #fileViewSubmenu *ngIf="fileViewSubmenuOpen"
+        [ngClass]="{ 'flip-submenu': fileViewSubmenuShouldFlip }">
+        <div class="submenu-item" (click)="switchFilesView('extraLarge')">
+          <span *ngIf="filesViewMode==='extraLarge'">✓</span> Extra large icons
+        </div>
+        <div class="submenu-item" (click)="switchFilesView('large')">
+          <span *ngIf="filesViewMode==='large'">✓</span> Large icons
+        </div>
+        <div class="submenu-item" (click)="switchFilesView('medium')">
+          <span *ngIf="filesViewMode==='medium'">✓</span> Medium icons
+        </div>
+        <div class="submenu-item" (click)="switchFilesView('small')">
+          <span *ngIf="filesViewMode==='small'">✓</span> Small icons
+        </div>
+        <div class="submenu-item" (click)="switchFilesView('list')">
+          <span *ngIf="filesViewMode==='list'">✓</span> List
+        </div>
+        <div class="submenu-item" (click)="switchFilesView('details')">
+          <span *ngIf="filesViewMode==='details'">✓</span> Details
+        </div>
       </div>
     </div>
+
+    <!-- View folders as > -->
+    <div class="menu-item" (mouseenter)="onMouseEnterDirViewSubmenu($event)"
+      (mouseleave)="dirViewSubmenuOpen = false; dirViewSubmenuShouldFlip = false;">
+      View folders as >
+      <div class="submenu" #dirViewSubmenu *ngIf="dirViewSubmenuOpen"
+        [ngClass]="{ 'flip-submenu': dirViewSubmenuShouldFlip }">
+        <div class="submenu-item" (click)="switchFoldersView('extraLarge')">
+          <span *ngIf="foldersViewMode==='extraLarge'">✓</span> Extra large icons
+        </div>
+        <div class="submenu-item" (click)="switchFoldersView('large')">
+          <span *ngIf="foldersViewMode==='large'">✓</span> Large icons
+        </div>
+        <div class="submenu-item" (click)="switchFoldersView('medium')">
+          <span *ngIf="foldersViewMode==='medium'">✓</span> Medium icons
+        </div>
+        <div class="submenu-item" (click)="switchFoldersView('small')">
+          <span *ngIf="foldersViewMode==='small'">✓</span> Small icons
+        </div>
+        <div class="submenu-item" (click)="switchFoldersView('list')">
+          <span *ngIf="foldersViewMode==='list'">✓</span> List
+        </div>
+        <div class="submenu-item" (click)="switchFoldersView('details')">
+          <span *ngIf="foldersViewMode==='details'">✓</span> Details
+        </div>
+      </div>
+    </div>
+
     <div class="menu-item" (mouseenter)="onMouseEnterSortSubmenu($event)"
       (mouseleave)="sortSubmenuOpen = false; sortSubmenuShouldFlip = false;">
       Sort by >

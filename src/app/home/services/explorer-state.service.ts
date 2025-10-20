@@ -3,6 +3,9 @@
 import { Injectable } from '@angular/core';
 import { DirectoryItem } from '../components/file-list/model/directory-item.model';
 
+type ViewMode = 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details';
+
+
 @Injectable({ providedIn: 'root' })
 export class ExplorerStateService {
     selectedDirectory: string | null = null;
@@ -13,7 +16,12 @@ export class ExplorerStateService {
     enableCivitaiMode = true;
     updateLocalPathEnabled: boolean = true;
 
-    viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
+    /** ⚠️ legacy (kept for backward compatibility) */
+    viewMode: ViewMode = 'large';
+
+    /** ✅ new: separate view modes */
+    filesViewMode: ViewMode = 'large';
+    foldersViewMode: ViewMode = 'large';
 
     fsSelectedDirectory: string | null = null;
     fsDirectoryContents: DirectoryItem[] = [];
@@ -22,19 +30,46 @@ export class ExplorerStateService {
     virtualDirectoryContents: DirectoryItem[] = [];
 
     constructor() {
-        const savedViewMode = localStorage.getItem('viewMode');
-        if (savedViewMode) {
-            // Make sure it's one of the valid strings
-            if (['extraLarge', 'large', 'medium', 'small', 'list', 'details'].includes(savedViewMode)) {
-                this.viewMode = savedViewMode as any;
-            }
+        const savedFiles = localStorage.getItem('filesViewMode');
+        const savedFolders = localStorage.getItem('foldersViewMode');
+        const legacy = localStorage.getItem('viewMode'); // old single setting
+
+        const isValid = (m: any): m is ViewMode =>
+            ['extraLarge', 'large', 'medium', 'small', 'list', 'details'].includes(m);
+
+        // files
+        if (savedFiles && isValid(savedFiles)) {
+            this.filesViewMode = savedFiles;
+            this.viewMode = savedFiles;              // keep legacy mirror updated
+        } else if (legacy && isValid(legacy)) {
+            // migrate from old key
+            this.filesViewMode = legacy;
+            this.viewMode = legacy;
+            localStorage.setItem('filesViewMode', legacy);
+        }
+
+        // folders
+        if (savedFolders && isValid(savedFolders)) {
+            this.foldersViewMode = savedFolders;
         }
     }
 
+    /** legacy setter (still used in a few places) */
     saveViewMode(mode: string) {
-        this.viewMode = mode as any;
-        // Also persist it
-        localStorage.setItem('viewMode', mode);
+        this.saveFilesViewMode(mode as ViewMode);
+    }
+
+    /** new explicit setters */
+    saveFilesViewMode(mode: ViewMode) {
+        this.filesViewMode = mode;
+        this.viewMode = mode; // keep legacy in sync
+        localStorage.setItem('filesViewMode', mode);
+        localStorage.setItem('viewMode', mode); // optional but helps other old code
+    }
+
+    saveFoldersViewMode(mode: ViewMode) {
+        this.foldersViewMode = mode;
+        localStorage.setItem('foldersViewMode', mode);
     }
 
 }

@@ -17,11 +17,15 @@ export class FileListComponent {
     this.scrollToSelected();
   }
 
+  @Input() filesViewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
+  @Input() foldersViewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
+
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['selectedItems'] || changes['viewMode']) {
+    if (changes['selectedItems'] || changes['filesViewMode'] || changes['foldersViewMode']) {
       setTimeout(() => this.scrollToSelected(), 0);
     }
   }
+
 
   scrollToSelected() {
     if (this.selectedItems.length === 1 && this.fileCards) {
