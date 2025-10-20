@@ -12,6 +12,8 @@ import { PreferencesService } from './preferences.service';
 import { SearchService } from '../home/services/search.service';
 import { Theme, ThemeService } from '../home/services/theme.service';
 
+type ViewMode = 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details';
+
 @Component({
   selector: 'app-preferences',
   templateUrl: './preferences.component.html',
@@ -21,7 +23,8 @@ export class PreferencesComponent {
   // Preference flags
   rememberLastDirectory = true;
   enableCivitaiMode = false;
-  viewMode: 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details' = 'large';
+  filesViewMode: ViewMode = 'large';
+  foldersViewMode: ViewMode = 'large';
   theme: Theme = 'dark';
   searchLevels: number = 999; // NEW
 
@@ -47,7 +50,8 @@ export class PreferencesComponent {
   ) {
     // Load existing preferences if available.
     this.enableCivitaiMode = explorerState.enableCivitaiMode;
-    this.viewMode = explorerState.viewMode;
+    this.filesViewMode = this.explorerState.filesViewMode ?? this.explorerState.viewMode ?? 'large';
+    this.foldersViewMode = this.explorerState.foldersViewMode ?? this.explorerState.viewMode ?? 'large';
   }
 
   ngOnInit(): void {
@@ -247,13 +251,15 @@ export class PreferencesComponent {
   savePreferences(): void {
     this.preferencesService.theme = this.theme;
     this.explorerState.enableCivitaiMode = this.enableCivitaiMode;
-    this.explorerState.saveViewMode(this.viewMode);
+    this.explorerState.saveFilesViewMode(this.filesViewMode);
+    this.explorerState.saveFoldersViewMode(this.foldersViewMode);
     this.preferencesService.searchLevels = this.searchLevels;
 
     // (Optional) Save these values to localStorage or another settings service.
     console.log('Saved preferences:', {
       enableCivitaiMode: this.enableCivitaiMode,
-      viewMode: this.viewMode,
+      filesViewMode: this.filesViewMode,
+      foldersViewMode: this.foldersViewMode,
       storageDir: this.storageDir,
       deleteDir: this.deleteDir,
       updateDir: this.updateDir,

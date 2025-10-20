@@ -10,8 +10,9 @@
 
     <br />
 
-    <label for="viewModeSelect">View Mode:</label>
-    <select id="viewModeSelect" [(ngModel)]="viewMode">
+    <!-- Files view mode -->
+    <label for="filesViewModeSelect">Files view mode:</label>
+    <select id="filesViewModeSelect" [(ngModel)]="filesViewMode">
         <option value="extraLarge">Extra large icons</option>
         <option value="large">Large icons</option>
         <option value="medium">Medium icons</option>
@@ -19,6 +20,20 @@
         <option value="list">List</option>
         <option value="details">Details</option>
     </select>
+
+    <br /><br />
+
+    <!-- Folders (directories) view mode -->
+    <label for="foldersViewModeSelect">Folders view mode:</label>
+    <select id="foldersViewModeSelect" [(ngModel)]="foldersViewMode">
+        <option value="extraLarge">Extra large icons</option>
+        <option value="large">Large icons</option>
+        <option value="medium">Medium icons</option>
+        <option value="small">Small icons</option>
+        <option value="list">List</option>
+        <option value="details">Details</option>
+    </select>
+
 
     <br /><br />
 
