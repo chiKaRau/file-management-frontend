@@ -29,6 +29,7 @@ import { shell } from 'electron';
 import { DATA_SOURCE } from '../shared/data-sources/DATA_SOURCE';
 import { ExplorerDataSource } from '../shared/data-sources/data-source';
 import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 
 type ViewMode = 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details';
 
@@ -167,11 +168,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
     private http: HttpClient,
     @Inject(DATA_SOURCE) public dataSource: ExplorerDataSource,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) { }
 
+  private isUpdateModeActive(): boolean {
+    return this.router.url.startsWith('/update') || !!this.route.snapshot.data?.['updateMode'];
+  }
+
   ngOnInit() {
-    this.updateMode = !!this.route.snapshot.data?.['updateMode'];
+    this.updateMode = this.isUpdateModeActive();
 
     setTimeout(() => window.scrollTo(0, this.scrollState.homeScrollPosition), 0);
 
@@ -200,24 +206,35 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.loadDirectoryContents(start);
     } else {
       // Filesystem mode
-      this.navigationService.setContext(this.updateMode ? 'update' : 'fs');
+      this.navigationService.setContext(this.isUpdateModeActive() ? 'update' : 'fs');
 
-      if (this.updateMode) {
+      if (this.isUpdateModeActive()) {
         // Update tab uses card view, but one card per row.
         this.filesViewMode = 'extraLarge';
         this.foldersViewMode = 'extraLarge';
 
-        // Update starts empty until user explicitly selects an Update directory.
-        this.selectedDirectory = null;
-        this.directoryContents = [];
+        // Preserve prior Update selection when returning to the Update tab.
+        const existingUpdatePath = this.explorerState.updateSelectedDirectory;
+        const hasExistingUpdateContents = (this.explorerState.updateDirectoryContents?.length ?? 0) > 0;
 
-        // also clear the old shared legacy state in case toolbar still reads it
-        this.explorerState.selectedDirectory = null;
-        this.explorerState.directoryContents = [];
+        if (existingUpdatePath && this.isValidUpdateDirectory(existingUpdatePath)) {
+          this.selectedDirectory = existingUpdatePath;
+          this.infoMessage = null;
+          this.errorMessage = null;
+          this.isLoading = false;
 
-        this.errorMessage = null;
-        this.infoMessage = 'Select an Update directory to begin.';
-        this.isLoading = false;
+          // If we have a path but no cached items (e.g. cold reload), fetch now.
+          if (!hasExistingUpdateContents) {
+            this.loadDirectoryContents(existingUpdatePath);
+          }
+        } else {
+          // First time: start empty until user explicitly selects an Update directory.
+          this.selectedDirectory = null;
+          this.directoryContents = [];
+          this.errorMessage = null;
+          this.infoMessage = 'Select an Update directory to begin.';
+          this.isLoading = false;
+        }
       }
 
       // If we already have an FS folder loaded, do nothing (preserve it).
@@ -237,6 +254,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.infoMessage = null;
     this.isLoading = false;
   }
+
 
   private readonly PAGE_SIZE = 100;    // tune 100–400
   visibleCount = this.PAGE_SIZE;
@@ -369,8 +387,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
 
   get selectedDirectory(): string | null {
-
-    if (this.updateMode) {
+    if (this.isUpdateModeActive()) {
       return this.explorerState.updateSelectedDirectory;
     }
 
@@ -379,12 +396,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
       : this.explorerState.fsSelectedDirectory;
   }
   set selectedDirectory(val: string | null) {
-
-    if (this.updateMode) {
+    if (this.isUpdateModeActive()) {
       this.explorerState.updateSelectedDirectory = val;
       return;
     }
-
 
     if (this.isReadOnly) {
       this.explorerState.virtualSelectedDirectory = val;
@@ -394,19 +409,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   get directoryContents(): DirectoryItem[] {
-
-    if (this.updateMode) {
+    if (this.isUpdateModeActive()) {
       return this.explorerState.updateDirectoryContents;
     }
-
 
     return this.isReadOnly
       ? this.explorerState.virtualDirectoryContents
       : this.explorerState.fsDirectoryContents;
   }
   set directoryContents(val: DirectoryItem[]) {
-
-    if (this.updateMode) {
+    if (this.isUpdateModeActive()) {
       this.explorerState.updateDirectoryContents = val;
       return;
     }
@@ -417,7 +429,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.explorerState.fsDirectoryContents = val;
     }
   }
-
 
   get errorMessage(): string | null {
     return this.explorerState.errorMessage;
@@ -555,7 +566,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // Filesystem mode (unchanged)
     const directoryPath = await this.electronService.openDirectoryDialog();
     if (directoryPath) {
-      if (this.updateMode && !this.isValidUpdateDirectory(directoryPath)) {
+      if (this.isUpdateModeActive() && !this.isValidUpdateDirectory(directoryPath)) {
         this.ngZone.run(() => this.showUpdateDirectoryError());
         return;
       }
@@ -580,7 +591,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private async loadFromFilesystem(directoryPath: string) {
     try {
 
-      if (this.updateMode) {
+      if (this.isUpdateModeActive()) {
         await this.loadUpdateDirectoryContents(directoryPath);
         return;
       }
@@ -897,6 +908,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+
   async loadDirectoryContents(directoryPath: string | null) {
     if (this.isReadOnly) {
       this.ngZone.run(() => {
@@ -959,7 +971,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // Otherwise, normal filesystem mode: use your original logic.
     if (!directoryPath) return;
 
-    if (this.updateMode && !this.isValidUpdateDirectory(directoryPath)) {
+    if (this.isUpdateModeActive() && !this.isValidUpdateDirectory(directoryPath)) {
       this.ngZone.run(() => this.showUpdateDirectoryError());
       return;
     }

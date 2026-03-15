@@ -2,7 +2,7 @@
 <ng-container [ngSwitch]="foldersViewMode">
 
     <!-- FOLDERS: Extra Large -->
-    <div *ngSwitchCase="'extraLarge'" class="file-card-container">
+    <div *ngSwitchCase="'extraLarge'" class="file-card-container" [class.single-column]="singleColumnCards">
         <ng-container *ngFor="let item of directoryItems; let i = index; trackBy: trackByPath">
             <div class="card-slot">
                 <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
@@ -220,7 +220,7 @@
 <ng-container [ngSwitch]="filesViewMode">
 
     <!-- FILES: Extra Large -->
-    <div *ngSwitchCase="'extraLarge'" class="file-card-container">
+    <div *ngSwitchCase="'extraLarge'" class="file-card-container" [class.single-column]="singleColumnCards">
         <ng-container *ngFor="let item of fileItems; let i = index; trackBy: trackByPath">
             <div class="card-slot">
                 <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
