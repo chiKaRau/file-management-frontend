@@ -47,6 +47,7 @@ export class FileListComponent {
 
   @Input() showDeletedInfo = false;
   @Input() updateModeView = false;
+  @Input() updateResultBySourcePath: Record<string, DirectoryItem | null> = {};
 
   @Input() isReadOnly = false;
 
@@ -228,6 +229,10 @@ export class FileListComponent {
 
   isSelected(item: DirectoryItem): boolean {
     return this.selectedItems.indexOf(item) !== -1;
+  }
+
+  getUpdateResultFor(item: DirectoryItem): DirectoryItem | null {
+    return this.updateResultBySourcePath?.[item.path] ?? null;
   }
 
   isImage(item: DirectoryItem): boolean {

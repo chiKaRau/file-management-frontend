@@ -7,13 +7,28 @@
 
 
     <div class="content" *ngIf="updateTabMode; else homeUpgradeSidebar">
-        <p><strong>This is update/upgrade sidebar (update tab)</strong></p>
         <p *ngIf="!updateTabReady" class="error">
             You have to set up Scan/Storage/Delete directories in Preferences to use this function (Update tab only).
         </p>
         <ng-container *ngIf="updateTabReady">
-            <p><strong>Directory:</strong> {{ updateDirectoryPath || 'No update directory selected.' }}</p>
-            <p><strong>Displayed items:</strong> {{ updateDirectoryContents.length }}</p>
+            <div class="update-tab-layout">
+                <section class="update-item-selection">
+                    <p><strong>Directory:</strong> {{ updateDirectoryPath || 'No update directory selected.' }}</p>
+                    <p><strong>Displayed items:</strong> {{ updateDirectoryContents.length }}</p>
+                    <p>Select items directly in the file list, then run actions here.</p>
+
+                    <div class="selection-controls">
+                        <button class="action-btn" (click)="selectAllUpdateItems()">Select All (file-list)</button>
+                        <div class="select-n-group">
+                            <input type="number" min="0" [(ngModel)]="selectedCountInput">
+                            <button class="action-btn" (click)="selectTopNUpdateItems()">Select N (file-list)</button>
+                        </div>
+                        <button class="action-btn upgrade" (click)="searchSelectedItems()">
+                            Search Selected Item
+                        </button>
+                    </div>
+                </section>
+            </div>
         </ng-container>
     </div>
 

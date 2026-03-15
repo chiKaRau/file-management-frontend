@@ -41,12 +41,17 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   @Input() updateDirectoryContents: DirectoryItem[] = [];
   @Input() updateTabReady: boolean = false;
   @Output() closed = new EventEmitter<void>();
+  @Output() selectAllRequested = new EventEmitter<void>();
+  @Output() selectTopNRequested = new EventEmitter<number>();
+  @Output() searchSelectedRequested = new EventEmitter<void>();
 
   progressMessage: string = '';
   // These will hold the raw file results and the grouped sets.
   foundItems: DirectoryItem[] = [];
   groupedItems: CivitaiSet[] = [];
   searching: boolean = false;
+
+  selectedCountInput: number = 5;
 
   // Timing properties.
   elapsedTime: number = 0;
@@ -115,6 +120,18 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     console.log('[Update tab sidebar] displayed update contents:', this.updateDirectoryContents);
   }
 
+  selectAllUpdateItems(): void {
+    this.selectAllRequested.emit();
+  }
+
+  selectTopNUpdateItems(): void {
+    const max = Math.max(0, Math.floor(Number(this.selectedCountInput) || 0));
+    this.selectTopNRequested.emit(max);
+  }
+
+  searchSelectedItems(): void {
+    this.searchSelectedRequested.emit();
+  }
 
   // Extract modelId and versionId from the file name, and determine a hint if possible.
   private startSearchForItem(item: DirectoryItem) {

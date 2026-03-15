@@ -20,7 +20,7 @@ import { ScrollStateService } from './services/scroll-state.service';
 import { RecycleService } from '../recycle/recycle.service';
 import { RecycleRecord } from '../recycle/model/recycle-record.model';
 import { DirectoryItem } from './components/file-list/model/directory-item.model';
-import { Subscription, lastValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom, lastValueFrom } from 'rxjs';
 import { HomeRefreshService } from './services/home-refresh.service';
 import { PreferencesService } from '../preferences/preferences.service';
 import { FileListComponent } from './components/file-list/file-list.component';
@@ -30,6 +30,7 @@ import { DATA_SOURCE } from '../shared/data-sources/DATA_SOURCE';
 import { ExplorerDataSource } from '../shared/data-sources/data-source';
 import { ActivatedRoute } from '@angular/router';
 import { Router } from '@angular/router';
+import { SearchService } from './services/search.service';
 
 type ViewMode = 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details';
 
@@ -98,6 +99,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   deepSearchActive = false;
   deepSearchItems: DirectoryItem[] = [];
+  updateSearchResultBySourcePath: Record<string, DirectoryItem | null> = {};
+  searchingUpdateSelections = false;
 
   /** debounce timer for search */
   private searchDebounceTimer: any = null;
@@ -164,6 +167,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     public navigationService: NavigationService,
     public explorerState: ExplorerStateService,
     public recycleService: RecycleService,
+    public searchService: SearchService,
     public preferencesService: PreferencesService,
     private http: HttpClient,
     @Inject(DATA_SOURCE) public dataSource: ExplorerDataSource,
@@ -835,6 +839,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   private async loadUpdateDirectoryContents(directoryPath: string): Promise<void> {
+    this.updateSearchResultBySourcePath = {};
     this.ngZone.run(() => {
       this.selectedDirectory = directoryPath;
       this.errorMessage = null;
@@ -1825,6 +1830,71 @@ export class HomeComponent implements OnInit, AfterViewInit {
   closeUpdateSidebar() {
     this.showUpdateSidebar = false;
     this.updateFile = null;
+  }
+
+  onUpdateSelectAllRequested(): void {
+    const selectable = this.getUpdateSelectableItems();
+    if (this.fileListComponent) {
+      this.fileListComponent.selectedItems = [...selectable];
+      this.fileListComponent.selectionChanged.emit(this.fileListComponent.selectedItems);
+    }
+  }
+
+  onUpdateSelectTopNRequested(count: number): void {
+    const selectable = this.getUpdateSelectableItems().slice(0, Math.max(0, count));
+    if (this.fileListComponent) {
+      this.fileListComponent.selectedItems = [...selectable];
+      this.fileListComponent.selectionChanged.emit(this.fileListComponent.selectedItems);
+    }
+  }
+
+  async onUpdateSearchSelectedRequested(): Promise<void> {
+    const selected = (this.fileListComponent?.selectedItems ?? []).filter((i) => i.isFile);
+    const bySource: Record<string, DirectoryItem | null> = {};
+    this.searchingUpdateSelections = true;
+
+    try {
+      for (const item of selected) {
+        const ids = this.extractIdsFromItem(item);
+        if (!ids) {
+          bySource[item.path] = null;
+          continue;
+        }
+
+        const hintPath = this.getUpdateHintPath(item.path);
+        const progress = await firstValueFrom(
+          this.searchService.searchByModelAndVersion(ids.modelId, ids.versionId, hintPath, item.path)
+        );
+
+        const firstMatch = (progress?.results ?? [])[0];
+        bySource[item.path] = firstMatch
+          ? {
+            name: firstMatch.split(/\\|\//).pop() || firstMatch,
+            path: firstMatch,
+            isFile: true,
+            isDirectory: false
+          }
+          : null;
+      }
+    } catch (error) {
+      console.error('Error searching selected update items from file-list selection', error);
+    } finally {
+      this.updateSearchResultBySourcePath = bySource;
+      this.searchingUpdateSelections = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private getUpdateSelectableItems(): DirectoryItem[] {
+    return (this.renderItems ?? []).filter((item) => item.isFile);
+  }
+
+  private getUpdateHintPath(itemPath: string): string | undefined {
+    const lower = itemPath.toLowerCase();
+    const updateIndex = lower.indexOf('\\update\\');
+    if (updateIndex === -1) return undefined;
+    const afterUpdate = itemPath.substring(updateIndex + 8);
+    return path.dirname(afterUpdate);
   }
 
   // Called when the sidebar emits the full model data

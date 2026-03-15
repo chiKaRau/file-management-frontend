@@ -586,3 +586,31 @@
         user-select: none;
     }
 }
+
+
+/* Update-mode rows: source card at start (left), searched result card at end (right). */
+.file-card-container.single-column.update-mode-results {
+    width: 100%;
+    align-items: stretch;
+}
+
+.file-card-container.single-column.update-mode-results .update-mode-slot {
+    width: 100%;
+}
+
+.update-row {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.update-source-card,
+.update-result-card {
+    flex: 0 0 auto;
+}
+
+.search-result-card {
+    border-style: dashed;
+}

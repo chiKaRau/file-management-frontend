@@ -219,9 +219,65 @@
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
-    background: #e6ffed;     /* or var(--success-bg) */
-    color: #087443;          /* or var(--success-fg) */
+    background: #e6ffed;
+    /* or var(--success-bg) */
+    color: #087443;
+    /* or var(--success-fg) */
     border: 1px solid #b7f5c9;
     margin: 0 0 6px 0;
-  }
-  
+}
+
+.update-tab-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr);
+    gap: 12px;
+}
+
+.update-item-selection {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    background: var(--bg-elevated);
+}
+
+.selection-controls {
+    display: grid;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.select-n-group {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 8px;
+
+    input {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 8px;
+    }
+}
+
+.update-item-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 48vh;
+    overflow: auto;
+
+    li {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        background: var(--panel);
+    }
+
+    li.selected {
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+    }
+}
