@@ -1,14 +1,15 @@
 // navigation.service.ts
 import { Injectable } from '@angular/core';
 
-type Ctx = 'fs' | 'virtual';
+type Ctx = 'fs' | 'virtual' | 'update';
 interface Stack { history: string[]; index: number; }
 
 @Injectable({ providedIn: 'root' })
 export class NavigationService {
     private stacks: Record<Ctx, Stack> = {
         fs: { history: [], index: -1 },
-        virtual: { history: [], index: -1 }
+        virtual: { history: [], index: -1 },
+        update: { history: [], index: -1 }
     };
 
     private ctx: Ctx = 'fs';
@@ -25,6 +26,7 @@ export class NavigationService {
         } else {
             this.stacks.fs = { history: [], index: -1 };
             this.stacks.virtual = { history: [], index: -1 };
+            this.stacks.update = { history: [], index: -1 };
         }
     }
 
@@ -73,7 +75,7 @@ export class NavigationService {
     }
 
     // navigation.service.ts
-    getCurrentFor(ctx: 'fs' | 'virtual'): string | null {
+    getCurrentFor(ctx: 'fs' | 'virtual' | 'update'): string | null {
         const s = this.stacks[ctx];
         return s.index >= 0 ? s.history[s.index] : null;
     }

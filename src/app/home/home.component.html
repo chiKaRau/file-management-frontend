@@ -10,11 +10,12 @@
     </button>
     <app-explorer-toolbar *ngIf="!isReadOnly" [currentPath]="selectedDirectory"
       [canGoBack]="navigationService.canGoBack()" [canGoForward]="navigationService.canGoForward()"
-      [isReadOnly]="isReadOnly" (back)="onBack()" (forward)="onForward()" [isPreloadComplete]="isPreloadComplete"
-      (refresh)="onRefresh()" (searchQuery)="applySearch($event)" (pathChanged)="navigateByPath($event)"
-      (toggleZipSidebarEvent)="toggleZipSidebar()" (updateAllModels)="updateAllModels()"
-      (lockContextChange)="onLockContextChange($event)" [visitedSubDirectories]="visitedSubdirs"
-      (manualUpdateLocalPath)="updateLocalPath()" (subdirSelect)="openSubDirectoryWithoutHistory($event)">
+      [isReadOnly]="isReadOnly" [updateMode]="updateMode" (back)="onBack()" (forward)="onForward()"
+      [isPreloadComplete]="isPreloadComplete" (refresh)="onRefresh()" (searchQuery)="applySearch($event)"
+      (pathChanged)="navigateByPath($event)" (toggleZipSidebarEvent)="toggleZipSidebar()"
+      (updateAllModels)="updateAllModels()" (lockContextChange)="onLockContextChange($event)"
+      [visitedSubDirectories]="visitedSubdirs" (manualUpdateLocalPath)="updateLocalPath()"
+      (subdirSelect)="openSubDirectoryWithoutHistory($event)">
     </app-explorer-toolbar>
 
     <app-virtual-explorer-toolbar *ngIf="isReadOnly" [currentPath]="selectedDirectory"

@@ -44,6 +44,13 @@ export class AppComponent implements OnInit { // ⬅️ implement OnInit
     if (componentRef instanceof HomeComponent) {
       console.log('HomeComponent activated, refreshing...');
       componentRef.onRefresh();
+
+      setTimeout(() => {
+        if (componentRef.selectedDirectory) {
+          componentRef.onRefresh();
+        }
+      }, 0);
+
     }
     if (componentRef instanceof RecycleComponent) {
       console.log('RecycleComponent activated, refreshing...');

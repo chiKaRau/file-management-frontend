@@ -26,6 +26,9 @@ export class ExplorerStateService {
     fsSelectedDirectory: string | null = null;
     fsDirectoryContents: DirectoryItem[] = [];
 
+    updateSelectedDirectory: string | null = null;
+    updateDirectoryContents: DirectoryItem[] = [];
+
     virtualSelectedDirectory: string | null = null;
     virtualDirectoryContents: DirectoryItem[] = [];
 

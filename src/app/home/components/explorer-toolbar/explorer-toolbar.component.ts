@@ -12,7 +12,7 @@ export class ExplorerToolbarComponent {
   @Input() canGoBack: boolean = false;
   @Input() canGoForward: boolean = false;
   @Input() isPreloadComplete: boolean = false;
-
+  @Input() updateMode: boolean = false;
   // NEW: let parent tell us which context we’re in
   @Input() isReadOnly: boolean = false;
 
@@ -172,10 +172,12 @@ export class ExplorerToolbarComponent {
   get subDirectories(): DirectoryItem[] {
     const list = this.isReadOnly
       ? this.explorerState.virtualDirectoryContents
-      : this.explorerState.fsDirectoryContents;
+      : this.updateMode
+        ? this.explorerState.updateDirectoryContents
+        : this.explorerState.fsDirectoryContents;
+
     return (list || []).filter(i => i.isDirectory);
   }
-
   // ExplorerToolbarComponent (getter)
   // prefer visitedSubDirectories when present; else fall back to current logic
   get displayedSubDirectories(): any[] {

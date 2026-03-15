@@ -12,18 +12,16 @@ const routes: Routes = [
   // ...
   { path: 'home', loadChildren: () => import('./home/home.module').then(m => m.HomeModule) },
   { path: 'preferences', loadChildren: () => import('./preferences/preferences.module').then(m => m.PreferencesModule) },
-  { path: 'recycle', loadChildren: () => import('./recycle/recycle.module').then(m => m.RecycleModule) }, // <- this
+  { path: 'recycle', loadChildren: () => import('./recycle/recycle.module').then(m => m.RecycleModule) },
   { path: 'virtual', loadChildren: () => import('./virtual/virtual.module').then(m => m.VirtualModule) },
+  { path: 'update', loadChildren: () => import('./update/update.module').then(m => m.UpdateModule) },
   { path: '**', component: PageNotFoundComponent }
 ];
-
-
 
 @NgModule({
   imports: [
     RouterModule.forRoot(routes, {
       scrollPositionRestoration: 'enabled',
-      // or 'top' if you want it always to scroll to top on new route
     }),
     HomeRoutingModule,
     DetailRoutingModule

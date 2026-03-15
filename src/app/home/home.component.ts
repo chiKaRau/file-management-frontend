@@ -39,8 +39,12 @@ type ViewMode = 'extraLarge' | 'large' | 'medium' | 'small' | 'list' | 'details'
   changeDetection: ChangeDetectionStrategy.Default
 })
 export class HomeComponent implements OnInit, AfterViewInit {
+  private readonly updateFolderName = 'update';
+
   // Search filter
   searchTerm = '';
+
+  updateMode = false;
 
   // Distinguish file vs. empty area context menu
   showFileContextMenu = false;
@@ -167,6 +171,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngOnInit() {
+    this.updateMode = !!this.route.snapshot.data?.['updateMode'];
+
     setTimeout(() => window.scrollTo(0, this.scrollState.homeScrollPosition), 0);
 
     this.homeRefreshSub = this.homeRefreshService.refresh$.subscribe(() => {
@@ -194,11 +200,42 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.loadDirectoryContents(start);
     } else {
       // Filesystem mode
-      this.navigationService.setContext('fs');
+      this.navigationService.setContext(this.updateMode ? 'update' : 'fs');
+
+      if (this.updateMode) {
+        // Update tab uses card view, but one card per row.
+        this.filesViewMode = 'extraLarge';
+        this.foldersViewMode = 'extraLarge';
+
+        // Update starts empty until user explicitly selects an Update directory.
+        this.selectedDirectory = null;
+        this.directoryContents = [];
+
+        // also clear the old shared legacy state in case toolbar still reads it
+        this.explorerState.selectedDirectory = null;
+        this.explorerState.directoryContents = [];
+
+        this.errorMessage = null;
+        this.infoMessage = 'Select an Update directory to begin.';
+        this.isLoading = false;
+      }
 
       // If we already have an FS folder loaded, do nothing (preserve it).
       // Otherwise wait for user to choose a folder as before.
     }
+  }
+
+  private isValidUpdateDirectory(dirPath?: string | null): boolean {
+    if (!dirPath) return false;
+    return dirPath
+      .split(/[\\/]+/)
+      .some(part => part.toLowerCase() === this.updateFolderName);
+  }
+
+  private showUpdateDirectoryError(): void {
+    this.errorMessage = 'Selected path must be inside an Update directory.';
+    this.infoMessage = null;
+    this.isLoading = false;
   }
 
   private readonly PAGE_SIZE = 100;    // tune 100–400
@@ -332,11 +369,23 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
 
   get selectedDirectory(): string | null {
+
+    if (this.updateMode) {
+      return this.explorerState.updateSelectedDirectory;
+    }
+
     return this.isReadOnly
       ? this.explorerState.virtualSelectedDirectory
       : this.explorerState.fsSelectedDirectory;
   }
   set selectedDirectory(val: string | null) {
+
+    if (this.updateMode) {
+      this.explorerState.updateSelectedDirectory = val;
+      return;
+    }
+
+
     if (this.isReadOnly) {
       this.explorerState.virtualSelectedDirectory = val;
     } else {
@@ -345,11 +394,23 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   get directoryContents(): DirectoryItem[] {
+
+    if (this.updateMode) {
+      return this.explorerState.updateDirectoryContents;
+    }
+
+
     return this.isReadOnly
       ? this.explorerState.virtualDirectoryContents
       : this.explorerState.fsDirectoryContents;
   }
   set directoryContents(val: DirectoryItem[]) {
+
+    if (this.updateMode) {
+      this.explorerState.updateDirectoryContents = val;
+      return;
+    }
+
     if (this.isReadOnly) {
       this.explorerState.virtualDirectoryContents = val;
     } else {
@@ -494,6 +555,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
     // Filesystem mode (unchanged)
     const directoryPath = await this.electronService.openDirectoryDialog();
     if (directoryPath) {
+      if (this.updateMode && !this.isValidUpdateDirectory(directoryPath)) {
+        this.ngZone.run(() => this.showUpdateDirectoryError());
+        return;
+      }
+
       this.ngZone.run(() => {
         this.isLoading = true;
         this.errorMessage = null;
@@ -513,6 +579,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // 1) Your original logic, unchanged—just renamed.
   private async loadFromFilesystem(directoryPath: string) {
     try {
+
+      if (this.updateMode) {
+        await this.loadUpdateDirectoryContents(directoryPath);
+        return;
+      }
+
       // Read the directory asynchronously.
       const files = await fs.promises.readdir(directoryPath);
 
@@ -709,6 +781,122 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private async collectFilesRecursively(rootDir: string): Promise<string[]> {
+    const files: string[] = [];
+    const stack = [rootDir];
+
+    while (stack.length) {
+      const current = stack.pop()!;
+      let entries: fs.Dirent[] = [];
+      try {
+        entries = await fs.promises.readdir(current, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+
+      for (const entry of entries) {
+        const fullPath = path.join(current, entry.name);
+        if (entry.isDirectory()) {
+          stack.push(fullPath);
+        } else if (entry.isFile()) {
+          files.push(fullPath);
+        }
+      }
+    }
+
+    return files;
+  }
+
+  private async loadUpdateDirectoryContents(directoryPath: string): Promise<void> {
+    this.ngZone.run(() => {
+      this.selectedDirectory = directoryPath;
+      this.errorMessage = null;
+      this.infoMessage = null;
+    });
+
+    await this.recycleService.loadRecords();
+    const recycleRecords = this.recycleService.getRecords();
+    const isFileDeleted = (fullPath: string): boolean =>
+      recycleRecords.some(record => record.files.includes(fullPath));
+
+    const allFiles = await this.collectFilesRecursively(directoryPath);
+    const groupMap = new Map<string, {
+      allFiles: string[];
+      representativePath?: string;
+      previewPath?: string;
+      totalSize: number;
+      createdAt?: Date;
+      modifiedAt?: Date;
+    }>();
+
+    for (const fullPath of allFiles) {
+      const file = path.basename(fullPath);
+      const prefix = this.getCivitaiPrefix(file);
+      if (!prefix) continue;
+
+      let stats: fs.Stats;
+      try {
+        stats = await fs.promises.stat(fullPath);
+      } catch {
+        continue;
+      }
+
+      if (!groupMap.has(prefix)) {
+        groupMap.set(prefix, {
+          allFiles: [],
+          totalSize: 0,
+          representativePath: fullPath
+        });
+      }
+
+      const group = groupMap.get(prefix)!;
+      group.allFiles.push(fullPath);
+      group.totalSize += stats.size;
+
+      const created = this.getCreatedTime(stats);
+      const modified = stats.mtime;
+      group.createdAt = group.createdAt ? (created < group.createdAt ? created : group.createdAt) : created;
+      group.modifiedAt = group.modifiedAt ? (modified > group.modifiedAt ? modified : group.modifiedAt) : modified;
+
+      if (file.endsWith('.preview.png')) {
+        group.previewPath = fullPath;
+      }
+    }
+
+    const groupedItems: DirectoryItem[] = [];
+    groupMap.forEach((group) => {
+      const displayPath = group.previewPath ?? group.representativePath;
+      if (!displayPath) return;
+
+      groupedItems.push({
+        name: path.basename(displayPath),
+        path: displayPath,
+        isFile: true,
+        isDirectory: false,
+        isDeleted: isFileDeleted(displayPath),
+        civitaiGroup: group.allFiles,
+        size: group.totalSize,
+        createdAt: group.createdAt,
+        modifiedAt: group.modifiedAt
+      });
+    });
+
+    this.ngZone.run(() => {
+      this.directoryContents = groupedItems;
+      this.selectedFile = null;
+      this.selectedFiles = [];
+      this.contextFile = null;
+      this.isLoading = false;
+      this.recomputeRenderItems();
+    });
+
+    if (this.directoryContents.length > 0) {
+      this.scanLocalFiles();
+      this.updateVisitedPath();
+      this.fetchVisitedChildren();
+    }
+  }
+
   async loadDirectoryContents(directoryPath: string | null) {
     if (this.isReadOnly) {
       this.ngZone.run(() => {
@@ -770,6 +958,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     // Otherwise, normal filesystem mode: use your original logic.
     if (!directoryPath) return;
+
+    if (this.updateMode && !this.isValidUpdateDirectory(directoryPath)) {
+      this.ngZone.run(() => this.showUpdateDirectoryError());
+      return;
+    }
+
     this.ngZone.run(() => {
       this.isLoading = true;
       this.errorMessage = null;
