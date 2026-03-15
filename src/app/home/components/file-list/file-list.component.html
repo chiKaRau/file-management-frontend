@@ -1,8 +1,8 @@
 <!-- ===================== FOLDERS (use foldersViewMode) ===================== -->
-<ng-container [ngSwitch]="foldersViewMode">
+<ng-container *ngIf="!updateModeView" [ngSwitch]="foldersViewMode">
 
     <!-- FOLDERS: Extra Large -->
-    <div *ngSwitchCase="'extraLarge'" class="file-card-container" [class.single-column]="singleColumnCards">
+    <div *ngSwitchCase="'extraLarge'" class="file-card-container">
         <ng-container *ngFor="let item of directoryItems; let i = index; trackBy: trackByPath">
             <div class="card-slot">
                 <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
@@ -217,10 +217,10 @@
 </ng-container>
 
 <!-- ===================== FILES (use filesViewMode) ===================== -->
-<ng-container [ngSwitch]="filesViewMode">
+<ng-container *ngIf="!updateModeView; else updateModeFilesOnly" [ngSwitch]="filesViewMode">
 
     <!-- FILES: Extra Large -->
-    <div *ngSwitchCase="'extraLarge'" class="file-card-container" [class.single-column]="singleColumnCards">
+    <div *ngSwitchCase="'extraLarge'" class="file-card-container">
         <ng-container *ngFor="let item of fileItems; let i = index; trackBy: trackByPath">
             <div class="card-slot">
                 <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
@@ -387,3 +387,58 @@
     </div>
 
 </ng-container>
+
+<ng-template #updateModeFilesOnly>
+    <!-- Update-only view: always extra-large cards, one per line -->
+    <div class="file-card-container single-column">
+        <ng-container *ngFor="let item of fileItems; let i = index; trackBy: trackByPath">
+            <div class="card-slot">
+                <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
+                    <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
+                        (dblclick)="onItemDblClick(item)"
+                        [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
+                        [appLazyBg]="getCardBgUrl(item)">
+                        <ng-container *ngIf="item.isFile">
+                            <div class="badge top-left">ID: {{ item.scanData?.modelNumber }} / {{
+                                item.scanData?.versionNumber }}</div>
+                            <div class="badge top-right">{{ item.scanData?.baseModel }}</div>
+                            <div class="card-footer">
+                                <div class="creator">{{ item.scanData?.creatorName }}</div>
+                                <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+                                <ng-container *ngIf="getParsedStats(item) as stats">
+                                    <div class="stats">
+                                        <span><span class="material-icons icon-download">file_download</span>{{
+                                            stats.downloadCount ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating-count">rate_review</span>{{
+                                            stats.ratingCount ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating">star_rate</span>{{ stats.rating
+                                            ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-thumb-up">thumb_up</span>{{
+                                            stats.thumbsUpCount ?? 'N/A' }}</span>
+                                    </div>
+                                </ng-container>
+                                <div class="size-line" *ngIf="item.size != null">
+                                    <span class="material-icons">sd_storage</span>
+                                    <span class="size-text" [ngClass]="sizeClass(item.size)">{{ formatBytes(item.size)
+                                        }}</span>
+                                </div>
+                            </div>
+                        </ng-container>
+                    </div>
+
+                    <ng-container *ngIf="getMyRating(item) as r">
+                        <div class="rating-star" *ngIf="r > 0" [style.--star-size.px]="starSize(r)"
+                            [attr.title]="r + ' / 20'">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                            <div class="star-number">{{ r }}</div>
+                        </div>
+                    </ng-container>
+
+                </div>
+            </div>
+        </ng-container>
+    </div>
+</ng-template>

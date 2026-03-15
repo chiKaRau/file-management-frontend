@@ -46,7 +46,7 @@ export class FileListComponent {
   @Input() viewMode: string = 'large'; // default to "large"
 
   @Input() showDeletedInfo = false;
-  @Input() singleColumnCards = false;
+  @Input() updateModeView = false;
 
   @Input() isReadOnly = false;
 

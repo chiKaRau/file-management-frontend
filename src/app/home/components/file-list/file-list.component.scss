@@ -270,6 +270,12 @@
     padding-top: 50px;
 }
 
+.file-card-container.single-column {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+
 /* keep tile so card+caption stay together */
 .card-tile {
     display: flex;

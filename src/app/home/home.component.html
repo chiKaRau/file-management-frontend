@@ -90,8 +90,8 @@
 
           <app-file-list #fileList [items]="visibleItems" [filesViewMode]="filesViewMode"
             [foldersViewMode]="foldersViewMode" [isReadOnly]="isReadOnly" [combined]="true"
-            [singleColumnCards]="updateMode"
-            (openFolder)="openSubDirectory($event)" (fileRightClick)="onFileRightClick($event.file, $event.event)"
+            [updateModeView]="updateMode" (openFolder)="openSubDirectory($event)"
+            (fileRightClick)="onFileRightClick($event.file, $event.event)"
             (selectionChanged)="onSelectionChanged($event)">
           </app-file-list>
 
