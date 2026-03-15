@@ -179,6 +179,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.updateMode = this.isUpdateModeActive();
 
+    if (this.preferencesService.storageDir && this.preferencesService.deleteDir) {
+      this.recycleService.setPaths(this.preferencesService.storageDir, this.preferencesService.deleteDir);
+    }
+
     setTimeout(() => window.scrollTo(0, this.scrollState.homeScrollPosition), 0);
 
     this.homeRefreshSub = this.homeRefreshService.refresh$.subscribe(() => {
@@ -235,6 +239,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
           this.infoMessage = 'Select an Update directory to begin.';
           this.isLoading = false;
         }
+
+        this.showUpdateSidebar = this.isUpdateModeActive();
       }
 
       // If we already have an FS folder loaded, do nothing (preserve it).
@@ -253,6 +259,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.errorMessage = 'Selected path must be inside an Update directory.';
     this.infoMessage = null;
     this.isLoading = false;
+  }
+
+  private shouldShowUpdateTabSidebar(): boolean {
+    return this.isUpdateModeActive()
+      && this.preferencesService.scanVerified
+      && this.recycleService.arePathsSet;
+  }
+
+  get updateTabReady(): boolean {
+    return this.shouldShowUpdateTabSidebar();
   }
 
 
@@ -899,6 +915,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.contextFile = null;
       this.isLoading = false;
       this.recomputeRenderItems();
+      this.showUpdateSidebar = this.isUpdateModeActive();
     });
 
     if (this.directoryContents.length > 0) {
@@ -907,7 +924,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.fetchVisitedChildren();
     }
   }
-
 
   async loadDirectoryContents(directoryPath: string | null) {
     if (this.isReadOnly) {
@@ -1822,6 +1838,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   // Toggle method triggered by the toolbar's event
   toggleZipSidebar(): void {
+    if (this.isUpdateModeActive()) return;
     this.showZipSidebar = !this.showZipSidebar;
   }
 
@@ -1864,6 +1881,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   async updateAllModels(): Promise<void> {
+
+    if (this.isUpdateModeActive()) return;
+
     this.isUpdatingAllModels = true;
     this.currentUpdateModel = 'Starting update...';
 

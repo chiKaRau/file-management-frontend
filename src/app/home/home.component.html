@@ -111,7 +111,9 @@
       <div class="right-dock">
         <!-- Show Update if open, otherwise Zip, otherwise placeholder -->
         <ng-container *ngIf="showUpdateSidebar; else checkZip">
-          <app-update-sidebar [item]="updateFile" (closed)="closeUpdateSidebar()">
+          <app-update-sidebar [item]="updateFile" [updateTabMode]="updateMode" [updateDirectoryPath]="selectedDirectory"
+            [updateDirectoryContents]="directoryContents" [updateTabReady]="updateTabReady"
+            (closed)="closeUpdateSidebar()">
           </app-update-sidebar>
         </ng-container>
 

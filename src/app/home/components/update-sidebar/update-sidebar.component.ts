@@ -36,6 +36,10 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   @HostBinding('class') hostClass = 'update-sidebar';
 
   @Input() item: DirectoryItem | null = null;
+  @Input() updateTabMode: boolean = false;
+  @Input() updateDirectoryPath: string | null = null;
+  @Input() updateDirectoryContents: DirectoryItem[] = [];
+  @Input() updateTabReady: boolean = false;
   @Output() closed = new EventEmitter<void>();
 
   progressMessage: string = '';
@@ -64,12 +68,24 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     private http: HttpClient) { }
 
   ngOnInit() {
+
+    if (this.updateTabMode) {
+      this.logUpdateTabPayload();
+      return;
+    }
+
     if (this.item) {
       this.startSearchForItem(this.item);
     }
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    if (this.updateTabMode) {
+      if (changes['updateDirectoryPath'] || changes['updateDirectoryContents'] || changes['updateTabMode']) {
+        this.logUpdateTabPayload();
+      }
+      return;
+    }
     if (changes['item'] && !changes['item'].firstChange) {
       if (this.searchSubscription) {
         this.searchSubscription.unsubscribe();
@@ -93,6 +109,12 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
   }
+
+  private logUpdateTabPayload(): void {
+    console.log('[Update tab sidebar] selected update directory:', this.updateDirectoryPath);
+    console.log('[Update tab sidebar] displayed update contents:', this.updateDirectoryContents);
+  }
+
 
   // Extract modelId and versionId from the file name, and determine a hint if possible.
   private startSearchForItem(item: DirectoryItem) {
