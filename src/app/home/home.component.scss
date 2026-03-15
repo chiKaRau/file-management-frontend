@@ -192,24 +192,14 @@
     font-weight: 600;
 }
 
-/* Only the file list scrolls */
 .file-list-container {
-    height: 100%;
-    z-index: 1;
-    min-height: 0;
-    overflow-y: auto;
-    scroll-behavior: smooth;
+    position: relative; // add this
 }
 
-/* Overlay during preload */
 .update-overlay {
-    position: fixed;
+    position: absolute; // was fixed
     inset: 0;
-    background: var(--overlay);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 10; // keep above file list, below whole app
 }
 
 .update-message {

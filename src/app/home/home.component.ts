@@ -289,7 +289,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
       contents = shouldClientFilter
         ? contents.filter((item: any) => {
-          if (item._searchText) return item._searchText.includes(free);
+          // if (item._searchText) return item._searchText.includes(free);
           const hay: string[] = [];
           if (item.name) hay.push(item.name);
           const sd = (item as any).scanData;
@@ -952,7 +952,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         const scanned = byKey.get(`${String(modelID)}_${String(versionID)}`);
         if (scanned) {
           // Keep the original item, attach scanData (don’t mutate in place)
-          return { ...item, scanData: scanned };
+          return { ...item, scanData: scanned, _searchText: undefined as any };
         }
       }
       return item;

@@ -28,7 +28,8 @@
 
         <!-- Search (always pinned right) -->
         <div class="right search-container">
-            <input type="text" placeholder="Search files..." (input)="onSearchChange($any($event.target).value)" />
+            <input type="text" placeholder="Search files..." [disabled]="isPreloadComplete"
+                (input)="onSearchChange($any($event.target).value)" />
         </div>
     </div>
 
