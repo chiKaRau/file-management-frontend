@@ -1006,6 +1006,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   updateLocalPath() {
 
+    if (this.isUpdateModeActive()) {
+      return;
+    }
+
     // Only perform the update if the flag is enabled
     if (!this.explorerState.updateLocalPathEnabled) {
       return;
@@ -1056,6 +1060,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   private updateVisitedPath(): void {
+
+    if (this.isUpdateModeActive()) {
+      return;
+    }
+
     if (!this.selectedDirectory) return;
 
     // Only perform the update if the flag is enabled
@@ -1072,6 +1081,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   // tweak your existing fetchVisitedChildren()
   private fetchVisitedChildren(): void {
+
+    if (this.isUpdateModeActive()) {
+      this.visitedSubdirs = [];
+      return;
+    }
+
+
     const basePath = this.visitedBasePath ?? this.selectedDirectory;
     if (!basePath) return;
 

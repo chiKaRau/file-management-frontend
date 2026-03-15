@@ -36,7 +36,7 @@
     <!-- Row 2: utility controls -->
     <div class="row row-secondary">
         <!-- Auto-update + manual update -->
-        <div class="update-checkbox">
+        <div class="update-checkbox" *ngIf="!isUpdateMode">
             <label>
                 <input type="checkbox" [(ngModel)]="explorerState.updateLocalPathEnabled" />
                 Auto Update Info to DB
@@ -47,13 +47,14 @@
         </div>
 
         <!-- Zip toggle -->
-        <div class="sidebar-toggle-container">
+        <div class="sidebar-toggle-container" *ngIf="!isUpdateMode">
             <button (click)="toggleZipSidebar()">Zip</button>
         </div>
 
         <!-- Update all models -->
-        <div class="update-models-button">
-            <button (click)="onUpdateAllModels()">Update All Models</button>
+        <div class="update-models-button" *ngIf="!isUpdateMode">
+            <button (click)="onUpdateAllModels()">Update All
+                Models</button>
         </div>
 
         <!-- Sub-directory navigator -->
