@@ -115,7 +115,8 @@
             [updateDirectoryContents]="directoryContents" [updateTabReady]="updateTabReady"
             (selectAllRequested)="onUpdateSelectAllRequested()"
             (selectTopNRequested)="onUpdateSelectTopNRequested($event)"
-            (searchSelectedRequested)="onUpdateSearchSelectedRequested()" (closed)="closeUpdateSidebar()">
+            (searchSelectedRequested)="onUpdateSearchSelectedRequested()"
+            (performActionsRequested)="onUpdatePerformActionsRequested()" (closed)="closeUpdateSidebar()">
           </app-update-sidebar>
         </ng-container>
 

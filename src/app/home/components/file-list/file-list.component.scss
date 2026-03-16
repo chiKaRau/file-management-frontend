@@ -600,33 +600,26 @@
 
 .update-row {
     width: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr) 56px;
+    column-gap: 16px;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
 }
 
-.update-source-card,
-.update-result-card {
-    flex: 0 0 auto;
-}
-
-.search-result-card {
-    border-style: dashed;
+.update-source-card {
+    justify-self: start;
 }
 
 .update-results-column {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
     gap: 12px;
-    justify-content: flex-end;
-}
-
-.update-results-column {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    justify-content: flex-end;
+    align-items: flex-start;
+    justify-self: end;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
 }
 
 
@@ -649,4 +642,65 @@
     background: rgba(231, 76, 60, 0.2);
     color: #ffc9c0;
     border: 1px solid rgba(231, 76, 60, 0.55);
+}
+
+
+.update-action-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 56px;
+    min-width: 56px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    align-items: center;
+    justify-self: end;
+}
+
+.update-action-panel label,
+.result-select-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.result-select-radio {
+    margin-bottom: 6px;
+}
+
+
+.action-icon-label {
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    position: relative;
+}
+
+.action-icon-label input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.action-icon-label .material-icons {
+    font-size: 19px;
+}
+
+.action-icon-label input:checked+.material-icons {
+    color: #9ec0ff;
+}
+
+
+@media (max-width: 1500px) {
+    .update-row {
+        grid-template-columns: 320px minmax(0, 1fr) 56px;
+    }
 }

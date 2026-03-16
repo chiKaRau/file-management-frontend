@@ -44,6 +44,7 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   @Output() selectAllRequested = new EventEmitter<void>();
   @Output() selectTopNRequested = new EventEmitter<number>();
   @Output() searchSelectedRequested = new EventEmitter<void>();
+  @Output() performActionsRequested = new EventEmitter<void>();
 
   progressMessage: string = '';
   // These will hold the raw file results and the grouped sets.
@@ -132,6 +133,11 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   searchSelectedItems(): void {
     this.searchSelectedRequested.emit();
   }
+
+  performSelectedActions(): void {
+    this.performActionsRequested.emit();
+  }
+
 
   // Extract modelId and versionId from the file name, and determine a hint if possible.
   private startSearchForItem(item: DirectoryItem) {

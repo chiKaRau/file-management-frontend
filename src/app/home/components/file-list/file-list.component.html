@@ -415,6 +415,12 @@
                     <div class="update-results-column" *ngIf="getUpdateResultsFor(item) as results">
                         <ng-container *ngFor="let result of results">
                             <div class="card-tile update-result-card" (contextmenu)="onFileRightClick(result, $event)">
+                                <label class="result-select-radio" (click)="$event.stopPropagation()">
+                                    <input type="radio" [name]="'update-result-' + getUpdateSourceKey(item)"
+                                        [checked]="getUpdateSelectedResultPath(getUpdateSourceKey(item)) === result.path"
+                                        (click)="setUpdateSelectedResult(getUpdateSourceKey(item), result.path, $event)">
+                                    Use this result
+                                </label>
                                 <div class="file-card search-result-card" (click)="onItemClick(result, $event, i)"
                                     (dblclick)="onItemDblClick(result)"
                                     [ngClass]="{ 'selected': isSelected(result), 'file': true }"
@@ -439,6 +445,33 @@
                                 </div>
                             </div>
                         </ng-container>
+                    </div>
+
+                    <div class="update-action-panel" (click)="$event.stopPropagation()">
+                        <label class="action-icon-label" title="Do nothing">
+                            <input type="radio" [name]="'update-action-' + getUpdateSourceKey(item)"
+                                [checked]="getUpdateSelectedAction(getUpdateSourceKey(item)) === 'none'"
+                                (click)="setUpdateSelectedAction(getUpdateSourceKey(item), 'none', $event)">
+                            <span class="material-icons" aria-hidden="true">block</span>
+                        </label>
+                        <label class="action-icon-label" title="Upgrade">
+                            <input type="radio" [name]="'update-action-' + getUpdateSourceKey(item)"
+                                [checked]="getUpdateSelectedAction(getUpdateSourceKey(item)) === 'upgrade'"
+                                (click)="setUpdateSelectedAction(getUpdateSourceKey(item), 'upgrade', $event)">
+                            <span class="material-icons" aria-hidden="true">system_update_alt</span>
+                        </label>
+                        <label class="action-icon-label" title="Add to location">
+                            <input type="radio" [name]="'update-action-' + getUpdateSourceKey(item)"
+                                [checked]="getUpdateSelectedAction(getUpdateSourceKey(item)) === 'add'"
+                                (click)="setUpdateSelectedAction(getUpdateSourceKey(item), 'add', $event)">
+                            <span class="material-icons" aria-hidden="true">drive_file_move</span>
+                        </label>
+                        <label class="action-icon-label" title="Delete">
+                            <input type="radio" [name]="'update-action-' + getUpdateSourceKey(item)"
+                                [checked]="getUpdateSelectedAction(getUpdateSourceKey(item)) === 'delete'"
+                                (click)="setUpdateSelectedAction(getUpdateSourceKey(item), 'delete', $event)">
+                            <span class="material-icons" aria-hidden="true">delete</span>
+                        </label>
                     </div>
                 </div>
             </div>

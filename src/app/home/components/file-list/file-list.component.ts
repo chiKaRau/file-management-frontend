@@ -2,6 +2,15 @@ import { Component, Input, Output, EventEmitter, ViewChildren, QueryList, Elemen
 import { DirectoryItem } from './model/directory-item.model';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
+export type UpdateBatchAction = 'none' | 'upgrade' | 'add' | 'delete';
+
+export interface UpdateBatchActionPlanItem {
+  source: DirectoryItem;
+  result: DirectoryItem;
+  action: Exclude<UpdateBatchAction, 'none'>;
+}
+
+
 @Component({
   selector: 'app-file-list',
   templateUrl: './file-list.component.html',
@@ -23,6 +32,10 @@ export class FileListComponent {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['selectedItems'] || changes['filesViewMode'] || changes['foldersViewMode']) {
       setTimeout(() => this.scrollToSelected(), 0);
+    }
+
+    if (changes['updateResultBySourcePath']) {
+      this.syncUpdateResultState();
     }
   }
 
@@ -48,6 +61,9 @@ export class FileListComponent {
   @Input() showDeletedInfo = false;
   @Input() updateModeView = false;
   @Input() updateResultBySourcePath: Record<string, DirectoryItem[]> = {};
+
+  private updateSelectedResultPathBySource: Record<string, string | undefined> = {};
+  private updateSelectedActionBySource: Record<string, UpdateBatchAction> = {};
 
   @Input() isReadOnly = false;
 
@@ -233,6 +249,65 @@ export class FileListComponent {
 
   getUpdateResultsFor(item: DirectoryItem): DirectoryItem[] {
     return this.updateResultBySourcePath?.[item.path] ?? [];
+  }
+
+  getUpdateSourceKey(item: DirectoryItem): string {
+    return item.path;
+  }
+
+  getUpdateSelectedResultPath(sourceKey: string): string | undefined {
+    return this.updateSelectedResultPathBySource[sourceKey];
+  }
+
+  setUpdateSelectedResult(sourceKey: string, resultPath: string, event?: Event): void {
+    event?.stopPropagation();
+    this.updateSelectedResultPathBySource[sourceKey] = resultPath;
+  }
+
+  getUpdateSelectedAction(sourceKey: string): UpdateBatchAction {
+    return this.updateSelectedActionBySource[sourceKey] ?? 'none';
+  }
+
+  setUpdateSelectedAction(sourceKey: string, action: UpdateBatchAction, event?: Event): void {
+    event?.stopPropagation();
+    this.updateSelectedActionBySource[sourceKey] = action;
+  }
+
+  getUpdateBatchActionPlan(): UpdateBatchActionPlanItem[] {
+    const plan: UpdateBatchActionPlanItem[] = [];
+
+    for (const source of this.fileItems) {
+      const sourceKey = this.getUpdateSourceKey(source);
+      const selectedResultPath = this.updateSelectedResultPathBySource[sourceKey];
+      const action = this.updateSelectedActionBySource[sourceKey] ?? 'none';
+      if (!selectedResultPath || action === 'none') continue;
+
+      const result = this.getUpdateResultsFor(source).find((it) => it.path === selectedResultPath);
+      if (!result) continue;
+
+      plan.push({ source, result, action });
+    }
+
+    return plan;
+  }
+
+  private syncUpdateResultState(): void {
+    const nextResultState: Record<string, string | undefined> = {};
+    const nextActionState: Record<string, UpdateBatchAction> = {};
+
+    for (const source of this.fileItems) {
+      const sourceKey = this.getUpdateSourceKey(source);
+      const results = this.getUpdateResultsFor(source);
+      if (!results.length) continue;
+
+      const currentSelected = this.updateSelectedResultPathBySource[sourceKey];
+      const selectedStillExists = currentSelected && results.some((r) => r.path === currentSelected);
+      nextResultState[sourceKey] = selectedStillExists ? currentSelected : results[0].path;
+      nextActionState[sourceKey] = this.updateSelectedActionBySource[sourceKey] ?? 'none';
+    }
+
+    this.updateSelectedResultPathBySource = nextResultState;
+    this.updateSelectedActionBySource = nextActionState;
   }
 
   isImage(item: DirectoryItem): boolean {

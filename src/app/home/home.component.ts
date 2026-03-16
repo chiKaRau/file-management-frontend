@@ -23,7 +23,7 @@ import { DirectoryItem } from './components/file-list/model/directory-item.model
 import { Subscription, firstValueFrom, lastValueFrom } from 'rxjs';
 import { HomeRefreshService } from './services/home-refresh.service';
 import { PreferencesService } from '../preferences/preferences.service';
-import { FileListComponent } from './components/file-list/file-list.component';
+import { FileListComponent, UpdateBatchActionPlanItem } from './components/file-list/file-list.component';
 import { HttpClient } from '@angular/common/http';
 import { shell } from 'electron';
 import { DATA_SOURCE } from '../shared/data-sources/DATA_SOURCE';
@@ -1848,6 +1848,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  onUpdatePerformActionsRequested(): void {
+    const plan: UpdateBatchActionPlanItem[] = this.fileListComponent?.getUpdateBatchActionPlan?.() ?? [];
+
+    console.log(`[Update tab] Perform Actions clicked. Planned action count: ${plan.length}`);
+    plan.forEach((item, index) => {
+      console.log(
+        `[Update tab] Action #${index + 1}: ${item.action} | source=${item.source.path} | result=${item.result.path}`
+      );
+    });
+  }
+
+
   async onUpdateSearchSelectedRequested(): Promise<void> {
     const selected = (this.fileListComponent?.selectedItems ?? []).filter((i) => i.isFile);
     const bySource: Record<string, DirectoryItem[]> = {};
@@ -1982,10 +1994,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
     if (parts.length >= 2 && parts[0] && parts[1]) {
       return `${parts[0]}_${parts[1]}`;
     }
+
     const fallback = fileName.match(/^([^\.]+)/);
     return fallback ? fallback[1] : fileName;
   }
-
 
   private getUpdateSelectableItems(): DirectoryItem[] {
     return (this.renderItems ?? []).filter((item) => item.isFile);
