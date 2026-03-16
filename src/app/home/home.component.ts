@@ -99,7 +99,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   deepSearchActive = false;
   deepSearchItems: DirectoryItem[] = [];
-  updateSearchResultBySourcePath: Record<string, DirectoryItem | null> = {};
+  updateSearchResultBySourcePath: Record<string, DirectoryItem[]> = {};
   searchingUpdateSelections = false;
 
   /** debounce timer for search */
@@ -1850,31 +1850,37 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   async onUpdateSearchSelectedRequested(): Promise<void> {
     const selected = (this.fileListComponent?.selectedItems ?? []).filter((i) => i.isFile);
-    const bySource: Record<string, DirectoryItem | null> = {};
+    const bySource: Record<string, DirectoryItem[]> = {};
     this.searchingUpdateSelections = true;
+
+    const totalStart = performance.now();
+    console.log(`[Update tab] Search Selected Item started. Selected file count: ${selected.length}`);
 
     try {
       for (const item of selected) {
         const ids = this.extractIdsFromItem(item);
         if (!ids) {
-          bySource[item.path] = null;
+          bySource[item.path] = [];
+          console.warn(`[Update tab] Skipping item with unparsable IDs: ${item.name}`);
           continue;
         }
 
         const hintPath = this.getUpdateHintPath(item.path);
-        const progress = await firstValueFrom(
+        const itemStart = performance.now();
+
+        const progress = await lastValueFrom(
           this.searchService.searchByModelAndVersion(ids.modelId, ids.versionId, hintPath, item.path)
         );
 
-        const firstMatch = (progress?.results ?? [])[0];
-        bySource[item.path] = firstMatch
-          ? {
-            name: firstMatch.split(/\\|\//).pop() || firstMatch,
-            path: firstMatch,
-            isFile: true,
-            isDirectory: false
-          }
-          : null;
+        const itemElapsedSeconds = (performance.now() - itemStart) / 1000;
+        const matchCount = progress?.results?.length ?? 0;
+
+        console.log(
+          `[Update tab] Search completed for ${item.name} (model=${ids.modelId}, version=${ids.versionId}) in ${itemElapsedSeconds.toFixed(3)}s. Matches: ${matchCount}`
+        );
+
+        const matches = this.collapseSearchMatchesToSetRepresentatives(progress?.results ?? [], item.path);
+        bySource[item.path] = matches;
       }
     } catch (error) {
       console.error('Error searching selected update items from file-list selection', error);
@@ -1882,8 +1888,83 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.updateSearchResultBySourcePath = bySource;
       this.searchingUpdateSelections = false;
       this.cdr.markForCheck();
+      const totalElapsedSeconds = (performance.now() - totalStart) / 1000;
+      console.log(`[Update tab] Search Selected Item finished in ${totalElapsedSeconds.toFixed(3)}s.`);
     }
   }
+
+  private collapseSearchMatchesToSetRepresentatives(matchPaths: string[], sourceItemPath?: string): DirectoryItem[] {
+    const bySetId = new Map<string, string[]>();
+    const sourceNorm = sourceItemPath ? sourceItemPath.replace(/\\/g, '/').toLowerCase() : '';
+    const sourceName = sourceItemPath ? sourceItemPath.split(/\\|\//).pop() || sourceItemPath : '';
+    const sourceSetId = sourceName ? this.getModelVersionSetId(sourceName) : '';
+
+    for (const matchPath of matchPaths) {
+      const matchNorm = matchPath.replace(/\\/g, '/').toLowerCase();
+      if (sourceNorm && matchNorm === sourceNorm) {
+        continue; // never include the selected source item itself
+      }
+
+      const name = matchPath.split(/\\|\//).pop() || matchPath;
+      const setId = this.getModelVersionSetId(name);
+      if (sourceSetId && setId === sourceSetId) {
+        continue; // mirror sidebar behavior: exclude same set as source item
+      }
+
+      const existing = bySetId.get(setId) ?? [];
+      existing.push(matchPath);
+      bySetId.set(setId, existing);
+    }
+
+    const pickRepresentative = (paths: string[]): string => {
+      const extPriority = ['.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.zip'];
+
+      for (const ext of extPriority) {
+        const found = paths.find((p) => (p.split(/\\|\//).pop() || p).toLowerCase().endsWith(ext));
+        if (found) return found;
+      }
+
+      const previewImage = this.pickPreviewImagePath(paths);
+      if (previewImage) return previewImage;
+
+      return paths[0];
+    };
+
+    return Array.from(bySetId.entries()).map(([setId, paths]) => {
+      const chosen = pickRepresentative(paths);
+      const chosenName = chosen.split(/\\|\//).pop() || chosen;
+      const previewPath = this.pickPreviewImagePath(paths);
+      return {
+        name: chosenName,
+        path: chosen,
+        isFile: true,
+        isDirectory: false,
+        displayName: setId,
+        previewPath
+      } as DirectoryItem;
+    });
+  }
+
+  private pickPreviewImagePath(paths: string[]): string | undefined {
+    const previewImage = paths.find((p) => {
+      const name = (p.split(/\\|\//).pop() || p).toLowerCase();
+      return /\.(png|jpe?g|webp|gif)$/.test(name) && name.includes('preview');
+    });
+    if (previewImage) return previewImage;
+
+    return paths.find((p) => /\.(png|jpe?g|webp|gif)$/i.test(p.split(/\\|\//).pop() || p));
+  }
+
+  private getModelVersionSetId(fileName: string): string {
+    const beforeDot = fileName.split('.')[0] || fileName;
+    const parts = beforeDot.split('_');
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return `${parts[0]}_${parts[1]}`;
+    }
+    const fallback = fileName.match(/^([^\.]+)/);
+    return fallback ? fallback[1] : fileName;
+  }
+
 
   private getUpdateSelectableItems(): DirectoryItem[] {
     return (this.renderItems ?? []).filter((item) => item.isFile);

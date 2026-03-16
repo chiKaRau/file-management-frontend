@@ -47,7 +47,7 @@ export class FileListComponent {
 
   @Input() showDeletedInfo = false;
   @Input() updateModeView = false;
-  @Input() updateResultBySourcePath: Record<string, DirectoryItem | null> = {};
+  @Input() updateResultBySourcePath: Record<string, DirectoryItem[]> = {};
 
   @Input() isReadOnly = false;
 
@@ -231,8 +231,8 @@ export class FileListComponent {
     return this.selectedItems.indexOf(item) !== -1;
   }
 
-  getUpdateResultFor(item: DirectoryItem): DirectoryItem | null {
-    return this.updateResultBySourcePath?.[item.path] ?? null;
+  getUpdateResultsFor(item: DirectoryItem): DirectoryItem[] {
+    return this.updateResultBySourcePath?.[item.path] ?? [];
   }
 
   isImage(item: DirectoryItem): boolean {
@@ -301,9 +301,11 @@ export class FileListComponent {
     if (!item.isFile) return '';
     if (this.isReadOnly) {
       return this.firstImageUrl(item) || '';
-    } else {
-      return this.isImage(item) ? this.toFileUrl(item.path) : '';
     }
+    const previewPath = (item as any).previewPath as string | undefined;
+    if (previewPath) return this.toFileUrl(previewPath);
+
+    return this.isImage(item) ? this.toFileUrl(item.path) : '';
   }
 
   // UPDATE: use file:/// for local thumbnails
@@ -312,6 +314,10 @@ export class FileListComponent {
     if (this.isReadOnly) {
       return this.firstImageUrl(item);
     }
+
+    const previewPath = (item as any).previewPath as string | undefined;
+    if (previewPath) return this.toFileUrl(previewPath);
+
     return this.isImage(item) ? this.toFileUrl(item.path) : null;
   }
 

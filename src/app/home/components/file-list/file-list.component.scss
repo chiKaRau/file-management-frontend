@@ -614,3 +614,10 @@
 .search-result-card {
     border-style: dashed;
 }
+
+.update-results-column {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+}

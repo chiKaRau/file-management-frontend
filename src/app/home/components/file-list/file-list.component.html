@@ -412,20 +412,22 @@
                         </div>
                     </div>
 
-                    <ng-container *ngIf="getUpdateResultFor(item) as result">
-                        <div class="card-tile update-result-card" (contextmenu)="onFileRightClick(result, $event)">
-                            <div class="file-card search-result-card" (click)="onItemClick(result, $event, i)"
-                                (dblclick)="onItemDblClick(result)"
-                                [ngClass]="{ 'selected': isSelected(result), 'file': true }"
-                                [appLazyBg]="getCardBgUrl(result)">
-                                <div class="badge top-left">Search Result</div>
-                                <div class="card-footer">
-                                    <div class="creator">{{ result.path }}</div>
-                                    <div class="main-model">{{ result.name }}</div>
+                    <div class="update-results-column" *ngIf="getUpdateResultsFor(item) as results">
+                        <ng-container *ngFor="let result of results; let resultIndex = index">
+                            <div class="card-tile update-result-card" (contextmenu)="onFileRightClick(result, $event)">
+                                <div class="file-card search-result-card" (click)="onItemClick(result, $event, i)"
+                                    (dblclick)="onItemDblClick(result)"
+                                    [ngClass]="{ 'selected': isSelected(result), 'file': true }"
+                                    [appLazyBg]="getCardBgUrl(result)">
+                                    <div class="badge top-left">Search Result {{ resultIndex + 1 }}</div>
+                                    <div class="card-footer">
+                                        <div class="creator">{{ result.path }}</div>
+                                        <div class="main-model">{{ ($any(result).displayName || result.name) }}</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </ng-container>
+                        </ng-container>
+                    </div>
                 </div>
             </div>
         </ng-container>
