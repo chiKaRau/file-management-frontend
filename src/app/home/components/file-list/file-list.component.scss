@@ -621,3 +621,32 @@
     gap: 12px;
     justify-content: flex-end;
 }
+
+.update-results-column {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+
+.base-model-match {
+    margin-top: 6px;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    width: fit-content;
+    backdrop-filter: blur(2px);
+}
+
+.base-model-match.match {
+    background: rgba(46, 204, 113, 0.22);
+    color: #b9ffcf;
+    border: 1px solid rgba(46, 204, 113, 0.6);
+}
+
+.base-model-match.no-match {
+    background: rgba(231, 76, 60, 0.2);
+    color: #ffc9c0;
+    border: 1px solid rgba(231, 76, 60, 0.55);
+}

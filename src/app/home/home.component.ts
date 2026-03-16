@@ -1940,9 +1940,30 @@ export class HomeComponent implements OnInit, AfterViewInit {
         isFile: true,
         isDirectory: false,
         displayName: setId,
-        previewPath
+        previewPath,
+        scanData: this.parseSearchResultScanData(chosenName, setId)
       } as DirectoryItem;
     });
+  }
+
+  private parseSearchResultScanData(fileName: string, fallbackSetId: string): any {
+    const stem = fileName.split('.')[0] || fileName;
+    const parts = stem.split('_');
+
+    const fallbackParts = fallbackSetId.split('_');
+    const modelNumber = parts[0] || fallbackParts[0] || undefined;
+    const versionNumber = parts[1] || fallbackParts[1] || undefined;
+    const baseModel = parts[2] || undefined;
+    const creatorName = parts[3] || undefined;
+    const mainModelName = parts.slice(4).join('_') || fallbackSetId;
+
+    return {
+      modelNumber,
+      versionNumber,
+      baseModel,
+      creatorName,
+      mainModelName
+    };
   }
 
   private pickPreviewImagePath(paths: string[]): string | undefined {
