@@ -1848,7 +1848,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onUpdatePerformActionsRequested(): void {
+  async onUpdatePerformActionsRequested(): Promise<void> {
     const plan: UpdateBatchActionPlanItem[] = this.fileListComponent?.getUpdateBatchActionPlan?.() ?? [];
 
     console.log(`[Update tab] Perform Actions clicked. Planned action count: ${plan.length}`);
@@ -1857,8 +1857,138 @@ export class HomeComponent implements OnInit, AfterViewInit {
         `[Update tab] Action #${index + 1}: ${item.action} | source=${item.source.path} | result=${item.result.path}`
       );
     });
+
+    if (!plan.length) {
+      alert('No actionable rows selected. Pick a result and an action (not Do nothing).');
+      return;
+    }
+
+    if (!window.confirm(`Run ${plan.length} planned action(s)?`)) {
+      return;
+    }
+
+    const errors: string[] = [];
+
+    for (const [index, item] of plan.entries()) {
+      try {
+        if (item.action === 'upgrade') {
+          await this.executeUpdateUpgrade(item.source, item.result);
+        } else if (item.action === 'add') {
+          await this.executeUpdateAddToLocation(item.source, item.result);
+        } else if (item.action === 'delete') {
+          await this.executeUpdateDelete(item.result);
+        }
+      } catch (error) {
+        console.error(`[Update tab] Failed action #${index + 1}`, error);
+        errors.push(`#${index + 1} ${item.action} (${item.source.name})`);
+      }
+    }
+
+    if (errors.length) {
+      alert(`Batch actions completed with errors\n${errors.join('\n')}`);
+    } else {
+      alert('Batch actions completed successfully.');
+    }
+
+    this.homeRefreshService.triggerRefresh();
   }
 
+  private normalizeSetId(fileName: string): string {
+    const match = fileName.match(/^([^\.]+)/);
+    return match ? match[1] : fileName;
+  }
+
+
+  private getModelVersionSetIdFromFileName(fileName: string): string {
+    const stem = fileName.split('.')[0] || fileName;
+    const parts = stem.split('_');
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return `${parts[0]}_${parts[1]}`;
+    }
+    return this.normalizeSetId(fileName);
+  }
+
+  private async moveFileAsync(src: string, dest: string): Promise<void> {
+    const destDir = path.dirname(dest);
+    if (!fs.existsSync(destDir)) {
+      await fs.promises.mkdir(destDir, { recursive: true });
+    }
+
+    if (!fs.existsSync(src)) {
+      throw new Error(`Source does not exist: ${src}`);
+    }
+
+    try {
+      await fs.promises.rename(src, dest);
+    } catch {
+      await fs.promises.copyFile(src, dest);
+      await fs.promises.unlink(src);
+    }
+  }
+
+  private getDeleteTarget(src: string): string {
+    const deleteFolder = this.recycleService.getDeleteFolderPath();
+    return path.join(deleteFolder, path.basename(src));
+  }
+
+  private async getSetFilesInDirectory(dirPath: string, modelVersionSetId: string): Promise<string[]> {
+    const allFiles = await this.collectFilesRecursively(dirPath);
+    return allFiles.filter((fullPath) => {
+      const fileName = path.basename(fullPath);
+      return this.getModelVersionSetIdFromFileName(fileName) === modelVersionSetId;
+    });
+  }
+
+  private async executeUpdateUpgrade(source: DirectoryItem, result: DirectoryItem): Promise<void> {
+    const updateDir = path.dirname(source.path);
+    const productionDir = path.dirname(result.path);
+
+    const updateSetId = this.getModelVersionSetIdFromFileName(source.name);
+    const resultSetId = ((result as any).displayName as string | undefined) ?? this.getModelVersionSetIdFromFileName(result.name);
+
+    const updateFiles = await this.getSetFilesInDirectory(updateDir, updateSetId);
+    const productionFiles = await this.getSetFilesInDirectory(productionDir, resultSetId);
+
+    // Replace semantics (same as sidebar upgrade):
+    // 1) move selected production/result-set files to delete folder
+    for (const prod of productionFiles) {
+      if (fs.existsSync(prod)) {
+        await this.moveFileAsync(prod, this.getDeleteTarget(prod));
+      }
+    }
+
+    // 2) move selected update-set files into production folder
+    for (const src of updateFiles) {
+      const target = path.join(productionDir, path.basename(src));
+      await this.moveFileAsync(src, target);
+    }
+  }
+
+  private async executeUpdateAddToLocation(source: DirectoryItem, result: DirectoryItem): Promise<void> {
+    const updateDir = path.dirname(source.path);
+    const productionDir = path.dirname(result.path);
+    const setId = this.getModelVersionSetIdFromFileName(source.name);
+
+    const updateFiles = await this.getSetFilesInDirectory(updateDir, setId);
+    await fs.promises.mkdir(productionDir, { recursive: true });
+
+    for (const src of updateFiles) {
+      const target = path.join(productionDir, path.basename(src));
+      if (!fs.existsSync(target)) {
+        await this.moveFileAsync(src, target);
+      }
+    }
+  }
+
+  private async executeUpdateDelete(source: DirectoryItem): Promise<void> {
+    const updateDir = path.dirname(source.path);
+    const setId = this.getModelVersionSetIdFromFileName(source.name);
+    const updateFiles = await this.getSetFilesInDirectory(updateDir, setId);
+
+    for (const src of updateFiles) {
+      await this.moveFileAsync(src, this.getDeleteTarget(src));
+    }
+  }
 
   async onUpdateSearchSelectedRequested(): Promise<void> {
     const selected = (this.fileListComponent?.selectedItems ?? []).filter((i) => i.isFile);
