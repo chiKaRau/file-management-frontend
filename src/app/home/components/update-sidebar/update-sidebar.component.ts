@@ -40,6 +40,11 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   @Input() updateDirectoryPath: string | null = null;
   @Input() updateDirectoryContents: DirectoryItem[] = [];
   @Input() updateTabReady: boolean = false;
+  @Input() selectedUpdateItemCount: number = 0;
+  @Input() searchingUpdateSelections: boolean = false;
+  @Input() updateSearchCurrentItemName: string = '';
+  @Input() updateSearchProcessedCount: number = 0;
+  @Input() updateSearchTotalCount: number = 0;
   @Output() closed = new EventEmitter<void>();
   @Output() selectAllRequested = new EventEmitter<void>();
   @Output() selectTopNRequested = new EventEmitter<number>();
@@ -138,6 +143,11 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     this.performActionsRequested.emit();
   }
 
+  get searchSelectedButtonLabel(): string {
+    return this.selectedUpdateItemCount > 0
+      ? `Search Selected Item (${this.selectedUpdateItemCount})`
+      : 'Search Selected Item';
+  }
 
   // Extract modelId and versionId from the file name, and determine a hint if possible.
   private startSearchForItem(item: DirectoryItem) {

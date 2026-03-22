@@ -158,6 +158,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   @ViewChild('fileViewSubmenu') fileViewSubmenuRef!: ElementRef<HTMLDivElement>;
   @ViewChild('dirViewSubmenu') dirViewSubmenuRef!: ElementRef<HTMLDivElement>;
 
+  updateSearchCurrentItemName: string = '';
+  updateSearchProcessedCount: number = 0;
+  updateSearchTotalCount: number = 0;
+
 
   constructor(
     private electronService: ElectronService,
@@ -1993,18 +1997,42 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   async onUpdateSearchSelectedRequested(): Promise<void> {
     const selected = (this.fileListComponent?.selectedItems ?? []).filter((i) => i.isFile);
+
     const bySource: Record<string, DirectoryItem[]> = {};
+
+    if (!selected.length) {
+      this.updateSearchResultBySourcePath = {};
+      this.searchingUpdateSelections = false;
+      this.updateSearchCurrentItemName = '';
+      this.updateSearchProcessedCount = 0;
+      this.updateSearchTotalCount = 0;
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.searchingUpdateSelections = true;
+    this.updateSearchCurrentItemName = '';
+    this.updateSearchProcessedCount = 0;
+    this.updateSearchTotalCount = selected.length;
+    this.cdr.detectChanges();
 
     const totalStart = performance.now();
     console.log(`[Update tab] Search Selected Item started. Selected file count: ${selected.length}`);
 
     try {
-      for (const item of selected) {
+      for (let i = 0; i < selected.length; i++) {
+        const item = selected[i];
+
+        this.updateSearchCurrentItemName = this.getUpdateSearchDisplayName(item);
+        this.updateSearchProcessedCount = i;
+        this.cdr.detectChanges();
+
         const ids = this.extractIdsFromItem(item);
         if (!ids) {
           bySource[item.path] = [];
           console.warn(`[Update tab] Skipping item with unparsable IDs: ${item.name}`);
+          this.updateSearchProcessedCount = i + 1;
+          this.cdr.detectChanges();
           continue;
         }
 
@@ -2024,13 +2052,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
         const matches = this.collapseSearchMatchesToSetRepresentatives(progress?.results ?? [], item.path);
         bySource[item.path] = matches;
+
+        this.updateSearchProcessedCount = i + 1;
+        this.cdr.detectChanges();
       }
     } catch (error) {
       console.error('Error searching selected update items from file-list selection', error);
     } finally {
       this.updateSearchResultBySourcePath = bySource;
       this.searchingUpdateSelections = false;
+      this.updateSearchCurrentItemName = '';
       this.cdr.markForCheck();
+
       const totalElapsedSeconds = (performance.now() - totalStart) / 1000;
       console.log(`[Update tab] Search Selected Item finished in ${totalElapsedSeconds.toFixed(3)}s.`);
     }
@@ -2144,6 +2177,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     const fallback = fileName.match(/^([^\.]+)/);
     return fallback ? fallback[1] : fileName;
+  }
+
+  get selectedUpdateItemCount(): number {
+    return (this.selectedFiles ?? []).filter(item => item.isFile).length;
+  }
+
+  private getUpdateSearchDisplayName(item: DirectoryItem): string {
+    const name = item?.name || '';
+
+    return name
+      .replace(/\.preview\.(png|jpe?g|webp|gif)$/i, '')
+      .replace(/\.(zip|safetensors|ckpt|pt|pth|bin|png|jpe?g|webp|gif)$/i, '');
   }
 
   private getUpdateSelectableItems(): DirectoryItem[] {

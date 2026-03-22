@@ -23,9 +23,22 @@
                             <input type="number" min="0" [(ngModel)]="selectedCountInput">
                             <button class="action-btn" (click)="selectTopNUpdateItems()">Select N (file-list)</button>
                         </div>
-                        <button class="action-btn upgrade" (click)="searchSelectedItems()">
-                            Search Selected Item
+                        <button class="action-btn upgrade" (click)="searchSelectedItems()"
+                            [disabled]="searchingUpdateSelections || selectedUpdateItemCount === 0">
+                            {{ searchSelectedButtonLabel }}
                         </button>
+
+                        <div class="update-search-progress" *ngIf="searchingUpdateSelections">
+                            <p>Searching... <span class="spinner"></span></p>
+
+                            <p *ngIf="updateSearchCurrentItemName">
+                                Now is Searching for {{ updateSearchCurrentItemName }}
+                            </p>
+
+                            <p *ngIf="updateSearchTotalCount > 0">
+                                Progress: {{ updateSearchProcessedCount }} / {{ updateSearchTotalCount }}
+                            </p>
+                        </div>
 
                         <button class="action-btn add" (click)="performSelectedActions()">
                             Perform Actions

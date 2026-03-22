@@ -113,6 +113,9 @@
         <ng-container *ngIf="showUpdateSidebar; else checkZip">
           <app-update-sidebar [item]="updateFile" [updateTabMode]="updateMode" [updateDirectoryPath]="selectedDirectory"
             [updateDirectoryContents]="directoryContents" [updateTabReady]="updateTabReady"
+            [selectedUpdateItemCount]="selectedUpdateItemCount" [searchingUpdateSelections]="searchingUpdateSelections"
+            [updateSearchCurrentItemName]="updateSearchCurrentItemName"
+            [updateSearchProcessedCount]="updateSearchProcessedCount" [updateSearchTotalCount]="updateSearchTotalCount"
             (selectAllRequested)="onUpdateSelectAllRequested()"
             (selectTopNRequested)="onUpdateSelectTopNRequested($event)"
             (searchSelectedRequested)="onUpdateSearchSelectedRequested()"
