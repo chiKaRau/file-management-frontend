@@ -1928,7 +1928,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   private getDeleteTarget(src: string): string {
     const deleteFolder = this.recycleService.getDeleteFolderPath();
-    return path.join(deleteFolder, path.basename(src));
+    const target = path.join(deleteFolder, path.basename(src));
+    return this.getUniqueFilePath(target);
   }
 
   private async getSetFilesInDirectory(dirPath: string, modelVersionSetId: string): Promise<string[]> {
@@ -2061,15 +2062,31 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const pickRepresentative = (paths: string[]): string => {
       const extPriority = ['.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.zip'];
 
-      for (const ext of extPriority) {
-        const found = paths.find((p) => (p.split(/\\|\//).pop() || p).toLowerCase().endsWith(ext));
-        if (found) return found;
-      }
+      const getFolderPriority = (p: string): number => {
+        const norm = p.replace(/\\/g, '/').toLowerCase();
 
-      const previewImage = this.pickPreviewImagePath(paths);
-      if (previewImage) return previewImage;
+        if (norm.includes('/@scan@/delete/')) return 3;
+        if (norm.includes('/@scan@/update/')) return 2;
+        return 1; // normal result folders like ACG/...
+      };
 
-      return paths[0];
+      const getExtPriority = (p: string): number => {
+        const name = (p.split(/\\|\//).pop() || p).toLowerCase();
+        const idx = extPriority.findIndex(ext => name.endsWith(ext));
+        return idx === -1 ? 999 : idx;
+      };
+
+      const sorted = [...paths].sort((a, b) => {
+        const folderDiff = getFolderPriority(a) - getFolderPriority(b);
+        if (folderDiff !== 0) return folderDiff;
+
+        const extDiff = getExtPriority(a) - getExtPriority(b);
+        if (extDiff !== 0) return extDiff;
+
+        return a.localeCompare(b);
+      });
+
+      return sorted[0];
     };
 
     return Array.from(bySetId.entries()).map(([setId, paths]) => {
