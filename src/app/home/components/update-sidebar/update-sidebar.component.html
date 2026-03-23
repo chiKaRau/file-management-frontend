@@ -18,10 +18,11 @@
                     <p>Select items directly in the file list, then run actions here.</p>
 
                     <div class="selection-controls">
-                        <button class="action-btn" (click)="selectAllUpdateItems()">Select All (file-list)</button>
+                        <button class="action-btn" (click)="selectAllUpdateItems()">Select All {{
+                            updateDirectoryContents.length }} Items</button>
                         <div class="select-n-group">
                             <input type="number" min="0" [(ngModel)]="selectedCountInput">
-                            <button class="action-btn" (click)="selectTopNUpdateItems()">Select N (file-list)</button>
+                            <button class="action-btn" (click)="selectTopNUpdateItems()">Select N Items</button>
                         </div>
                         <button class="action-btn upgrade" (click)="searchSelectedItems()"
                             [disabled]="searchingUpdateSelections || selectedUpdateItemCount === 0">

@@ -607,6 +607,23 @@
     grid-template-columns: 320px minmax(0, 2fr) 56px;
     column-gap: 16px;
     align-items: flex-start;
+
+    position: relative;
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+}
+
+.file-card-container.single-column.update-mode-results .update-mode-slot:not(:last-child) .update-row::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(to right,
+            transparent,
+            rgba(255, 255, 255, 0.28),
+            transparent);
 }
 
 .update-source-card {
