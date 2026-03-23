@@ -412,28 +412,57 @@
                         </div>
                     </div>
 
-                    <div class="update-results-column" *ngIf="getUpdateResultsFor(item) as results">
-                        <ng-container *ngFor="let result of results">
-                            <div class="card-tile update-result-card" (contextmenu)="onFileRightClick(result, $event)">
-                                <label class="result-select-radio" (click)="$event.stopPropagation()">
+                    <div class="update-results-column" *ngIf="getUpdateResultsFor(item) as results"
+                        [style.--result-count]="results.length">
+
+                        <div class="update-result-stack-item" *ngFor="let result of results; let ri = index"
+                            [style.--stack-index]="ri"
+                            [class.active-badges]="getUpdateSelectedResultPath(getUpdateSourceKey(item)) === result.path">
+
+                            <div class="update-result-floating-badges">
+                                <label class="result-select-radio result-chip" (click)="$event.stopPropagation()">
                                     <input type="radio" [name]="'update-result-' + getUpdateSourceKey(item)"
                                         [checked]="getUpdateSelectedResultPath(getUpdateSourceKey(item)) === result.path"
                                         (click)="setUpdateSelectedResult(getUpdateSourceKey(item), result.path, $event)">
                                     Use this result
                                 </label>
+
+                                <div class="result-chip recommend-chip" *ngIf="isBaseModelMatch(item, result)">
+                                    Recommend: BaseModel Match
+                                </div>
+
+                                <div class="result-chip action-chip" *ngIf="getUpdateActionHint(item) as actionHint"
+                                    [class.upgrade]="getUpdateActionValue(item) === 'upgrade'"
+                                    [class.add]="getUpdateActionValue(item) === 'add'"
+                                    [class.delete]="getUpdateActionValue(item) === 'delete'">
+                                    {{ actionHint }}
+                                </div>
+                            </div>
+
+                            <div class="card-tile update-result-card" (contextmenu)="onFileRightClick(result, $event)">
                                 <div class="file-card search-result-card" (click)="onItemClick(result, $event, i)"
                                     (dblclick)="onItemDblClick(result)"
                                     [ngClass]="{ 'selected': isSelected(result), 'file': true }"
                                     [appLazyBg]="getCardBgUrl(result)">
-                                    <div class="badge top-left">ID: {{ result.scanData?.modelNumber }} / {{
-                                        result.scanData?.versionNumber }}</div>
-                                    <div class="badge top-right">{{ result.scanData?.baseModel || 'Unknown Base' }}
+
+                                    <div class="badge top-left">
+                                        ID: {{ result.scanData?.modelNumber }} / {{ result.scanData?.versionNumber }}
                                     </div>
+
+                                    <div class="badge top-right">
+                                        {{ result.scanData?.baseModel || 'Unknown Base' }}
+                                    </div>
+
                                     <div class="card-footer">
-                                        <div class="creator">{{ result.scanData?.creatorName || 'Unknown creator' }}
+                                        <div class="creator">
+                                            {{ result.scanData?.creatorName || 'Unknown creator' }}
                                         </div>
-                                        <div class="main-model">{{ result.scanData?.mainModelName ||
-                                            ($any(result).displayName || result.name) }}</div>
+
+                                        <div class="main-model">
+                                            {{ result.scanData?.mainModelName || ($any(result).displayName ||
+                                            result.name) }}
+                                        </div>
+
                                         <div class="base-model-match"
                                             *ngIf="item.scanData?.baseModel && result.scanData?.baseModel"
                                             [class.match]="item.scanData?.baseModel === result.scanData?.baseModel"
@@ -444,7 +473,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </ng-container>
+                        </div>
                     </div>
 
                     <div class="update-action-panel" (click)="$event.stopPropagation()">

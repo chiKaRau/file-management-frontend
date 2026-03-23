@@ -290,6 +290,30 @@ export class FileListComponent {
 
     return plan;
   }
+  isBaseModelMatch(source: any, result: any): boolean {
+    return !!source?.scanData?.baseModel &&
+      !!result?.scanData?.baseModel &&
+      source.scanData.baseModel === result.scanData.baseModel;
+  }
+
+  getUpdateActionValue(item: any): UpdateBatchAction {
+    return this.getUpdateSelectedAction(this.getUpdateSourceKey(item));
+  }
+
+  getUpdateActionHint(item: any): string {
+    const action = this.getUpdateActionValue(item);
+
+    switch (action) {
+      case 'upgrade':
+        return 'Will replace left update card into this location';
+      case 'add':
+        return 'Will add left update card to this location';
+      case 'delete':
+        return 'Will move this result card to Delete';
+      default:
+        return '';
+    }
+  }
 
   private syncUpdateResultState(): void {
     const nextResultState: Record<string, string | undefined> = {};
