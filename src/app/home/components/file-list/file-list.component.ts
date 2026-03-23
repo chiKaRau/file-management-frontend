@@ -36,9 +36,9 @@ export class FileListComponent {
 
     if (changes['updateResultBySourcePath']) {
       this.syncUpdateResultState();
+      this.syncUpdateResultPaginationState();
     }
   }
-
 
   scrollToSelected() {
     if (this.selectedItems.length === 1 && this.fileCards) {
@@ -87,6 +87,9 @@ export class FileListComponent {
 
   // Track the index of the last clicked item.
   lastSelectedIndex: number | null = null;
+
+  readonly updateResultPageSize = 2;
+  private updateResultPageBySource: Record<string, number> = {};
 
   onContainerClick(event: MouseEvent) {
     // If the click is directly on the container (and not on a child element), clear selection.
@@ -374,6 +377,68 @@ export class FileListComponent {
       return typeof first === 'string' ? first : first?.url ?? null;
     }
     return null;
+  }
+
+  getUpdateResultPage(sourceKey: string): number {
+    return this.updateResultPageBySource[sourceKey] ?? 0;
+  }
+
+  getUpdateResultTotalPages(item: DirectoryItem): number {
+    const total = this.getUpdateResultsFor(item).length;
+    return Math.max(1, Math.ceil(total / this.updateResultPageSize));
+  }
+
+  getPagedUpdateResultsFor(item: DirectoryItem): DirectoryItem[] {
+    const allResults = this.getUpdateResultsFor(item) ?? [];
+    const sourceKey = this.getUpdateSourceKey(item);
+    const totalPages = Math.max(1, Math.ceil(allResults.length / this.updateResultPageSize));
+    const page = Math.min(this.getUpdateResultPage(sourceKey), totalPages - 1);
+    const start = page * this.updateResultPageSize;
+
+    return allResults.slice(start, start + this.updateResultPageSize);
+  }
+
+  canGoToPrevUpdateResultPage(item: DirectoryItem): boolean {
+    return this.getUpdateResultPage(this.getUpdateSourceKey(item)) > 0;
+  }
+
+  canGoToNextUpdateResultPage(item: DirectoryItem): boolean {
+    return this.getUpdateResultPage(this.getUpdateSourceKey(item)) < this.getUpdateResultTotalPages(item) - 1;
+  }
+
+  goToPrevUpdateResultPage(item: DirectoryItem, event?: Event): void {
+    event?.stopPropagation();
+    const sourceKey = this.getUpdateSourceKey(item);
+    const current = this.getUpdateResultPage(sourceKey);
+
+    if (current > 0) {
+      this.updateResultPageBySource[sourceKey] = current - 1;
+    }
+  }
+
+  goToNextUpdateResultPage(item: DirectoryItem, event?: Event): void {
+    event?.stopPropagation();
+    const sourceKey = this.getUpdateSourceKey(item);
+    const current = this.getUpdateResultPage(sourceKey);
+    const totalPages = this.getUpdateResultTotalPages(item);
+
+    if (current < totalPages - 1) {
+      this.updateResultPageBySource[sourceKey] = current + 1;
+    }
+  }
+
+  private syncUpdateResultPaginationState(): void {
+    const nextState: Record<string, number> = {};
+
+    for (const sourceKey of Object.keys(this.updateResultBySourcePath ?? {})) {
+      const total = this.updateResultBySourcePath[sourceKey]?.length ?? 0;
+      const totalPages = Math.max(1, Math.ceil(total / this.updateResultPageSize));
+      const current = this.updateResultPageBySource[sourceKey] ?? 0;
+
+      nextState[sourceKey] = Math.min(current, totalPages - 1);
+    }
+
+    this.updateResultPageBySource = nextState;
   }
 
   /** For extraLarge background directive */
