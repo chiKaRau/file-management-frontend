@@ -1187,6 +1187,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   }
 
+  get plannedUpdateActionCount(): number {
+    return this.fileListComponent?.getUpdateBatchActionPlan?.().length ?? 0;
+  }
+
   mergeScannedModelsIntoDirectoryContents(scannedModels: any[]): void {
     // Index by "modelId_versionId" as strings to avoid 123 vs "123" mismatches
     const byKey = new Map<string, any>(

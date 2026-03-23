@@ -119,7 +119,8 @@
             (selectAllRequested)="onUpdateSelectAllRequested()"
             (selectTopNRequested)="onUpdateSelectTopNRequested($event)"
             (searchSelectedRequested)="onUpdateSearchSelectedRequested()"
-            (performActionsRequested)="onUpdatePerformActionsRequested()" (closed)="closeUpdateSidebar()">
+            (performActionsRequested)="onUpdatePerformActionsRequested()"
+            [plannedUpdateActionCount]="plannedUpdateActionCount" (closed)="closeUpdateSidebar()">
           </app-update-sidebar>
         </ng-container>
 

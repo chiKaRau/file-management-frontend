@@ -41,8 +41,9 @@
                             </p>
                         </div>
 
-                        <button class="action-btn add" (click)="performSelectedActions()">
-                            Perform Actions
+                        <button class="action-btn add" (click)="performSelectedActions()"
+                            [disabled]="plannedUpdateActionCount === 0">
+                            {{ performActionsButtonLabel }}
                         </button>
                     </div>
                 </section>

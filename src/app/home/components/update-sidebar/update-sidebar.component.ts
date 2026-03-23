@@ -45,6 +45,8 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
   @Input() updateSearchCurrentItemName: string = '';
   @Input() updateSearchProcessedCount: number = 0;
   @Input() updateSearchTotalCount: number = 0;
+  @Input() plannedUpdateActionCount: number = 0;
+
   @Output() closed = new EventEmitter<void>();
   @Output() selectAllRequested = new EventEmitter<void>();
   @Output() selectTopNRequested = new EventEmitter<number>();
@@ -137,6 +139,12 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
 
   searchSelectedItems(): void {
     this.searchSelectedRequested.emit();
+  }
+
+  get performActionsButtonLabel(): string {
+    return this.plannedUpdateActionCount > 0
+      ? `Perform Action for (${this.plannedUpdateActionCount}) Items`
+      : 'Perform Actions';
   }
 
   performSelectedActions(): void {

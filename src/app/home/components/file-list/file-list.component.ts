@@ -308,11 +308,11 @@ export class FileListComponent {
 
     switch (action) {
       case 'upgrade':
-        return 'Will replace left update card into this location';
+        return 'Will replace left Update Card into this Result Card';
       case 'add':
-        return 'Will add left update card to this location';
+        return 'Will add left Update Card to this Result Card location';
       case 'delete':
-        return 'Will move this result card to Delete';
+        return 'Will move this Result Card to Delete directory';
       default:
         return '';
     }
