@@ -88,7 +88,7 @@ export class FileListComponent {
   // Track the index of the last clicked item.
   lastSelectedIndex: number | null = null;
 
-  readonly updateResultPageSize = 2;
+  readonly updateResultPageSize = 5;
   private updateResultPageBySource: Record<string, number> = {};
 
   onContainerClick(event: MouseEvent) {
