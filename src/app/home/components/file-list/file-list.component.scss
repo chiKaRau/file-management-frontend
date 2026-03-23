@@ -599,6 +599,9 @@
 }
 
 .update-row {
+    --update-card-top-offset: 118px;
+    --update-top-space: 128px;
+
     width: 100%;
     display: grid;
     grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr) 56px;
@@ -608,6 +611,7 @@
 
 .update-source-card {
     justify-self: start;
+    margin-top: var(--update-card-top-offset);
 }
 
 .update-results-column {
@@ -622,7 +626,7 @@
     min-width: 0;
     overflow: visible;
 
-    padding-top: 128px; // was 92px
+    padding-top: var(--update-top-space);
     padding-bottom: 8px;
 
     width: calc(var(--stack-card-width) + (var(--result-count, 1) - 1) * var(--stack-expanded-offset));
@@ -631,7 +635,7 @@
 
 .update-result-stack-item {
     position: absolute;
-    top: 118px; // was 84px
+    top: var(--update-card-top-offset);
     left: 0;
     width: var(--stack-card-width);
     transform: translateX(calc(var(--stack-index) * var(--stack-collapsed-offset)));
