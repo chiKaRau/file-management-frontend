@@ -413,11 +413,17 @@
                     </div>
 
                     <div class="update-results-column" *ngIf="getUpdateResultsFor(item) as results"
-                        [style.--result-count]="results.length">
+                        [style.--result-count]="results.length"
+                        [style.--gap-count]="results.length > 1 ? results.length - 1 : 1">
 
                         <div class="update-result-stack-item" *ngFor="let result of results; let ri = index"
                             [style.--stack-index]="ri"
                             [class.active-badges]="getUpdateSelectedResultPath(getUpdateSourceKey(item)) === result.path">
+
+                            <div class="update-result-recommend-badge result-chip recommend-chip"
+                                *ngIf="isBaseModelMatch(item, result)">
+                                Recommend: BaseModel Match
+                            </div>
 
                             <div class="update-result-floating-badges">
                                 <label class="result-select-radio result-chip" (click)="$event.stopPropagation()">
@@ -426,10 +432,6 @@
                                         (click)="setUpdateSelectedResult(getUpdateSourceKey(item), result.path, $event)">
                                     Use this result
                                 </label>
-
-                                <div class="result-chip recommend-chip" *ngIf="isBaseModelMatch(item, result)">
-                                    Recommend: BaseModel Match
-                                </div>
 
                                 <div class="result-chip action-chip" *ngIf="getUpdateActionHint(item) as actionHint"
                                     [class.upgrade]="getUpdateActionValue(item) === 'upgrade'"

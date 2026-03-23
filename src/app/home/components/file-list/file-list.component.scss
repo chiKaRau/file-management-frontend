@@ -604,7 +604,7 @@
 
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr) 56px;
+    grid-template-columns: 320px minmax(0, 2fr) 56px;
     column-gap: 16px;
     align-items: flex-start;
 }
@@ -615,37 +615,44 @@
 }
 
 .update-results-column {
-    --stack-card-width: 300px;
-    --stack-card-height: 400px;
-    --stack-collapsed-offset: 56px;
-    --stack-expanded-offset: 132px;
+    --stack-card-width: 220px;
+    --stack-card-height: 300px;
+
+    --stack-collapsed-offset: clamp(34px, 3vw, 56px);
+    --stack-expanded-offset: clamp(90px, 12vw, 220px);
 
     position: relative;
     display: block;
-    justify-self: end;
+    justify-self: stretch;
+    width: 100%;
     min-width: 0;
     overflow: visible;
 
     padding-top: var(--update-top-space);
     padding-bottom: 8px;
-
-    width: calc(var(--stack-card-width) + (var(--result-count, 1) - 1) * var(--stack-expanded-offset));
     height: calc(var(--stack-card-height) + 136px);
 }
 
 .update-result-stack-item {
     position: absolute;
     top: var(--update-card-top-offset);
-    left: 0;
+    right: 0;
+    /* was left: 0 */
     width: var(--stack-card-width);
-    transform: translateX(calc(var(--stack-index) * var(--stack-collapsed-offset)));
+    transform: translateX(calc(var(--stack-index) * -1 * var(--stack-collapsed-offset)));
     transition: transform .22s ease, z-index .22s ease, filter .22s ease;
     z-index: calc(10 + var(--stack-index));
     overflow: visible;
 }
 
 .update-results-column:hover .update-result-stack-item {
-    transform: translateX(calc(var(--stack-index) * var(--stack-expanded-offset)));
+    transform: translateX(calc(var(--stack-index) * -1 * var(--stack-expanded-offset)));
+}
+
+.update-result-stack-item .card-tile,
+.update-result-stack-item .file-card {
+    width: var(--stack-card-width);
+    height: var(--stack-card-height);
 }
 
 .update-result-stack-item:hover {
@@ -657,10 +664,9 @@
     width: var(--stack-card-width);
 }
 
-/* centered badge group above card */
 .update-result-floating-badges {
     position: absolute;
-    top: -112px; // was -82px
+    top: -74px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -673,7 +679,6 @@
     transition: opacity .18s ease;
 }
 
-/* show only hovered card or selected-result card */
 .update-result-stack-item:hover .update-result-floating-badges,
 .update-result-stack-item.active-badges .update-result-floating-badges {
     opacity: 1;
@@ -706,6 +711,15 @@
 
 .result-select-radio input {
     margin: 0;
+}
+
+.update-result-recommend-badge {
+    position: absolute;
+    top: -112px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 35;
+    pointer-events: none;
 }
 
 .recommend-chip {
