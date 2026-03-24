@@ -6,35 +6,23 @@ import { Observable, Observer } from 'rxjs';
 import { PreferencesService } from '../../preferences/preferences.service';
 
 export interface SearchProgress {
-    progress: string;    // A message showing the current folder/file being processed
-    results: string[];   // Collected file paths matching the search criteria so far
+    progress: string;
+    results: string[];
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class SearchService {
-    // The root directory to scan (from user preferences)
     private scanDir: string;
 
     constructor(private zone: NgZone, private preferencesService: PreferencesService) {
         this.scanDir = this.preferencesService.scanDir;
     }
 
-    /**
-     * Normalizes a file's base name.
-     *
-     * If the file's base name ends with ".preview", remove that segment.
-     * For example:
-     *   "somefile.preview" becomes "somefile"
-     *   "somefile" remains "somefile"
-     *
-     * @param filePath Full file path.
-     * @returns Normalized base name.
-     */
     private normalizeBaseName(filePath: string): string {
         const parsed = path.parse(filePath);
-        let base = parsed.name; // e.g. "1208241_1360770_Illustrious_center-axis-relock-stance-illustriousxl-lora-nochekaiser.preview"
+        let base = parsed.name;
         const previewSuffix = '.preview';
         if (base.toLowerCase().endsWith(previewSuffix)) {
             base = base.substring(0, base.length - previewSuffix.length);
@@ -42,22 +30,6 @@ export class SearchService {
         return base;
     }
 
-    /**
-     * Recursively searches for files starting with "<modelId>_" (you can include versionId if needed).
-     * When a hintPath is provided, it builds candidate search roots:
-     *
-     *   1. First candidate: scanDir + hintPath (e.g. ...\ACG\Appearance\Mud)
-     *   2. Next candidate: its parent directory (e.g. ...\ACG\Appearance)
-     *   3. Finally: the full scanDir.
-     *
-     * It searches each candidate sequentially and stops as soon as any candidate returns a match.
-     *
-     * @param modelId The model ID to search for.
-     * @param versionId The version ID (currently unused in the prefix, but available).
-     * @param hintPath An optional hint path (relative) to narrow the search.
-     * @param ignorePath An optional full path of the selected file; any file whose normalized base name
-     *                   matches that of ignorePath will be skipped.
-     */
     searchByModelAndVersion(
         modelId: string,
         versionId: string,
@@ -65,15 +37,17 @@ export class SearchService {
         ignorePath?: string
     ): Observable<SearchProgress> {
         return new Observable((observer: Observer<SearchProgress>) => {
-            // --- Config: levels ---
+            let cancelled = false;
+
             const maxLevelsRaw = Number(this.preferencesService.searchLevels);
             const maxLevels = (!isNaN(maxLevelsRaw) && maxLevelsRaw > 0) ? maxLevelsRaw : 999;
 
-            // --- Build candidate roots (deep → shallow), capped by levels ---
+            // Build candidate roots exactly like before: deep -> shallow, capped by levels
             let candidateRoots: string[] = [];
             if (hintPath) {
                 let candidate = path.join(this.scanDir, hintPath);
                 let levels = 0;
+
                 while (candidate && candidate.startsWith(this.scanDir) && levels < maxLevels) {
                     candidateRoots.push(candidate);
                     levels++;
@@ -84,15 +58,19 @@ export class SearchService {
                 candidateRoots = [this.scanDir];
             }
 
-            // --- Helpers ---
             const exists = (p: string) => {
-                try { return fs.existsSync(p); } catch { return false; }
+                try {
+                    return fs.existsSync(p);
+                } catch {
+                    return false;
+                }
             };
+
             const SEP = path.sep;
             const norm = (p: string) => path.resolve(p).toLowerCase().replace(/[\\/]+/g, SEP);
             const startsWithin = (dir: string, root: string) => {
-                // true if dir === root OR dir is inside root
-                const d = norm(dir), r = norm(root);
+                const d = norm(dir);
+                const r = norm(root);
                 return d === r || d.startsWith(r + SEP);
             };
 
@@ -109,40 +87,77 @@ export class SearchService {
 
             console.log('Candidate roots (existing):', candidateRoots);
 
-            // Prepare ignore (exact path equality)
             const ignoreAbs = ignorePath ? path.resolve(ignorePath) : null;
 
-            // --- Aggregated (cross-level) results ---
+            // Same aggregated cross-level results as before
             const aggregatedSet = new Set<string>();
             const aggregatedArr = () => Array.from(aggregatedSet);
 
-            // Previously scanned roots (to prune when scanning a parent)
+            // Previously scanned roots; parents skip already-scanned subtrees
             const scannedRootsNorm: string[] = [];
 
-            const emit = (progress: string) => {
-                this.zone.run(() => {
-                    observer.next({ progress, results: aggregatedArr() });
-                });
+            // Throttled progress emission to reduce Angular churn
+            let lastProgress = 'Preparing search...';
+            let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+            const flushProgress = (force = false) => {
+                if (cancelled) return;
+
+                if (force) {
+                    if (flushTimer) {
+                        clearTimeout(flushTimer);
+                        flushTimer = null;
+                    }
+                    this.zone.run(() => {
+                        observer.next({ progress: lastProgress, results: aggregatedArr() });
+                    });
+                    return;
+                }
+
+                if (flushTimer) return;
+
+                flushTimer = setTimeout(() => {
+                    flushTimer = null;
+                    if (cancelled) return;
+                    this.zone.run(() => {
+                        observer.next({ progress: lastProgress, results: aggregatedArr() });
+                    });
+                }, 150);
             };
 
-            // Recursive walker that skips excluded subtrees and aggregates matches
+            const emit = (progress: string, force = false) => {
+                lastProgress = progress;
+                flushProgress(force);
+            };
+
             const searchCandidate = (root: string, excludeRootsNorm: string[]): Promise<void> => {
                 return new Promise((resolve) => {
                     let pending = 0;
+                    let scannedDirCount = 0;
 
                     const shouldSkipDir = (dir: string) =>
                         excludeRootsNorm.some(ex => startsWithin(dir, ex));
 
                     const searchDirectory = (dir: string) => {
-                        // Prune directories that are inside already-scanned roots
+                        if (cancelled) return;
                         if (shouldSkipDir(dir)) return;
 
                         pending++;
-                        emit(`Scanning directory: ${dir}`);
+                        scannedDirCount++;
+
+                        // Emit directory progress only occasionally
+                        if (scannedDirCount === 1 || scannedDirCount % 25 === 0) {
+                            emit(`Scanning directory: ${dir}`);
+                        }
 
                         fs.readdir(dir, { withFileTypes: true }, (err, entries) => {
+                            if (cancelled) {
+                                pending--;
+                                if (pending === 0) resolve();
+                                return;
+                            }
+
                             if (err) {
-                                // Soft-ignore common transient/permission errors
                                 if (err.code !== 'ENOENT' && err.code !== 'EACCES' && err.code !== 'EPERM') {
                                     console.error('Error reading directory:', dir, err);
                                 }
@@ -152,6 +167,8 @@ export class SearchService {
                             }
 
                             for (const entry of entries) {
+                                if (cancelled) break;
+
                                 const fullPath = path.join(dir, entry.name);
 
                                 if (ignoreAbs && path.resolve(fullPath) === ignoreAbs) {
@@ -159,18 +176,18 @@ export class SearchService {
                                 }
 
                                 if (entry.isDirectory()) {
-                                    // Skip excluded subtrees
                                     if (!shouldSkipDir(fullPath)) {
                                         searchDirectory(fullPath);
                                     }
                                 } else {
-                                    emit(`Processing file: ${fullPath}`);
                                     const prefix = `${modelId}_`;
+
                                     if (entry.name.startsWith(prefix)) {
                                         const abs = path.resolve(fullPath);
                                         if (!aggregatedSet.has(abs)) {
                                             aggregatedSet.add(abs);
-                                            emit(`Matched file: ${fullPath}`);
+                                            // Force immediate update when a new match is found
+                                            emit(`Matched file: ${fullPath}`, true);
                                         }
                                     }
                                 }
@@ -181,30 +198,49 @@ export class SearchService {
                         });
                     };
 
-                    // Kick off
                     searchDirectory(root);
                 });
             };
 
-            // --- Run: scan every candidate (up to cap), aggregate results, then complete ---
             const run = async () => {
                 for (const root of candidateRoots) {
-                    if (!exists(root)) { emit(`Skipping missing: ${root}`); continue; }
-                    emit(`Searching in ${root}`);
+                    if (cancelled) return;
+
+                    if (!exists(root)) {
+                        emit(`Skipping missing: ${root}`, true);
+                        continue;
+                    }
+
+                    emit(`Searching in ${root}`, true);
                     await searchCandidate(root, scannedRootsNorm);
-                    // Mark this root as scanned, so parents skip it as a subtree
+
+                    // Same logic as before: mark root scanned so parents skip it
                     scannedRootsNorm.push(norm(root));
                 }
+
+                if (cancelled) return;
+
+                emit('Search finished for all levels.', true);
                 this.zone.run(() => {
-                    observer.next({ progress: 'Search finished for all levels.', results: aggregatedArr() });
                     observer.complete();
                 });
             };
 
-            run().catch(err => observer.error(err));
+            this.zone.runOutsideAngular(() => {
+                run().catch(err => {
+                    this.zone.run(() => observer.error(err));
+                });
+            });
+
+            return () => {
+                cancelled = true;
+                if (flushTimer) {
+                    clearTimeout(flushTimer);
+                    flushTimer = null;
+                }
+            };
         });
     }
-
 
     updateScanDir(newDir: string): void {
         this.scanDir = newDir;
