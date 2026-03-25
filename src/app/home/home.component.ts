@@ -90,6 +90,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private readonly FS_LOAD_BATCH_SIZE = 200;
   private readonly FS_SYNC_BATCH_SIZE = 150;
   private readonly FS_UI_FLUSH_EVERY = 2;
+  private readonly FS_METADATA_CONCURRENCY = 12;
+  private readonly FS_PROGRESS_UI_INTERVAL_MS = 250;
+  private readonly FS_PROGRESS_LOG_EVERY = 25;
 
   private currentFsLoadToken = 0;
   private activeFsSyncQueue: Promise<void> = Promise.resolve();
@@ -719,6 +722,65 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private async processEntriesWithProgress<T>(
+    entries: fs.Dirent[],
+    loadToken: number,
+    directoryPath: string,
+    alreadyProcessed: number,
+    grandTotal: number,
+    phaseLabel: string,
+    processor: (entry: fs.Dirent) => Promise<T | null>
+  ): Promise<T[]> {
+    const results: Array<{ index: number; value: T }> = [];
+    let nextIndex = 0;
+    let processedInThisBatch = 0;
+    let lastUiUpdateAt = 0;
+
+    const publishProgress = (force = false) => {
+      const now = Date.now();
+      if (!force && now - lastUiUpdateAt < this.FS_PROGRESS_UI_INTERVAL_MS) return;
+      lastUiUpdateAt = now;
+
+      const totalDone = alreadyProcessed + processedInThisBatch;
+
+      this.ngZone.run(() => {
+        if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+        this.fsLoadedCount = totalDone;
+        this.fsPhaseMessage = `${phaseLabel} ${totalDone.toLocaleString()} / ${grandTotal.toLocaleString()}`;
+        this.cdr.detectChanges();
+      });
+
+      if (force || totalDone % this.FS_PROGRESS_LOG_EVERY === 0) {
+        console.log(`[FS load] ${phaseLabel} ${totalDone}/${grandTotal} for ${directoryPath}`);
+      }
+    };
+
+    const worker = async () => {
+      while (true) {
+        const index = nextIndex++;
+        if (index >= entries.length) return;
+
+        const value = await processor(entries[index]);
+        if (value != null) {
+          results.push({ index, value });
+        }
+
+        processedInThisBatch++;
+        publishProgress();
+      }
+    };
+
+    const concurrency = Math.min(this.FS_METADATA_CONCURRENCY, entries.length);
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+    publishProgress(true);
+
+    return results
+      .sort((a, b) => a.index - b.index)
+      .map(x => x.value);
+  }
+
   private preserveExistingScanData(items: DirectoryItem[]): DirectoryItem[] {
     const existingByPath = new Map<string, any>();
 
@@ -881,6 +943,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
         this.fsSyncTotalCount = 0;
 
         this.recomputeRenderItems();
+
+        this.fsPhaseMessage = `Preparing file metadata... 0 / ${entries.length.toLocaleString()}`;
       });
 
       await this.recycleService.loadRecords();
@@ -907,8 +971,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
           const chunk = entries.slice(i, i + this.FS_LOAD_BATCH_SIZE);
 
-          const chunkItems = await Promise.all(
-            chunk.map(entry => this.mapNormalFsEntry(entry, directoryPath, isFileDeleted))
+          const chunkItems = await this.processEntriesWithProgress(
+            chunk,
+            loadToken,
+            directoryPath,
+            i,
+            entries.length,
+            'Reading file metadata...',
+            (entry) => this.mapNormalFsEntry(entry, directoryPath, isFileDeleted)
           );
 
           if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
@@ -968,58 +1038,113 @@ export class HomeComponent implements OnInit, AfterViewInit {
           modifiedAt?: Date;
         }>();
 
-        await Promise.all(
-          entries.map(async entry => {
-            const file = entry.name;
-            const fullPath = path.join(directoryPath, file);
-            try {
-              const stats = await fs.promises.stat(fullPath);
-              if (entry.isDirectory()) {
-                let count = 0;
-                try {
-                  const kids = await fs.promises.readdir(fullPath);
-                  count = kids.length;
-                } catch { }
+        type CivitaiEntryResult = {
+          dirItem?: DirectoryItem;
+          filePath?: string;
+          prefix?: string;
+          size?: number;
+          createdAt?: Date;
+          modifiedAt?: Date;
+          isPreview?: boolean;
+        };
 
-                directories.push({
-                  name: file,
-                  path: fullPath,
-                  isFile: false,
-                  isDirectory: true,
-                  isDeleted: isFileDeleted(fullPath),
-                  size: undefined,
+        for (let i = 0; i < entries.length; i += this.FS_LOAD_BATCH_SIZE) {
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+          const chunk = entries.slice(i, i + this.FS_LOAD_BATCH_SIZE);
+
+          const chunkResults = await this.processEntriesWithProgress<CivitaiEntryResult>(
+            chunk,
+            loadToken,
+            directoryPath,
+            i,
+            entries.length,
+            'Building grouped item list...',
+            async (entry) => {
+              const file = entry.name;
+              const fullPath = path.join(directoryPath, file);
+
+              try {
+                const stats = await fs.promises.stat(fullPath);
+
+                if (entry.isDirectory()) {
+                  let count = 0;
+                  try {
+                    const kids = await fs.promises.readdir(fullPath);
+                    count = kids.length;
+                  } catch { }
+
+                  return {
+                    dirItem: {
+                      name: file,
+                      path: fullPath,
+                      isFile: false,
+                      isDirectory: true,
+                      isDeleted: isFileDeleted(fullPath),
+                      size: undefined,
+                      createdAt: this.getCreatedTime(stats),
+                      modifiedAt: stats.mtime,
+                      childCount: count,
+                      isEmpty: count === 0,
+                    } as DirectoryItem
+                  };
+                }
+
+                const prefix = this.getCivitaiPrefix(file);
+                if (!prefix) return null;
+
+                return {
+                  prefix,
+                  filePath: fullPath,
+                  size: stats.size,
                   createdAt: this.getCreatedTime(stats),
                   modifiedAt: stats.mtime,
-                  childCount: count,
-                  isEmpty: count === 0,
-                });
-              } else {
-                const prefix = this.getCivitaiPrefix(file);
-                if (!prefix) return;
-
-                if (!groupMap.has(prefix)) {
-                  groupMap.set(prefix, { allFiles: [] as string[], totalSize: 0 });
-                }
-
-                const group = groupMap.get(prefix)!;
-                group.allFiles.push(fullPath);
-                group.totalSize += stats.size;
-
-                const created = this.getCreatedTime(stats);
-                const modified = stats.mtime;
-
-                group.createdAt = group.createdAt ? (created < group.createdAt ? created : group.createdAt) : created;
-                group.modifiedAt = group.modifiedAt ? (modified > group.modifiedAt ? modified : group.modifiedAt) : modified;
-
-                if (file.endsWith('.preview.png')) {
-                  groupMap.get(prefix)!.previewPath = fullPath;
-                }
+                  isPreview: file.endsWith('.preview.png')
+                };
+              } catch (err) {
+                console.error(`Error stating file ${fullPath}:`, err);
+                return null;
               }
-            } catch (err) {
-              console.error(`Error stating file ${fullPath}:`, err);
             }
-          })
-        );
+          );
+
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+          for (const result of chunkResults) {
+            if (result.dirItem) {
+              directories.push(result.dirItem);
+              continue;
+            }
+
+            if (!result.prefix || !result.filePath) continue;
+
+            if (!groupMap.has(result.prefix)) {
+              groupMap.set(result.prefix, { allFiles: [], totalSize: 0 });
+            }
+
+            const group = groupMap.get(result.prefix)!;
+            group.allFiles.push(result.filePath);
+            group.totalSize += result.size ?? 0;
+
+            if (result.createdAt) {
+              group.createdAt = group.createdAt
+                ? (result.createdAt < group.createdAt ? result.createdAt : group.createdAt)
+                : result.createdAt;
+            }
+
+            if (result.modifiedAt) {
+              group.modifiedAt = group.modifiedAt
+                ? (result.modifiedAt > group.modifiedAt ? result.modifiedAt : group.modifiedAt)
+                : result.modifiedAt;
+            }
+
+            if (result.isPreview) {
+              group.previewPath = result.filePath;
+            }
+          }
+
+          await this.yieldToUi();
+        }
 
         const groupedItems: DirectoryItem[] = [];
         groupMap.forEach((group) => {
