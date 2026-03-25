@@ -336,3 +336,43 @@
     color: var(--text);
     font-weight: 600;
 }
+
+.floating-status-stack {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--statusbar-h, 28px) + 12px);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: min(700px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.floating-status {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    box-shadow: 0 8px 24px var(--shadow);
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.35;
+    max-width: 100%;
+    white-space: normal;
+    pointer-events: none;
+}
+
+.floating-status.loading {
+    color: var(--text-muted);
+}
+
+.floating-status.info {
+    color: var(--info);
+}
+
+.floating-status.error {
+    color: var(--danger);
+}

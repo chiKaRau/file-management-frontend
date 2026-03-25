@@ -53,21 +53,8 @@
       <!-- File list panel -->
       <!-- Note: Added (contextmenu)="onEmptyAreaRightClick($event)" here -->
       <div class="file-list-container" #scrollRoot>
-        <div *ngIf="isLoading" class="loading">
-          Loading files...
-        </div>
 
-        <div *ngIf="infoMessage" class="info">
-          {{ infoMessage }}
-        </div>
-
-        <div *ngIf="isPreloadComplete" class="update-overlay">
-          <div class="update-message">
-            Preloading, please wait...
-          </div>
-        </div>
-
-        <div *ngIf="!isLoading && selectedDirectory">
+        <div *ngIf="selectedDirectory && (dataSource.readOnly ? !isLoading : true)">
           <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
 
           <!-- Banner for deep-search results -->
@@ -145,7 +132,33 @@
     </div>
   </div>
 
-  <!-- Fixed status bar sized to the middle column -->
+  <div class="floating-status-stack">
+    <div *ngIf="isLoading && dataSource.readOnly" class="floating-status loading">
+      Loading files...
+    </div>
+
+    <div *ngIf="(isFsListingInProgress || isFsBackgroundSyncInProgress) && !dataSource.readOnly"
+      class="floating-status loading">
+      <div>{{ fsPhaseMessage || 'Working...' }}</div>
+
+      <div *ngIf="isFsListingInProgress">
+        Loaded {{ fsLoadedCount | number }} / {{ fsTotalCount | number }}
+      </div>
+
+      <div *ngIf="isFsBackgroundSyncInProgress">
+        Synced {{ fsSyncedCount | number }} / {{ fsSyncTotalCount | number }}
+      </div>
+    </div>
+
+    <div *ngIf="infoMessage" class="floating-status info">
+      {{ infoMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="floating-status error">
+      {{ errorMessage }}
+    </div>
+  </div>
+
   <!-- Fixed status bar sized to the middle column -->
   <div class="list-status-bar fixed" #statusBar [class.stacked]="isReadOnly || searchTerm">
     <div class="left">

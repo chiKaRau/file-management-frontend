@@ -87,6 +87,22 @@ export class HomeComponent implements OnInit, AfterViewInit {
   private typeaheadTimer: any = null;
   private typeaheadTimeout = 1000; // in milliseconds
 
+  private readonly FS_LOAD_BATCH_SIZE = 200;
+  private readonly FS_SYNC_BATCH_SIZE = 150;
+  private readonly FS_UI_FLUSH_EVERY = 2;
+
+  private currentFsLoadToken = 0;
+  private activeFsSyncQueue: Promise<void> = Promise.resolve();
+  private syncedFsKeys = new Set<string>();
+
+  isFsListingInProgress = false;
+  isFsBackgroundSyncInProgress = false;
+  fsLoadedCount = 0;
+  fsTotalCount = 0;
+  fsSyncedCount = 0;
+  fsSyncTotalCount = 0;
+  fsPhaseMessage = '';
+
   // Add a property to store the scan result if needed:
   scannedModels: any[] = [];
 
@@ -290,14 +306,19 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   private resetWindow() {
     if (this.isReadOnly) {
-      // Virtual (DB) mode: always show everything we’ve loaded so far
       this.visibleCount = this.renderItems.length;
       return;
     }
 
-    // FS mode: keep client-side windowing
-    this.visibleCount = this.PAGE_SIZE;
-    if (this.renderItems.length <= this.visibleCount) return;
+    if (!this.renderItems.length) {
+      this.visibleCount = this.PAGE_SIZE;
+      return;
+    }
+
+    this.visibleCount = Math.min(
+      Math.max(this.visibleCount, this.PAGE_SIZE),
+      this.renderItems.length
+    );
   }
 
 
@@ -611,106 +632,333 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // 1) Your original logic, unchanged—just renamed.
-  private async loadFromFilesystem(directoryPath: string) {
-    try {
+  private yieldToUi(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
 
+  private isCurrentFsLoad(token: number, expectedDirectory?: string | null): boolean {
+    return token === this.currentFsLoadToken
+      && (!expectedDirectory || this.selectedDirectory === expectedDirectory);
+  }
+
+  private getModelVersionKeyFromItem(item: DirectoryItem): string | null {
+    if (item.isDirectory || !item.name?.includes('_')) return null;
+
+    const parts = item.name.split('_');
+    if (parts.length < 2) return null;
+
+    const modelID = parts[0];
+    const versionID = parts[1];
+
+    if (!modelID || !versionID) return null;
+    return `${modelID}_${versionID}`;
+  }
+
+  private buildModelVersionPayload(items: DirectoryItem[]): { modelID: string; versionID: string }[] {
+    const map = new Map<string, { modelID: string; versionID: string }>();
+
+    for (const item of items) {
+      const key = this.getModelVersionKeyFromItem(item);
+      if (!key) continue;
+
+      const [modelID, versionID] = key.split('_');
+      if (!map.has(key)) {
+        map.set(key, { modelID, versionID });
+      }
+    }
+
+    return Array.from(map.values());
+  }
+
+  private async mapNormalFsEntry(
+    entry: fs.Dirent,
+    directoryPath: string,
+    isFileDeleted: (fullPath: string) => boolean
+  ): Promise<DirectoryItem | null> {
+    const fullPath = path.join(directoryPath, entry.name);
+
+    try {
+      const stats = await fs.promises.stat(fullPath);
+
+      if (entry.isDirectory()) {
+        let count = 0;
+        try {
+          const kids = await fs.promises.readdir(fullPath);
+          count = kids.length;
+        } catch {
+          // ignore child count failures
+        }
+
+        return {
+          name: entry.name,
+          path: fullPath,
+          isFile: false,
+          isDirectory: true,
+          isDeleted: isFileDeleted(fullPath),
+          size: undefined,
+          createdAt: this.getCreatedTime(stats),
+          modifiedAt: stats.mtime,
+          childCount: count,
+          isEmpty: count === 0,
+        } as DirectoryItem;
+      }
+
+      return {
+        name: entry.name,
+        path: fullPath,
+        isFile: true,
+        isDirectory: false,
+        isDeleted: isFileDeleted(fullPath),
+        size: stats.size,
+        createdAt: this.getCreatedTime(stats),
+        modifiedAt: stats.mtime
+      } as DirectoryItem;
+    } catch (err) {
+      console.error(`Error stating file ${fullPath}:`, err);
+      return null;
+    }
+  }
+
+  private preserveExistingScanData(items: DirectoryItem[]): DirectoryItem[] {
+    const existingByPath = new Map<string, any>();
+
+    for (const item of this.directoryContents ?? []) {
+      const scanData = (item as any).scanData;
+      if (scanData) {
+        existingByPath.set(item.path, scanData);
+      }
+    }
+
+    return items.map(item => {
+      const existingScanData = existingByPath.get(item.path);
+      if (!existingScanData) return item;
+
+      return {
+        ...item,
+        scanData: existingScanData
+      } as DirectoryItem;
+    });
+  }
+
+  private queueFsChunkSync(chunkItems: DirectoryItem[], token: number, localPath: string): void {
+    if (this.isUpdateModeActive()) return;
+
+    const allPairs = this.buildModelVersionPayload(chunkItems);
+    if (!allPairs.length) return;
+
+    // Prevent duplicate model/version sync across chunks for the same load
+    const pairs = allPairs.filter(p => {
+      const key = `${p.modelID}_${p.versionID}`;
+      if (this.syncedFsKeys.has(key)) return false;
+      this.syncedFsKeys.add(key);
+      return true;
+    });
+
+    if (!pairs.length) return;
+
+    this.fsSyncTotalCount += pairs.length;
+    this.isFsBackgroundSyncInProgress = true;
+
+    this.fsPhaseMessage = 'Syncing scan data...';
+    console.log(`[FS sync] queued ${pairs.length} pairs for ${localPath}`);
+
+    this.activeFsSyncQueue = this.activeFsSyncQueue
+      .then(async () => {
+        if (!this.isCurrentFsLoad(token, localPath)) return;
+
+        // update-local-path for this chunk
+        if (this.explorerState.updateLocalPathEnabled) {
+          try {
+            await firstValueFrom(
+              this.http.post('http://localhost:3000/api/update-local-path', {
+                fileArray: pairs,
+                localPath
+              })
+            );
+          } catch (err) {
+            console.error('Chunk update-local-path failed:', err);
+          }
+        }
+
+        if (!this.isCurrentFsLoad(token, localPath)) return;
+
+        console.log(`[FS sync] sending ${pairs.length} pairs to /scan-local-files`);
+
+        // scan-local-files for this chunk
+        try {
+          const response: any = await firstValueFrom(
+            this.http.post('http://localhost:3000/api/scan-local-files', {
+              compositeList: pairs
+            })
+          );
+
+          if (!this.isCurrentFsLoad(token, localPath)) return;
+
+          const scannedData = response?.payload?.modelsList ?? [];
+
+          this.ngZone.run(() => {
+            if (!this.isCurrentFsLoad(token, localPath)) return;
+
+            this.mergeScannedModelsIntoDirectoryContents(scannedData);
+            this.fsSyncedCount += pairs.length;
+            this.fsPhaseMessage = `Syncing scan data... ${this.fsSyncedCount} / ${this.fsSyncTotalCount}`;
+            console.log(`[FS sync] completed ${this.fsSyncedCount}/${this.fsSyncTotalCount} pairs`);
+            this.recomputeRenderItems();
+            this.cdr.detectChanges();
+          });
+        } catch (err) {
+          console.error('Chunk scan-local-files failed:', err);
+        }
+      })
+      .catch(err => {
+        console.error('Chunk sync queue error:', err);
+      });
+  }
+
+  private async loadFromFilesystem(directoryPath: string) {
+    const loadToken = ++this.currentFsLoadToken;
+
+    try {
       if (this.isUpdateModeActive()) {
         await this.loadUpdateDirectoryContents(directoryPath);
         return;
       }
 
-      // Read the directory asynchronously.
-      const files = await fs.promises.readdir(directoryPath);
+      const entries = await fs.promises.readdir(directoryPath, { withFileTypes: true });
 
-      // If the directory is empty, update the UI to show it is empty.
-      if (files.length === 0) {
+      if (!this.isCurrentFsLoad(loadToken, directoryPath) && this.selectedDirectory !== directoryPath) {
+        // continue; selectedDirectory may not be set yet on first load
+      }
+
+      if (entries.length === 0) {
         this.ngZone.run(() => {
-          this.selectedDirectory = directoryPath;                 // point UI at the empty folder
+          if (loadToken !== this.currentFsLoadToken) return;
+
+          this.visibleCount = this.PAGE_SIZE;
+          this.selectedDirectory = directoryPath;
           this.directoryContents = [];
-          this.selectedFile = null;                                // clear any previous selection/sidebars
+          this.selectedFile = null;
           this.selectedFiles = [];
           this.contextFile = null;
 
           this.errorMessage = 'The selected directory is empty.';
           this.infoMessage = null;
 
-          this.recomputeRenderItems();                             // <- ensure visibleItems becomes []
+          this.isFsListingInProgress = false;
+          this.isFsBackgroundSyncInProgress = false;
+          this.fsLoadedCount = 0;
+          this.fsTotalCount = 0;
+          this.fsSyncedCount = 0;
+          this.fsSyncTotalCount = 0;
+          this.fsPhaseMessage = `Reading folder entries... 0 / ${entries.length}`;
+
+          this.recomputeRenderItems();
           this.isLoading = false;
         });
         return;
       }
 
-      // Set the selected directory.
+      this.activeFsSyncQueue = Promise.resolve();
+      this.syncedFsKeys.clear();
+
       this.ngZone.run(() => {
+        if (loadToken !== this.currentFsLoadToken) return;
+
         this.selectedDirectory = directoryPath;
+        this.directoryContents = [];
+        this.selectedFile = null;
+        this.selectedFiles = [];
+        this.contextFile = null;
+
         this.errorMessage = null;
+        this.infoMessage = null;
+
+        this.isFsListingInProgress = true;
+        this.isFsBackgroundSyncInProgress = false;
+        this.fsLoadedCount = 0;
+        this.fsTotalCount = entries.length;
+        this.fsSyncedCount = 0;
+        this.fsSyncTotalCount = 0;
+
+        this.recomputeRenderItems();
       });
 
-      // Load recycle records.
       await this.recycleService.loadRecords();
-      const recycleRecords = this.recycleService.getRecords();
+      if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
 
-      // Helper function to check if a file is marked as deleted.
+      const recycleRecords = this.recycleService.getRecords();
       const isFileDeleted = (fullPath: string): boolean =>
         recycleRecords.some(record => record.files.includes(fullPath));
 
+      // These only depend on the directory path, so they can run early.
+      this.updateVisitedPath();
+      this.fetchVisitedChildren();
+
       if (!this.explorerState.enableCivitaiMode) {
-        // Normal mode: Process all files with proper error handling.
-        const fileItems = await Promise.all(
-          files.map(async file => {
-            const fullPath = path.join(directoryPath, file);
-            try {
-              const stats = await fs.promises.stat(fullPath);
+        const progressiveItems: DirectoryItem[] = [];
+        let flushCounter = 0;
 
-              if (stats.isDirectory()) {
-                // 🔽 NEW: compute children count
-                let count = 0;
-                try {
-                  const kids = await fs.promises.readdir(fullPath);
-                  count = kids.length; // (or filter hidden/system if you want)
-                } catch { /* ignore */ }
+        for (let i = 0; i < entries.length; i += this.FS_LOAD_BATCH_SIZE) {
+          const chunkIndex = Math.floor(i / this.FS_LOAD_BATCH_SIZE) + 1;
+          const totalChunks = Math.ceil(entries.length / this.FS_LOAD_BATCH_SIZE);
+          console.log(`[FS load] starting chunk ${chunkIndex}/${totalChunks} for ${directoryPath}`);
 
-                return {
-                  name: file,
-                  path: fullPath,
-                  isFile: false,
-                  isDirectory: true,
-                  isDeleted: isFileDeleted(fullPath),
-                  size: undefined,
-                  createdAt: this.getCreatedTime(stats),
-                  modifiedAt: stats.mtime,
-                  childCount: count,
-                  isEmpty: count === 0,
-                } as DirectoryItem;
-              }
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
 
-              // files unchanged
-              return {
-                name: file,
-                path: fullPath,
-                isFile: true,
-                isDirectory: false,
-                isDeleted: isFileDeleted(fullPath),
-                size: stats.size,
-                createdAt: this.getCreatedTime(stats),
-                modifiedAt: stats.mtime
-              } as DirectoryItem;
-            } catch (statErr) {
-              console.error(`Error stating file ${fullPath}:`, statErr);
-              return null;
-            }
-          })
-        );
+          const chunk = entries.slice(i, i + this.FS_LOAD_BATCH_SIZE);
+
+          const chunkItems = await Promise.all(
+            chunk.map(entry => this.mapNormalFsEntry(entry, directoryPath, isFileDeleted))
+          );
+
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+          const validChunk = chunkItems.filter(Boolean) as DirectoryItem[];
+          progressiveItems.push(...validChunk);
+
+          // Queue backend sync for a smaller batch
+          for (let j = 0; j < validChunk.length; j += this.FS_SYNC_BATCH_SIZE) {
+            const syncChunk = validChunk.slice(j, j + this.FS_SYNC_BATCH_SIZE);
+            this.queueFsChunkSync(syncChunk, loadToken, directoryPath);
+          }
+
+          flushCounter++;
+          const loadedSoFar = Math.min(i + chunk.length, entries.length);
+          const isLastChunk = loadedSoFar >= entries.length;
+
+          if (flushCounter >= this.FS_UI_FLUSH_EVERY || isLastChunk) {
+            this.ngZone.run(() => {
+              if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+              this.directoryContents = this.preserveExistingScanData([...progressiveItems]);
+              this.fsLoadedCount = loadedSoFar;
+              this.fsPhaseMessage = `Reading metadata chunk ${chunkIndex} / ${totalChunks}... ${loadedSoFar} / ${entries.length}`;
+              this.recomputeRenderItems();
+            });
+
+            console.log(`[FS load] finished chunk ${chunkIndex}/${totalChunks}. Loaded ${loadedSoFar}/${entries.length}`);
+
+            flushCounter = 0;
+            await this.yieldToUi();
+          }
+        }
+
+        await this.activeFsSyncQueue;
 
         this.ngZone.run(() => {
-          this.directoryContents = fileItems.filter(item => item !== null) as DirectoryItem[];
-          this.isLoading = false;
-          this.recomputeRenderItems();
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
 
+          this.directoryContents = this.preserveExistingScanData([...progressiveItems]);
+          this.fsLoadedCount = this.fsTotalCount;
+          this.isFsListingInProgress = false;
+          this.isFsBackgroundSyncInProgress = false;
+          this.isLoading = false;
+          this.fsPhaseMessage = '';
+          console.log(`[FS load] completed for ${directoryPath}`);
+          this.recomputeRenderItems();
         });
       } else {
-        // Civitai Mode: Group files based on naming patterns.
+        // Leave your current Civitai-mode branch as-is for now
         const directories: DirectoryItem[] = [];
         const groupMap = new Map<string, {
           allFiles: string[];
@@ -720,13 +968,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
           modifiedAt?: Date;
         }>();
 
-        // Process each file asynchronously.
         await Promise.all(
-          files.map(async file => {
+          entries.map(async entry => {
+            const file = entry.name;
             const fullPath = path.join(directoryPath, file);
             try {
               const stats = await fs.promises.stat(fullPath);
-              if (stats.isDirectory()) {
+              if (entry.isDirectory()) {
                 let count = 0;
                 try {
                   const kids = await fs.promises.readdir(fullPath);
@@ -746,12 +994,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
                   isEmpty: count === 0,
                 });
               } else {
-                // Get prefix based on naming convention (e.g., "123_456_SDXL_myModel")
                 const prefix = this.getCivitaiPrefix(file);
                 if (!prefix) return;
+
                 if (!groupMap.has(prefix)) {
                   groupMap.set(prefix, { allFiles: [] as string[], totalSize: 0 });
                 }
+
                 const group = groupMap.get(prefix)!;
                 group.allFiles.push(fullPath);
                 group.totalSize += stats.size;
@@ -762,7 +1011,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
                 group.createdAt = group.createdAt ? (created < group.createdAt ? created : group.createdAt) : created;
                 group.modifiedAt = group.modifiedAt ? (modified > group.modifiedAt ? modified : group.modifiedAt) : modified;
 
-                // If this file is a preview image, record its path.
                 if (file.endsWith('.preview.png')) {
                   groupMap.get(prefix)!.previewPath = fullPath;
                 }
@@ -773,7 +1021,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
           })
         );
 
-        // Build grouped items only if a preview exists.
         const groupedItems: DirectoryItem[] = [];
         groupMap.forEach((group) => {
           if (group.previewPath) {
@@ -791,26 +1038,69 @@ export class HomeComponent implements OnInit, AfterViewInit {
           }
         });
 
+        const progressiveGroupedItems: DirectoryItem[] = [];
+        this.fsTotalCount = directories.length + groupedItems.length;
+
         this.ngZone.run(() => {
-          // Combine directories and grouped items.
-          this.directoryContents = [...directories, ...groupedItems];
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+          this.directoryContents = [...directories];
+          this.fsLoadedCount = directories.length;
+          this.isFsListingInProgress = true;
+          this.isFsBackgroundSyncInProgress = false;
+          this.recomputeRenderItems();
+        });
+
+        for (let i = 0; i < groupedItems.length; i += this.FS_LOAD_BATCH_SIZE) {
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+          const uiChunk = groupedItems.slice(i, i + this.FS_LOAD_BATCH_SIZE);
+          progressiveGroupedItems.push(...uiChunk);
+
+          for (let j = 0; j < uiChunk.length; j += this.FS_SYNC_BATCH_SIZE) {
+            const syncChunk = uiChunk.slice(j, j + this.FS_SYNC_BATCH_SIZE);
+            this.queueFsChunkSync(syncChunk, loadToken, directoryPath);
+          }
+
+          this.ngZone.run(() => {
+            if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+            this.directoryContents = this.preserveExistingScanData([...directories, ...progressiveGroupedItems]);
+            this.fsLoadedCount = directories.length + progressiveGroupedItems.length;
+            this.recomputeRenderItems();
+          });
+
+          await this.yieldToUi();
+        }
+
+        await this.activeFsSyncQueue;
+
+        this.ngZone.run(() => {
+          if (!this.isCurrentFsLoad(loadToken, directoryPath)) return;
+
+          this.directoryContents = this.preserveExistingScanData([...directories, ...progressiveGroupedItems]);
+          this.fsLoadedCount = this.fsTotalCount;
+          this.isFsListingInProgress = false;
+          this.isFsBackgroundSyncInProgress = false;
           this.isLoading = false;
           this.recomputeRenderItems();
         });
-      }
 
-      if (this.directoryContents.length > 0) {
-        this.updateLocalPath();
-        this.scanLocalFiles();
-        this.updateVisitedPath();
-        this.fetchVisitedChildren();
+        if (this.directoryContents.length > 0) {
+          this.updateLocalPath();
+          this.scanLocalFiles();
+        }
       }
 
       console.log('Directory Contents:', this.directoryContents);
     } catch (err) {
       console.error('Error reading directory:', err);
       this.ngZone.run(() => {
+        if (loadToken !== this.currentFsLoadToken) return;
+
         this.errorMessage = 'Failed to read the directory contents.';
+        this.isFsListingInProgress = false;
+        this.isFsBackgroundSyncInProgress = false;
         this.isLoading = false;
       });
     }
