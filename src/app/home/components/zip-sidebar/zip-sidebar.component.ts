@@ -135,10 +135,22 @@ export class ZipSidebarComponent {
     this.selectSetsEvent.emit(itemsToSelect);
   }
 
+  isImage(item: DirectoryItem): boolean {
+    return /\.(png|jpe?g|gif|webp)$/i.test(item.name);
+  }
 
   getThumbnail(group: FileGroup): string {
     const preview = group.items.find(item => item.name.toLowerCase().includes('preview'));
     return preview ? preview.path : '';
+  }
+
+  getThumbnailFallbackSources(group: FileGroup): string[] {
+    const primary = this.getThumbnail(group);
+
+    return (group?.items ?? [])
+      .filter(item => this.isImage(item))
+      .map(item => item.path)
+      .filter(p => !!p && p !== primary);
   }
 
   async zipGroup(item: UnzippedGroup, force: boolean = false): Promise<void> {

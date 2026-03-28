@@ -48,7 +48,8 @@
                 <tbody>
                     <tr *ngFor="let item of unzippedGroups">
                         <td>
-                            <app-smart-image class="zip-thumb-image" [src]="getThumbnail(item.group)" alt="thumbnail"
+                            <app-smart-image class="zip-thumb-image" [src]="getThumbnail(item.group)"
+                                [fallbackSources]="getThumbnailFallbackSources(item.group)" alt="thumbnail"
                                 loading="lazy" [showRetryButton]="false" objectFit="cover" [width]="32" [height]="32">
                             </app-smart-image>
                         </td>

@@ -566,6 +566,16 @@ export class UpdateSidebarComponent implements OnInit, OnChanges, OnDestroy {
     return /\.(png|jpe?g|gif|webp)$/i.test(item.name);
   }
 
+  getSetPreviewFallbackSources(set: CivitaiSet): string[] {
+    const primary = set.previewPath || '';
+    if (!set?.items?.length) return [];
+
+    return set.items
+      .filter(item => this.isImage(item))
+      .map(item => item.path)
+      .filter(p => !!p && p !== primary);
+  }
+
   close() {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();

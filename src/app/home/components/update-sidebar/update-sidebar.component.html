@@ -107,7 +107,8 @@
 
                         <div *ngIf="set.previewPath">
                             <div *ngIf="set.previewPath">
-                                <app-smart-image class="set-preview-image" [src]="set.previewPath" [alt]="set.setId"
+                                <app-smart-image class="set-preview-image" [src]="set.previewPath"
+                                    [fallbackSources]="getSetPreviewFallbackSources(set)" [alt]="set.setId"
                                     loading="lazy" [showRetryButton]="false" objectFit="contain" [maxHeight]="'200px'">
                                 </app-smart-image>
                             </div>

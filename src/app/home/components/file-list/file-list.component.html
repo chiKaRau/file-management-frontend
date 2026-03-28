@@ -298,8 +298,9 @@
 
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileL">
-                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
-                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name"
+                        [fallbackSources]="getThumbnailFallbackSources(item)" loading="lazy" [showRetryButton]="false"
+                        objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileL>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -320,8 +321,9 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileM">
-                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
-                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name"
+                        [fallbackSources]="getThumbnailFallbackSources(item)" loading="lazy" [showRetryButton]="false"
+                        objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileM>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -342,8 +344,9 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileS">
-                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
-                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name"
+                        [fallbackSources]="getThumbnailFallbackSources(item)" loading="lazy" [showRetryButton]="false"
+                        objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileS>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -364,8 +367,9 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileList">
-                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
-                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name"
+                        [fallbackSources]="getThumbnailFallbackSources(item)" loading="lazy" [showRetryButton]="false"
+                        objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileList>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -386,8 +390,9 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileDetails">
-                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
-                        [showRetryButton]="false" objectFit="cover">
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name"
+                        [fallbackSources]="getThumbnailFallbackSources(item)" loading="lazy" [showRetryButton]="false"
+                        objectFit="cover">
                     </app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileDetails>

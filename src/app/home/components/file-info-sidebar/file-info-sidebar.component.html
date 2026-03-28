@@ -11,8 +11,8 @@
                 [disabled]="!(modelVersion?.images?.length > 1)">&#10094;</button>
             <!-- NOTE: keep openModal() in template; we'll repurpose it in TS to open full-screen overlay -->
             <!-- Sidebar mini carousel -->
-            <app-smart-image class="carousel-image" [src]="currentImageUrl" alt="Model Image" loading="lazy"
-                [showRetryButton]="false" objectFit="contain" [maxHeight]="'200px'"
+            <app-smart-image class="carousel-image" [src]="currentImageUrl" [fallbackSources]="liveFallbackSources"
+                alt="Model Image" loading="lazy" [showRetryButton]="false" objectFit="contain" [maxHeight]="'200px'"
                 (click)="openModal()"></app-smart-image>
 
             <button class="carousel-btn" (click)="nextImage()"
@@ -134,8 +134,9 @@
                 <div class="overlay-carousel" *ngIf="dbImages.length">
                     <button class="carousel-btn" (click)="prevDbImage()">&#10094;</button>
                     <!-- CLICK HERE opens the FULL-SCREEN overlay with LOCAL data -->
-                    <app-smart-image class="overlay-image" [src]="dbImages[dbImageIndex].url" alt="Local record image"
-                        loading="lazy" [showRetryButton]="false" objectFit="contain" [maxHeight]="'34vh'"
+                    <app-smart-image class="overlay-image" [src]="dbImages[dbImageIndex].url"
+                        [fallbackSources]="dbFallbackSources" alt="Local record image" loading="lazy"
+                        [showRetryButton]="false" objectFit="contain" [maxHeight]="'34vh'"
                         (click)="openFullOverlay('local', dbImageIndex)"></app-smart-image>
                     <button class="carousel-btn" (click)="nextDbImage()">&#10095;</button>
                 </div>
@@ -349,6 +350,7 @@
                                         [disabled]="simImageCount(m) < 2">&#10094;</button>
 
                                     <app-smart-image class="mini-image" [src]="simCurrentImage(m)"
+                                        [fallbackSources]="simFallbackSources(m)"
                                         [alt]="m.mainModelName || 'Preview image'" loading="lazy"
                                         [showRetryButton]="false" objectFit="contain"></app-smart-image>
 
@@ -474,6 +476,7 @@
                                         [disabled]="sibImageCount(m) < 2">&#10094;</button>
 
                                     <app-smart-image class="mini-image" [src]="sibCurrentImage(m)"
+                                        [fallbackSources]="sibFallbackSources(m)"
                                         [alt]="m.mainModelName || 'Preview image'" loading="lazy"
                                         [showRetryButton]="false" objectFit="contain"></app-smart-image>
 
@@ -580,6 +583,7 @@
                                         [disabled]="liveImageCount(m) < 2">&#10094;</button>
 
                                     <app-smart-image class="mini-image" [src]="liveCurrentImage(m)"
+                                        [fallbackSources]="liveFallbackSourcesForCard(m)"
                                         [alt]="m.mainModelName || 'Preview image'" loading="lazy"
                                         [showRetryButton]="false" objectFit="contain"></app-smart-image>
 
@@ -682,8 +686,8 @@
                 <button class="carousel-btn" (click)="prevFullImage()">&#10094;</button>
                 <!-- Full-screen overlay -->
                 <app-smart-image *ngIf="fullImages && fullImages.length > fullImageIndex" class="overlay-image"
-                    [src]="fullImages[fullImageIndex].url" alt="image" loading="lazy" [showRetryButton]="false"
-                    objectFit="contain" [maxHeight]="'42vh'"></app-smart-image>
+                    [src]="fullImages[fullImageIndex].url" [fallbackSources]="fullFallbackSources" alt="image"
+                    loading="lazy" [showRetryButton]="false" objectFit="contain" [maxHeight]="'42vh'"></app-smart-image>
 
                 <button class="carousel-btn" (click)="nextFullImage()">&#10095;</button>
             </div>

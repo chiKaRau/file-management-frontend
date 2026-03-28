@@ -1273,6 +1273,63 @@ export class FileInfoSidebarComponent implements OnChanges {
   // trackBy for the result cards grid
   simTrackBy = (_: number, m: any) => this.simKey(m);
 
+  private urlsFromImages(images: any[] | null | undefined): string[] {
+    if (!Array.isArray(images)) return [];
+
+    return images
+      .map(x => typeof x === 'string' ? x : x?.url)
+      .filter((url): url is string => !!url);
+  }
+
+  private fallbackFromList(urls: string[], currentIndex: number): string[] {
+    if (!urls.length) return [];
+
+    const current = urls[currentIndex] || '';
+    return urls.filter((url, index) => !!url && index !== currentIndex && url !== current);
+  }
+
+  get liveFallbackSources(): string[] {
+    return this.fallbackFromList(
+      this.urlsFromImages(this.modelVersion?.images),
+      this.currentImageIndex
+    );
+  }
+
+  get dbFallbackSources(): string[] {
+    return this.fallbackFromList(
+      this.urlsFromImages(this.dbImages),
+      this.dbImageIndex
+    );
+  }
+
+  simFallbackSources(m: any): string[] {
+    const imgs = this.simImages(m) || [];
+    const key = this.simKey(m);
+    const index = this.simCarouselIndex.get(key) ?? 0;
+    return this.fallbackFromList(this.urlsFromImages(imgs), index);
+  }
+
+  sibFallbackSources(m: any): string[] {
+    const imgs = this.simImages(m) || [];
+    const key = this.simKey(m);
+    const index = this.sibCarouselIndex.get(key) ?? 0;
+    return this.fallbackFromList(this.urlsFromImages(imgs), index);
+  }
+
+  liveFallbackSourcesForCard(m: any): string[] {
+    const imgs = this.liveImages(m) || [];
+    const key = this.liveKey(m);
+    const index = this.liveCarouselIndex.get(key) ?? 0;
+    return this.fallbackFromList(this.urlsFromImages(imgs), index);
+  }
+
+  get fullFallbackSources(): string[] {
+    return this.fallbackFromList(
+      this.urlsFromImages(this.fullImages),
+      this.fullImageIndex
+    );
+  }
+
   revealLocalPath() {
     const p = this.dbLocalPath as unknown as string;
     if (!p || p === '—') return;
