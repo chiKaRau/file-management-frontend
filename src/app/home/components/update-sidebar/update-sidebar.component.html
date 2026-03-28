@@ -106,8 +106,11 @@
                         </p>
 
                         <div *ngIf="set.previewPath">
-                            <img [src]="set.previewPath" alt="{{ set.setId }}"
-                                style="max-width:200px; max-height:200px; display:block; margin: 0.5rem 0;">
+                            <div *ngIf="set.previewPath">
+                                <app-smart-image class="set-preview-image" [src]="set.previewPath" [alt]="set.setId"
+                                    loading="lazy" [showRetryButton]="false" objectFit="contain" [maxHeight]="'200px'">
+                                </app-smart-image>
+                            </div>
                         </div>
                         <p *ngIf="!set.previewPath">No preview available.</p>
 

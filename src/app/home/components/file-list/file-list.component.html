@@ -226,35 +226,48 @@
                 <div class="card-tile" (contextmenu)="onFileRightClick(item, $event)">
                     <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
                         (dblclick)="onItemDblClick(item)"
-                        [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
-                        [appLazyBg]="getCardBgUrl(item)">
+                        [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }">
+
                         <!-- File content -->
                         <ng-container *ngIf="item.isFile">
-                            <div class="badge top-left">ID: {{ item.scanData?.modelNumber }} / {{
-                                item.scanData?.versionNumber }}</div>
-                            <div class="badge top-right">{{ item.scanData?.baseModel }}</div>
+                            <app-smart-image class="card-image" [src]="getCardBgUrl(item)" [alt]="item.name"
+                                loading="lazy" [showRetryButton]="false" objectFit="cover">
+                            </app-smart-image>
+
+                            <div class="badge top-left">
+                                ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
+                            </div>
+
+                            <div class="badge top-right">
+                                {{ item.scanData?.baseModel }}
+                            </div>
+
                             <div class="card-footer">
                                 <div class="creator">{{ item.scanData?.creatorName }}</div>
                                 <div class="main-model">{{ item.scanData?.mainModelName || 'N/A' }}</div>
+
                                 <ng-container *ngIf="getParsedStats(item) as stats">
                                     <div class="stats">
                                         <span><span class="material-icons icon-download">file_download</span>{{
                                             stats.downloadCount ?? 'N/A' }}</span>
                                         <span><span class="material-icons icon-rating-count">rate_review</span>{{
                                             stats.ratingCount ?? 'N/A' }}</span>
-                                        <span><span class="material-icons icon-rating">star_rate</span>{{ stats.rating
-                                            ?? 'N/A' }}</span>
+                                        <span><span class="material-icons icon-rating">star_rate</span>{{
+                                            stats.rating ?? 'N/A' }}</span>
                                         <span><span class="material-icons icon-thumb-up">thumb_up</span>{{
                                             stats.thumbsUpCount ?? 'N/A' }}</span>
                                     </div>
                                 </ng-container>
+
                                 <div class="size-line" *ngIf="item.size != null">
                                     <span class="material-icons">sd_storage</span>
-                                    <span class="size-text" [ngClass]="sizeClass(item.size)">{{ formatBytes(item.size)
-                                        }}</span>
+                                    <span class="size-text" [ngClass]="sizeClass(item.size)">
+                                        {{ formatBytes(item.size) }}
+                                    </span>
                                 </div>
                             </div>
                         </ng-container>
+
                         <div class="filename" *ngIf="item.isDirectory">{{ item.name }}</div>
                     </div>
 
@@ -284,8 +297,8 @@
 
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileL">
-                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                        style="object-fit: cover" />
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
+                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileL>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -306,8 +319,8 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileM">
-                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                        style="object-fit: cover" />
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
+                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileM>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -328,8 +341,8 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileS">
-                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                        style="object-fit: cover" />
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
+                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileS>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -350,8 +363,8 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileList">
-                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                        style="object-fit: cover" />
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
+                        [showRetryButton]="false" objectFit="cover"></app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileList>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -372,8 +385,9 @@
             [ngClass]="{'deleted': item.isDeleted, 'selected': isSelected(item)}">
             <div class="icon">
                 <ng-container *ngIf="getThumbnailSrc(item) as thumb; else fallbackIconFileDetails">
-                    <img [attr.src]="thumb" alt="{{ item.name }}" width="40" height="40" loading="lazy" decoding="async"
-                        style="object-fit: cover" />
+                    <app-smart-image class="thumb-image" [src]="thumb" [alt]="item.name" loading="lazy"
+                        [showRetryButton]="false" objectFit="cover">
+                    </app-smart-image>
                 </ng-container>
                 <ng-template #fallbackIconFileDetails>
                     <svg *ngIf="item.isFile" width="40" height="40" fill="currentColor" viewBox="0 0 24 24">
@@ -397,12 +411,21 @@
                     <div class="card-tile update-source-card" (contextmenu)="onFileRightClick(item, $event)">
                         <div class="file-card" #fileCard (click)="onItemClick(item, $event, i)"
                             (dblclick)="onItemDblClick(item)"
-                            [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }"
-                            [appLazyBg]="getCardBgUrl(item)">
+                            [ngClass]="{ 'deleted': item.isDeleted, 'selected': isSelected(item), 'directory': item.isDirectory, 'file': item.isFile }">
+
                             <ng-container *ngIf="item.isFile">
-                                <div class="badge top-left">ID: {{ item.scanData?.modelNumber }} / {{
-                                    item.scanData?.versionNumber }}</div>
-                                <div class="badge top-right">{{ item.scanData?.baseModel }}</div>
+                                <app-smart-image class="card-image" [src]="getCardBgUrl(item)" [alt]="item.name"
+                                    loading="lazy" [showRetryButton]="false" objectFit="cover">
+                                </app-smart-image>
+
+                                <div class="badge top-left">
+                                    ID: {{ item.scanData?.modelNumber }} / {{ item.scanData?.versionNumber }}
+                                </div>
+
+                                <div class="badge top-right">
+                                    {{ item.scanData?.baseModel }}
+                                </div>
+
                                 <div class="card-footer">
                                     <div class="creator">{{ item.scanData?.creatorName }}</div>
                                     <div class="main-model">{{ item.scanData?.mainModelName || item.name || 'N/A' }}
@@ -458,8 +481,12 @@
                                     (contextmenu)="onFileRightClick(result, $event)">
                                     <div class="file-card search-result-card" (click)="onItemClick(result, $event, i)"
                                         (dblclick)="onItemDblClick(result)"
-                                        [ngClass]="{ 'selected': isSelected(result), 'file': true }"
-                                        [appLazyBg]="getCardBgUrl(result)">
+                                        [ngClass]="{ 'selected': isSelected(result), 'file': true }">
+
+                                        <app-smart-image class="card-image" [src]="getCardBgUrl(result)"
+                                            [alt]="result.name" loading="lazy" [showRetryButton]="false"
+                                            objectFit="cover">
+                                        </app-smart-image>
 
                                         <div class="badge top-left">
                                             ID: {{ result.scanData?.modelNumber }} / {{ result.scanData?.versionNumber

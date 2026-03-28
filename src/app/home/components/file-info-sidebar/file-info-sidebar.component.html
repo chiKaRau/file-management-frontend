@@ -11,8 +11,9 @@
                 [disabled]="!(modelVersion?.images?.length > 1)">&#10094;</button>
             <!-- NOTE: keep openModal() in template; we'll repurpose it in TS to open full-screen overlay -->
             <!-- Sidebar mini carousel -->
-            <img class="carousel-image" [src]="currentImageUrl" alt="Model Image" loading="lazy" decoding="async"
-                fetchpriority="low" (click)="openModal()" />
+            <app-smart-image class="carousel-image" [src]="currentImageUrl" alt="Model Image" loading="lazy"
+                [showRetryButton]="false" objectFit="contain" [maxHeight]="'200px'"
+                (click)="openModal()"></app-smart-image>
 
             <button class="carousel-btn" (click)="nextImage()"
                 [disabled]="!(modelVersion?.images?.length > 1)">&#10095;</button>
@@ -133,8 +134,9 @@
                 <div class="overlay-carousel" *ngIf="dbImages.length">
                     <button class="carousel-btn" (click)="prevDbImage()">&#10094;</button>
                     <!-- CLICK HERE opens the FULL-SCREEN overlay with LOCAL data -->
-                    <img class="overlay-image" [src]="dbImages[dbImageIndex].url" alt="Local record image"
-                        (click)="openFullOverlay('local', dbImageIndex)" />
+                    <app-smart-image class="overlay-image" [src]="dbImages[dbImageIndex].url" alt="Local record image"
+                        loading="lazy" [showRetryButton]="false" objectFit="contain" [maxHeight]="'34vh'"
+                        (click)="openFullOverlay('local', dbImageIndex)"></app-smart-image>
                     <button class="carousel-btn" (click)="nextDbImage()">&#10095;</button>
                 </div>
 
@@ -346,9 +348,9 @@
                                     <button class="carousel-btn mini" (click)="prevSimImage(m, $event)"
                                         [disabled]="simImageCount(m) < 2">&#10094;</button>
 
-                                    <img class="mini-image" [src]="simCurrentImage(m)"
-                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy" decoding="async"
-                                        fetchpriority="low" />
+                                    <app-smart-image class="mini-image" [src]="simCurrentImage(m)"
+                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy"
+                                        [showRetryButton]="false" objectFit="contain"></app-smart-image>
 
                                     <button class="carousel-btn mini" (click)="nextSimImage(m, $event)"
                                         [disabled]="simImageCount(m) < 2">&#10095;</button>
@@ -471,9 +473,9 @@
                                     <button class="carousel-btn mini" (click)="prevSibImage(m, $event)"
                                         [disabled]="sibImageCount(m) < 2">&#10094;</button>
 
-                                    <img class="mini-image" [src]="sibCurrentImage(m)"
-                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy" decoding="async"
-                                        fetchpriority="low" />
+                                    <app-smart-image class="mini-image" [src]="sibCurrentImage(m)"
+                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy"
+                                        [showRetryButton]="false" objectFit="contain"></app-smart-image>
 
                                     <button class="carousel-btn mini" (click)="nextSibImage(m, $event)"
                                         [disabled]="sibImageCount(m) < 2">&#10095;</button>
@@ -577,9 +579,9 @@
                                     <button class="carousel-btn mini" (click)="prevLiveImage(m, $event)"
                                         [disabled]="liveImageCount(m) < 2">&#10094;</button>
 
-                                    <img class="mini-image" [src]="liveCurrentImage(m)"
-                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy" decoding="async"
-                                        fetchpriority="low" />
+                                    <app-smart-image class="mini-image" [src]="liveCurrentImage(m)"
+                                        [alt]="m.mainModelName || 'Preview image'" loading="lazy"
+                                        [showRetryButton]="false" objectFit="contain"></app-smart-image>
 
                                     <button class="carousel-btn mini" (click)="nextLiveImage(m, $event)"
                                         [disabled]="liveImageCount(m) < 2">&#10095;</button>
@@ -679,9 +681,9 @@
             <div class="overlay-carousel" *ngIf="showFullCarousel && fullImages.length">
                 <button class="carousel-btn" (click)="prevFullImage()">&#10094;</button>
                 <!-- Full-screen overlay -->
-                <img *ngIf="fullImages && fullImages.length > fullImageIndex" class="overlay-image"
-                    [src]="fullImages[fullImageIndex].url" alt="image" loading="lazy" decoding="async"
-                    fetchpriority="low" />
+                <app-smart-image *ngIf="fullImages && fullImages.length > fullImageIndex" class="overlay-image"
+                    [src]="fullImages[fullImageIndex].url" alt="image" loading="lazy" [showRetryButton]="false"
+                    objectFit="contain" [maxHeight]="'42vh'"></app-smart-image>
 
                 <button class="carousel-btn" (click)="nextFullImage()">&#10095;</button>
             </div>

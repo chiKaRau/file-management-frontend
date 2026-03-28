@@ -10,7 +10,6 @@ export interface UpdateBatchActionPlanItem {
   action: Exclude<UpdateBatchAction, 'none'>;
 }
 
-
 @Component({
   selector: 'app-file-list',
   templateUrl: './file-list.component.html',
@@ -37,6 +36,10 @@ export class FileListComponent {
     if (changes['updateResultBySourcePath']) {
       this.syncUpdateResultState();
       this.syncUpdateResultPaginationState();
+    }
+
+    if (changes['items']) {
+      this.thumbnailFallbackCache.clear();
     }
   }
 
@@ -87,6 +90,8 @@ export class FileListComponent {
 
   // Track the index of the last clicked item.
   lastSelectedIndex: number | null = null;
+
+  private thumbnailFallbackCache = new Map<string, string[]>();
 
   readonly updateResultPageSize = 5;
   private updateResultPageBySource: Record<string, number> = {};
@@ -414,6 +419,43 @@ export class FileListComponent {
     if (current > 0) {
       this.updateResultPageBySource[sourceKey] = current - 1;
     }
+  }
+
+  getThumbnailFallbackSources(item: DirectoryItem): string[] {
+    const primary = this.getThumbnailSrc(item) || this.getCardBgUrl(item) || '';
+    const cacheKey = `${item.path}::${primary}`;
+
+    const cached = this.thumbnailFallbackCache.get(cacheKey);
+    if (cached) return cached;
+
+    const sd: any = (item as any).scanData;
+    if (!sd) {
+      this.thumbnailFallbackCache.set(cacheKey, []);
+      return [];
+    }
+
+    let urls = sd.imageUrls ?? sd.images?.imageUrls ?? [];
+    if (typeof urls === 'string') {
+      try {
+        urls = JSON.parse(urls);
+      } catch {
+        this.thumbnailFallbackCache.set(cacheKey, []);
+        return [];
+      }
+    }
+
+    if (!Array.isArray(urls)) {
+      this.thumbnailFallbackCache.set(cacheKey, []);
+      return [];
+    }
+
+    const result = urls
+      .map(x => typeof x === 'string' ? x : x?.url)
+      .filter((url): url is string => !!url)
+      .filter(url => url !== primary);
+
+    this.thumbnailFallbackCache.set(cacheKey, result);
+    return result;
   }
 
   goToNextUpdateResultPage(item: DirectoryItem, event?: Event): void {

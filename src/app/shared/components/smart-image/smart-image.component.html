@@ -1,0 +1,25 @@
+<div class="smart-image" [style.min-height]="hostMinHeight" [style.border-radius]="hostBorderRadius"
+    [class.dark]="isDarkMode">
+    <div class="smart-image__overlay" *ngIf="status === 'loading'">
+        <div class="smart-image__spinner"></div>
+        <span class="smart-image__message">
+            {{ currentIndex > 0 ? ('Trying fallback image ' + (currentIndex + 1) + '...') : 'Loading image...' }}
+        </span>
+    </div>
+
+    <div class="smart-image__error" *ngIf="status === 'error'; else imageTpl">
+        <div>Failed to load image</div>
+        <button *ngIf="showRetryButton" type="button" class="smart-image__retry" (click)="onRetry()">
+            Retry
+        </button>
+    </div>
+
+    <ng-template #imageTpl>
+        <img class="smart-image__img" *ngIf="activeSrc as srcValue" [src]="srcValue"
+            [attr.srcset]="currentIndex === 0 ? normalizedSrcSet : null"
+            [attr.sizes]="currentIndex === 0 ? sizes || null : null" [attr.alt]="alt" [attr.loading]="loading"
+            decoding="async" [style.width]="imageWidth" [style.height]="imageHeight" [style.max-height]="imageMaxHeight"
+            [style.object-fit]="objectFit" [style.opacity]="status === 'loaded' ? 1 : 0.15" (load)="onLoad()"
+            (error)="onError()" />
+    </ng-template>
+</div>

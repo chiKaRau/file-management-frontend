@@ -14,11 +14,12 @@ import { ModelModalComponent } from './components/model-modal/model-modal.compon
 import { ZipSidebarComponent } from './components/zip-sidebar/zip-sidebar.component';
 import { VirtualExplorerToolbarComponent } from '../virtual/components/virtual-explorer-toolbar/virtual-explorer-toolbar.component';
 import { LazyBgDirective } from '../shared/directives/lazy/lazy-bg.directive';
+import { SmartImageComponent } from '../shared/components/smart-image/smart-image.component';
 
 @NgModule({
-  declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent,
+  declarations: [HomeComponent, FileListComponent, ExplorerToolbarComponent, SmartImageComponent,
     FileInfoSidebarComponent, UpdateSidebarComponent, ModelModalComponent, ZipSidebarComponent, LazyBgDirective, VirtualExplorerToolbarComponent],
   imports: [CommonModule, SharedModule, HomeRoutingModule, ScrollingModule],
-  exports: [FileListComponent, HomeComponent]
+  exports: [FileListComponent, HomeComponent, SmartImageComponent]
 })
 export class HomeModule { }
