@@ -231,7 +231,8 @@
                         <!-- File content -->
                         <ng-container *ngIf="item.isFile">
                             <app-smart-image class="card-image" [src]="getCardBgUrl(item)" [alt]="item.name"
-                                loading="lazy" [showRetryButton]="false" objectFit="cover">
+                                [fallbackSources]="getThumbnailFallbackSources(item)" loading="eager"
+                                [showRetryButton]="false" objectFit="cover">
                             </app-smart-image>
 
                             <div class="badge top-left">
@@ -415,7 +416,8 @@
 
                             <ng-container *ngIf="item.isFile">
                                 <app-smart-image class="card-image" [src]="getCardBgUrl(item)" [alt]="item.name"
-                                    loading="lazy" [showRetryButton]="false" objectFit="cover">
+                                    [fallbackSources]="getThumbnailFallbackSources(item)" loading="lazy"
+                                    [showRetryButton]="false" objectFit="cover">
                                 </app-smart-image>
 
                                 <div class="badge top-left">
@@ -484,8 +486,8 @@
                                         [ngClass]="{ 'selected': isSelected(result), 'file': true }">
 
                                         <app-smart-image class="card-image" [src]="getCardBgUrl(result)"
-                                            [alt]="result.name" loading="lazy" [showRetryButton]="false"
-                                            objectFit="cover">
+                                            [alt]="result.name" [fallbackSources]="getThumbnailFallbackSources(result)"
+                                            loading="lazy" [showRetryButton]="false" objectFit="cover">
                                         </app-smart-image>
 
                                         <div class="badge top-left">

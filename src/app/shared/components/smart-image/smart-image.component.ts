@@ -41,18 +41,19 @@ export class SmartImageComponent implements OnChanges {
   readonly civitaiImageSegment = 'anim=false,width=450,optimized=true';
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['src'] || changes['fallbackSources'] || changes['srcSet'] || changes['sizes']) {
+    if (changes['src']) {
       this.rebuildCandidates();
       this.currentIndex = 0;
       this.retryNonce = 0;
       this.status = this.candidates.length > 0 ? 'loading' : 'error';
-
-      console.log('[SmartImage] rebuild', {
-        src: this.src,
-        candidates: this.candidates,
-        status: this.status
-      });
     }
+
+    console.log('[SmartImage] rebuild', {
+      src: this.src,
+      candidates: this.candidates,
+      status: this.status
+    });
+
   }
 
   get activeSrc(): string | null {

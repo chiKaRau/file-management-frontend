@@ -426,10 +426,23 @@ export class FileListComponent {
     const cacheKey = `${item.path}::${primary}`;
 
     const cached = this.thumbnailFallbackCache.get(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      console.log('[fallback][cached]', {
+        name: item.name,
+        path: item.path,
+        primary,
+        count: cached.length,
+        urls: cached
+      });
+      return cached;
+    }
 
     const sd: any = (item as any).scanData;
     if (!sd) {
+      console.log('[fallback][no-scanData]', {
+        name: item.name,
+        path: item.path
+      });
       this.thumbnailFallbackCache.set(cacheKey, []);
       return [];
     }
@@ -439,12 +452,22 @@ export class FileListComponent {
       try {
         urls = JSON.parse(urls);
       } catch {
+        console.log('[fallback][json-parse-fail]', {
+          name: item.name,
+          path: item.path,
+          raw: sd.imageUrls ?? sd.images?.imageUrls
+        });
         this.thumbnailFallbackCache.set(cacheKey, []);
         return [];
       }
     }
 
     if (!Array.isArray(urls)) {
+      console.log('[fallback][not-array]', {
+        name: item.name,
+        path: item.path,
+        urls
+      });
       this.thumbnailFallbackCache.set(cacheKey, []);
       return [];
     }
@@ -453,6 +476,15 @@ export class FileListComponent {
       .map(x => typeof x === 'string' ? x : x?.url)
       .filter((url): url is string => !!url)
       .filter(url => url !== primary);
+
+    console.log('[fallback][built]', {
+      name: item.name,
+      path: item.path,
+      primary,
+      sourceCount: urls.length,
+      fallbackCount: result.length,
+      urls: result
+    });
 
     this.thumbnailFallbackCache.set(cacheKey, result);
     return result;
